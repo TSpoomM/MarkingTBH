@@ -1,96 +1,247 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { CustomerTemplate, MarkingContent, TemplateField } from "./types/marking";
 
-type IconName = "grid" | "file" | "template" | "clock" | "settings" | "help" | "search" | "bell" | "chevron" | "check" | "eye" | "download" | "plus" | "trash" | "copy" | "box";
+type Customer = { id: number; name: string };
 
-function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
-  const paths: Record<IconName, React.ReactNode> = {
-    grid: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
-    file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></>,
-    template: <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></>,
-    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
-    settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21H9.6v-.1A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.6-1H3v-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3h4v.1A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1z"/></>,
-    help: <><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.4 2.4 0 1 1 3.9 1.9c-1 .7-1.6 1.1-1.6 2.6M12 17h.01"/></>,
-    search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>, bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></>,
-    chevron: <path d="m9 18 6-6-6-6"/>, check: <path d="m5 12 4 4L19 6"/>, eye: <><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12"/><circle cx="12" cy="12" r="2.5"/></>,
-    download: <><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></>, plus: <path d="M12 5v14M5 12h14"/>, trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></>,
-    copy: <><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></>, box: <><path d="m12 3 9 5-9 5-9-5 9-5zM3 8v9l9 5 9-5V8M12 13v9"/></>,
-  };
-  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
-}
-
-const templates = ["กล่องมาตรฐาน Export", "Premium Product", "กล่องสินค้าแช่แข็ง"];
-const initialFields = [
-  { id: 1, label: "LOT NO.", value: "TBH-2026-0722", required: true },
-  { id: 2, label: "PALLET NO.", value: "PLT-001", required: true },
-  { id: 3, label: "GROSS (KG)", value: "1,250.00", required: true },
-  { id: 4, label: "NET (KG)", value: "1,200.00", required: true },
-  { id: 5, label: "DESTINATION", value: "YOKOHAMA, JAPAN", required: true },
-  { id: 6, label: "CONTRACT NO.", value: "CT-TH-2026-047", required: false },
-];
+const emptyRow = (fields: TemplateField[]): MarkingContent =>
+  Object.fromEntries(fields.map((field) => [field.key, field.defaultValue ?? ""]));
 
 export default function Home() {
-  const [template, setTemplate] = useState(templates[0]);
-  const [tab, setTab] = useState<"inside" | "outside">("inside");
-  const [fields, setFields] = useState(initialFields);
-  const [toast, setToast] = useState("");
-  const filled = useMemo(() => fields.filter((field) => field.value.trim()).length, [fields]);
-  const update = (id: number, value: string) => setFields((all) => all.map((field) => field.id === id ? { ...field, value } : field));
-  const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2400); };
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerId, setCustomerId] = useState("");
+  const [template, setTemplate] = useState<CustomerTemplate | null>(null);
+  const [totalWeight, setTotalWeight] = useState("");
+  const [stickerSides, setStickerSides] = useState("2");
+  const [insideRows, setInsideRows] = useState<MarkingContent[]>([]);
+  const [outsideRows, setOutsideRows] = useState<MarkingContent[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [outsideDraft, setOutsideDraft] = useState<TemplateField[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
-  return <div className="app-shell">
-    <aside className="sidebar">
-      <div className="brand"><span className="brand-mark"><Icon name="box" size={22}/></span><span>Marking<span>TBH</span></span></div>
-      <nav className="nav-group" aria-label="เมนูหลัก">
-        <p>เมนูหลัก</p>
-        <a className="active" href="#workspace"><Icon name="grid"/> สร้างเอกสาร</a>
-        <a href="#templates" onClick={() => notify("Template Management พร้อมสำหรับเชื่อม API")}><Icon name="template"/> จัดการเทมเพลต <span className="nav-count">3</span></a>
-        <a href="#history" onClick={() => notify("ยังไม่มีประวัติเอกสารในเซสชันนี้")}><Icon name="clock"/> ประวัติเอกสาร</a>
-      </nav>
-      <nav className="nav-group nav-bottom">
-        <p>ระบบ</p><a href="#settings"><Icon name="settings"/> ตั้งค่า</a><a href="#help"><Icon name="help"/> ช่วยเหลือ</a>
-      </nav>
-      <div className="user-card"><span className="avatar">AD</span><span><b>Admin TBH</b><small>ผู้ดูแลระบบ</small></span><Icon name="chevron" size={15}/></div>
-    </aside>
+  const customer = useMemo(
+    () => customers.find((item) => String(item.id) === customerId),
+    [customerId, customers],
+  );
 
-    <main className="main">
-      <header className="topbar"><div className="search"><Icon name="search"/><input aria-label="ค้นหา" placeholder="ค้นหาเทมเพลต หรือเอกสาร..."/><kbd>⌘ K</kbd></div><button className="icon-button" aria-label="การแจ้งเตือน"><Icon name="bell"/><i/></button></header>
-      <section id="workspace" className="content">
-        <div className="breadcrumb">หน้าหลัก <Icon name="chevron" size={13}/> <span>สร้างเอกสารใหม่</span></div>
-        <div className="title-row"><div><h1>สร้างเอกสารใหม่</h1><p>เลือกเทมเพลตและกรอกข้อมูล เพื่อสร้างเอกสารพร้อมพิมพ์</p></div><span className="draft"><i/> แบบร่าง</span></div>
+  useEffect(() => {
+    fetch("/api/session")
+      .then((response) => response.json())
+      .then((body) => setIsAdmin(body.user?.role === "admin"))
+      .catch(() => setIsAdmin(false));
+    fetch("/api/customers")
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.message);
+        setCustomers(body.data);
+        if (body.data[0]) void selectCustomer(String(body.data[0].id));
+      })
+      .catch((error) => setNotice({ type: "error", text: error.message }))
+      .finally(() => setLoading(false));
+  }, []);
 
-        <section className="stepper" aria-label="ขั้นตอน"><div className="step done"><b><Icon name="check" size={15}/></b><span><strong>เลือกเทมเพลต</strong><small>กล่องมาตรฐาน Export</small></span></div><i/><div className="step current"><b>2</b><span><strong>กรอกข้อมูล</strong><small>Inside & Outside Box</small></span></div><i/><div className="step"><b>3</b><span><strong>ตรวจสอบ</strong><small>ดูตัวอย่างเอกสาร</small></span></div><i/><div className="step"><b>4</b><span><strong>ส่งออก</strong><small>ดาวน์โหลด PDF</small></span></div></section>
+  async function selectCustomer(id: string) {
+    setCustomerId(id);
+    setNotice(null);
+    if (!id) { setTemplate(null); return; }
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/customers/${id}/template`);
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message);
+      setTemplate(body.data);
+      setInsideRows([emptyRow(body.data.inside)]);
+      setOutsideRows(body.data.outside.length ? [emptyRow(body.data.outside)] : []);
+    } catch (error) {
+      setNotice({ type: "error", text: error instanceof Error ? error.message : "โหลด template ไม่สำเร็จ" });
+    } finally { setLoading(false); }
+  }
 
-        <div className="workspace-grid">
-          <section className="form-panel">
-            <label className="field-label">เทมเพลตที่เลือก</label>
-            <div className="template-select"><span className="template-icon"><Icon name="file"/></span><select value={template} onChange={(e) => setTemplate(e.target.value)}>{templates.map((item) => <option key={item}>{item}</option>)}</select><span className="status-dot"><Icon name="check" size={12}/></span></div>
-            <div className="tabs"><button className={tab === "inside" ? "active" : ""} onClick={() => setTab("inside")}>Inside Box <span>{fields.length}</span></button><button className={tab === "outside" ? "active" : ""} onClick={() => setTab("outside")}>Outside Box <span>5</span></button></div>
-            {tab === "inside" ? <div className="form-card"><div className="form-heading"><div><h2>ข้อมูลภายในกล่อง</h2><p>ข้อมูลหลักที่จะแสดงบนฉลากสินค้า</p></div><span>{filled}/{fields.length} กรอกแล้ว</span></div>
-              <div className="field-grid">{fields.map((field) => <label key={field.id} className={field.label === "DESTINATION" || field.label === "CONTRACT NO." ? "wide" : ""}><span>{field.label} {field.required && <em>*</em>}</span><div className="input-wrap"><input value={field.value} onChange={(e) => update(field.id, e.target.value)} placeholder={`กรอก ${field.label}`}/>{field.value && <Icon name="check" size={15}/>}</div></label>)}</div>
-              <button className="add-field" onClick={() => setFields((f) => [...f, { id: Date.now(), label: "CUSTOM FIELD", value: "", required: false }])}><Icon name="plus"/> เพิ่มข้อมูลเพิ่มเติม</button>
-            </div> : <OutsideForm/>}
-            <div className="form-actions"><button className="secondary" onClick={() => notify("บันทึกแบบร่างแล้ว")}><Icon name="file"/> บันทึกแบบร่าง</button><button className="primary" onClick={() => notify("ตรวจสอบข้อมูลครบถ้วนแล้ว")}><Icon name="eye"/> ตรวจสอบเอกสาร <Icon name="chevron" size={15}/></button></div>
-          </section>
+  function validate() {
+    if (!customerId) return "กรุณาเลือกลูกค้า";
+    if (Number(totalWeight) <= 0) return "กรุณากรอกน้ำหนักรวม";
+    for (const [index, row] of insideRows.entries()) {
+      const missing = template?.inside.find((field) => field.required && !row[field.key]?.trim());
+      if (missing) return `Inside แถว ${index + 1}: กรุณากรอก ${missing.label}`;
+    }
+    for (const [index, row] of outsideRows.entries()) {
+      const missing = template?.outside.find((field) => field.required && !row[field.key]?.trim());
+      if (missing) return `Outside แถว ${index + 1}: กรุณากรอก ${missing.label}`;
+    }
+    return "";
+  }
 
-          <aside className="preview-panel"><div className="preview-heading"><div><h2>ตัวอย่างเอกสาร</h2><p>อัปเดตแบบเรียลไทม์</p></div><div><button className="icon-button" title="คัดลอก" onClick={() => notify("คัดลอกข้อมูลแล้ว")}><Icon name="copy"/></button><button className="icon-button" title="ล้างข้อมูล" onClick={() => setFields((f) => f.map((x) => ({...x, value: ""})))}><Icon name="trash"/></button></div></div>
-            <div className="paper"><div className="paper-label">A4 · LANDSCAPE · 2 × 2</div><div className="label-grid">{[1,2,3,4].map((n) => <LabelCard key={n} fields={fields} index={n}/>)}</div></div>
-            <div className="preview-footer"><span><i/> พร้อมส่งออก</span><span>4 ฉลาก · 1 หน้า</span></div>
-            <button className="export" onClick={() => window.print()}><Icon name="download"/> ส่งออกเป็น PDF</button><p className="export-note">ไฟล์ PDF คุณภาพสูง · รองรับภาษาไทย</p>
-          </aside>
+  async function saveAndExport() {
+    const error = validate();
+    if (error) { setNotice({ type: "error", text: error }); return; }
+    setSaving(true);
+    try {
+      const response = await fetch("/api/markings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: Number(customerId),
+          totalWeight: Number(totalWeight),
+          stickerSides: Number(stickerSides),
+          contentInside: insideRows,
+          contentOutside: outsideRows,
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message);
+      setNotice({ type: "success", text: `บันทึกรายการ #${body.data.id} แล้ว กำลังเปิดหน้าต่าง PDF` });
+      window.setTimeout(() => window.print(), 120);
+    } catch (error) {
+      setNotice({ type: "error", text: error instanceof Error ? error.message : "บันทึกไม่สำเร็จ" });
+    } finally { setSaving(false); }
+  }
+
+  function openTemplateEditor() {
+    setOutsideDraft(template?.outside.map((field) => ({ ...field })) ?? []);
+    setShowTemplateEditor(true);
+  }
+
+  function updateDraft(index: number, patch: Partial<TemplateField>) {
+    setOutsideDraft((fields) =>
+      fields.map((field, fieldIndex) => fieldIndex === index ? { ...field, ...patch } : field),
+    );
+  }
+
+  async function saveTemplate() {
+    if (!customerId) return;
+    const cleaned = outsideDraft.map((field, index) => ({
+      ...field,
+      key: field.key.trim() || `outside_field_${index + 1}`,
+      label: field.label.trim(),
+    }));
+    if (cleaned.some((field) => !field.label)) {
+      setNotice({ type: "error", text: "กรุณากรอกชื่อ Field ให้ครบ" });
+      return;
+    }
+    if (new Set(cleaned.map((field) => field.key)).size !== cleaned.length) {
+      setNotice({ type: "error", text: "Key ของแต่ละ Field ต้องไม่ซ้ำกัน" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/customers/${customerId}/template`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-user-role": "admin" },
+        body: JSON.stringify({ outside: cleaned, updatedBy: "ADMIN" }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message);
+      setTemplate(body.data);
+      setOutsideRows(body.data.outside.length ? [emptyRow(body.data.outside)] : []);
+      setShowTemplateEditor(false);
+      setNotice({ type: "success", text: "อัปเดต Outside Template เรียบร้อยแล้ว" });
+    } catch (error) {
+      setNotice({ type: "error", text: error instanceof Error ? error.message : "อัปเดต Template ไม่สำเร็จ" });
+    } finally { setSaving(false); }
+  }
+
+  return <div className="order-app">
+    <header className="header">
+      <div className="header-inner">
+        <div className="logo"><span>TBH</span><div><h1>ระบบจัดการคำสั่งซื้อ</h1><p>จัดทำรายการบรรจุสินค้า Inside และ Outside</p></div></div>
+        <button className="export-button" onClick={saveAndExport} disabled={saving || !template}><DownloadIcon/>{saving ? "กำลังบันทึก..." : "ส่งออก PDF"}</button>
+      </div>
+    </header>
+
+    <main className="container">
+      {notice && <div className={`notice ${notice.type}`}><span>{notice.text}</span><button onClick={() => setNotice(null)}>×</button></div>}
+
+      <section className="panel details-panel">
+        <SectionTitle number="1" title="รายละเอียดสติ๊กเกอร์" subtitle="เลือกลูกค้า ระบุน้ำหนัก และจำนวนด้านที่ต้องการติด"/>
+        <div className="detail-grid">
+          <Field label="ลูกค้า" hint={template ? `Template ภายนอก ${template.outside.length} ช่องข้อมูล` : undefined}>
+            <select value={customerId} onChange={(event) => selectCustomer(event.target.value)} disabled={loading}>
+              <option value="">{loading ? "กำลังโหลดลูกค้า..." : "เลือกลูกค้า"}</option>
+              {customers.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+            </select>
+          </Field>
+          <Field label="น้ำหนักรวม (ตัน)"><input type="number" min="0" step="0.01" value={totalWeight} onChange={(e) => setTotalWeight(e.target.value)} placeholder="0.00"/></Field>
+          <Field label="จำนวนด้านสติ๊กเกอร์ต่อกล่อง"><select value={stickerSides} onChange={(e) => setStickerSides(e.target.value)}>{[1,2,3,4].map((side) => <option value={side} key={side}>{side} ด้าน</option>)}</select></Field>
         </div>
       </section>
+
+      <TableSection
+        number="2" title="ข้อมูลภายในกล่อง (Inside)" subtitle="Template มาตรฐานสำหรับข้อมูลภายในกล่อง"
+        fields={template?.inside ?? []} rows={insideRows}
+        onChange={setInsideRows}
+      />
+      {template && (template.outside.length > 0 || isAdmin) && <TableSection
+        number="3" title="ข้อมูลภายนอกกล่อง (Outside)" subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
+        fields={template.outside} rows={outsideRows}
+        onChange={setOutsideRows}
+        onEdit={isAdmin ? openTemplateEditor : undefined}
+        emptyText="ลูกค้ารายนี้ไม่มี Outside Template"
+      />}
+      <div className="bottom-action"><span>Inside {insideRows.length} ชุด{template?.outside.length ? ` · Outside ${outsideRows.length} ชุด` : " · ลูกค้ารายนี้ไม่มี Outside"}</span><button className="export-button" onClick={saveAndExport} disabled={saving || !template}><DownloadIcon/>ส่งออก PDF</button></div>
     </main>
-    {toast && <div className="toast"><Icon name="check"/> {toast}</div>}
+
+    <div className="print-sheet">
+      <h1>รายการสติ๊กเกอร์สินค้า</h1><p>{customer?.name} · {totalWeight} ตัน · สติ๊กเกอร์ {stickerSides} ด้าน</p>
+      <PrintTable title="ข้อมูลภายในกล่อง (INSIDE)" fields={template?.inside ?? []} rows={insideRows}/>
+      {template && template.outside.length > 0 && <PrintTable title="ข้อมูลภายนอกกล่อง (OUTSIDE)" fields={template.outside} rows={outsideRows}/>}
+    </div>
+    {showTemplateEditor && <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowTemplateEditor(false)}>
+      <section className="template-modal" role="dialog" aria-modal="true" aria-labelledby="template-editor-title" onMouseDown={(event) => event.stopPropagation()}>
+        <header><div><h2 id="template-editor-title">จัดการ Outside Template</h2><p>{customer?.name}</p></div><button onClick={() => setShowTemplateEditor(false)}>×</button></header>
+        <div className="editor-body">
+          {outsideDraft.length === 0 && <div className="editor-empty">ลูกค้ารายนี้ยังไม่มี Outside Field</div>}
+          {outsideDraft.map((field, index) => <article className="editor-field" key={`${field.key}-${index}`}>
+            <div className="editor-number">{index + 1}</div>
+            <label><span>ชื่อ Field</span><input value={field.label} onChange={(e) => updateDraft(index, { label: e.target.value })} placeholder="เช่น PRODUCT NAME"/></label>
+            <label><span>Key</span><input value={field.key} onChange={(e) => updateDraft(index, { key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_") })} placeholder="product_name"/></label>
+            <label><span>ชนิดข้อมูล</span><select value={field.type} onChange={(e) => updateDraft(index, { type: e.target.value as TemplateField["type"] })}><option value="text">ข้อความ</option><option value="number">ตัวเลข</option><option value="date">วันที่</option><option value="textarea">ข้อความหลายบรรทัด</option></select></label>
+            <label className="required-toggle"><input type="checkbox" checked={field.required} onChange={(e) => updateDraft(index, { required: e.target.checked })}/><span>บังคับกรอก</span></label>
+            <button className="delete-field" onClick={() => setOutsideDraft((fields) => fields.filter((_, fieldIndex) => fieldIndex !== index))}>ลบ</button>
+          </article>)}
+          <button className="add-field-button" onClick={() => setOutsideDraft((fields) => [...fields, { key: `outside_field_${fields.length + 1}`, label: "", type: "text", required: false }])}><PlusIcon/>เพิ่ม Field</button>
+        </div>
+        <footer><button className="cancel-button" onClick={() => setShowTemplateEditor(false)}>ยกเลิก</button><button className="export-button" onClick={saveTemplate} disabled={saving}>{saving ? "กำลังบันทึก..." : "บันทึก Template"}</button></footer>
+      </section>
+    </div>}
   </div>;
 }
 
-function OutsideForm() {
-  const labels = ["TRADE NAME", "S/I NO.", "P/I NO.", "PRODUCTION DATE", "UNIT NO."];
-  return <div className="form-card"><div className="form-heading"><div><h2>ข้อมูลภายนอกกล่อง</h2><p>ข้อมูลเพิ่มเติมสำหรับการขนส่ง</p></div><span>0/5 กรอกแล้ว</span></div><div className="field-grid">{labels.map((label, i) => <label key={label} className={i > 2 ? "wide" : ""}><span>{label}</span><div className="input-wrap"><input type={label.includes("DATE") ? "date" : "text"} placeholder={`กรอก ${label}`}/></div></label>)}</div></div>;
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return <label className="field"><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
 }
 
-function LabelCard({ fields, index }: { fields: typeof initialFields; index: number }) {
-  return <article className="label-card"><div className="label-brand"><span>TBH</span><small>THAI BEST HARVEST CO., LTD.</small></div><h3>PRODUCT MARKING</h3>{fields.slice(0, 6).map((field) => <div className="label-row" key={field.id}><b>{field.label}</b><span>{field.label === "PALLET NO." ? `${field.value || "—"} / ${index}` : field.value || "—"}</span></div>)}<footer>MADE IN THAILAND</footer></article>;
+function SectionTitle({ number, title, subtitle }: { number: string; title: string; subtitle: string }) {
+  return <div className="section-title"><div><span>{number}</span><div><h2>{title}</h2><p>{subtitle}</p></div></div></div>;
 }
+
+function TableSection({ number, title, subtitle, fields, rows, onChange, onEdit, emptyText }: {
+  number: string; title: string; subtitle: string; fields: TemplateField[]; rows: MarkingContent[];
+  onChange: React.Dispatch<React.SetStateAction<MarkingContent[]>>;
+  onEdit?: () => void;
+  emptyText?: string;
+}) {
+  const update = (rowIndex: number, key: string, value: string) =>
+    onChange((current) => current.map((row, index) => index === rowIndex ? { ...row, [key]: value } : row));
+
+  return <section className="panel table-panel">
+    <div className="table-heading"><SectionTitle number={number} title={title} subtitle={subtitle}/>{onEdit && <button onClick={onEdit}><EditIcon/>แก้ไข Template</button>}</div>
+    {!fields.length ? <div className="empty-table">{emptyText ?? "เลือกลูกค้าเพื่อโหลด Template"}</div> : <div className="vertical-records">
+      {rows.map((row, rowIndex) => <article className="record-card" key={rowIndex}>
+        <header><div><span>{String(rowIndex + 1).padStart(2, "0")}</span><b>ข้อมูลสติ๊กเกอร์</b></div></header>
+        <div className="vertical-fields">{fields.map((field) => <label key={field.key}><span>{field.label}{field.required && <em>*</em>}</span><input type={field.type === "textarea" ? "text" : field.type} value={row[field.key] ?? ""} onChange={(e) => update(rowIndex, field.key, e.target.value)} placeholder={`กรอก ${field.label}`}/></label>)}</div>
+      </article>)}
+    </div>}
+  </section>;
+}
+
+function PrintTable({ title, fields, rows }: { title: string; fields: TemplateField[]; rows: MarkingContent[] }) {
+  return <section><h2>{title}</h2><table><thead><tr><th>#</th>{fields.map((field) => <th key={field.key}>{field.label}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index}><td>{index + 1}</td>{fields.map((field) => <td key={field.key}>{row[field.key]}</td>)}</tr>)}</tbody></table></section>;
+}
+
+function DownloadIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>; }
+function PlusIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>; }
+function EditIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>; }

@@ -1,3 +1,1 @@
-export async function GET() {
-  return Response.json({ data: [], message: "Log service is ready" });
-}
+export { POST } from "../markings/route";

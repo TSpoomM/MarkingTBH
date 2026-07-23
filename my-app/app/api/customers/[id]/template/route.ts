@@ -1,0 +1,65 @@
+import { getCustomerTemplate } from "../../../../services/customer.service";
+import { saveOutsideTemplate } from "../../../../services/customer.service";
+import { z, ZodError } from "zod";
+
+export const runtime = "nodejs";
+
+export async function GET(
+  _request: Request,
+  context: RouteContext<"/api/customers/[id]/template">,
+) {
+  try {
+    const { id } = await context.params;
+    const customerId = Number(id);
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return Response.json({ message: "รหัสลูกค้าไม่ถูกต้อง" }, { status: 400 });
+    }
+    return Response.json({ data: await getCustomerTemplate(customerId) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "โหลด template ไม่สำเร็จ";
+    const isMissing = message === "ไม่พบข้อมูลลูกค้า" || message.includes("ยังไม่มี");
+    return Response.json({ message }, { status: isMissing ? 404 : 500 });
+  }
+}
+
+const fieldSchema = z.object({
+  key: z.string().trim().min(1),
+  label: z.string().trim().min(1, "กรุณากรอกชื่อ Field"),
+  type: z.enum(["text", "number", "date", "textarea"]),
+  required: z.boolean(),
+  placeholder: z.string().optional(),
+  defaultValue: z.string().optional(),
+});
+
+const updateSchema = z.object({
+  outside: z.array(fieldSchema),
+  updatedBy: z.string().trim().min(1).default("ADMIN"),
+});
+
+export async function PUT(
+  request: Request,
+  context: RouteContext<"/api/customers/[id]/template">,
+) {
+  try {
+    if (request.headers.get("x-user-role") !== "admin") {
+      return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
+    }
+    const { id } = await context.params;
+    const customerId = Number(id);
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return Response.json({ message: "รหัสลูกค้าไม่ถูกต้อง" }, { status: 400 });
+    }
+    const input = updateSchema.parse(await request.json());
+    const data = await saveOutsideTemplate(customerId, input.outside, input.updatedBy);
+    return Response.json({ data, message: "อัปเดต Outside Template แล้ว" });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return Response.json(
+        { message: error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" },
+        { status: 400 },
+      );
+    }
+    const message = error instanceof Error ? error.message : "อัปเดต Template ไม่สำเร็จ";
+    return Response.json({ message }, { status: 500 });
+  }
+}
