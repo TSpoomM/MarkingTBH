@@ -7,6 +7,8 @@ export interface TemplateField {
   required: boolean;
   placeholder?: string;
   defaultValue?: string;
+  segments?: Array<{ key: string; label: string }>;
+  condition?: { stickerType: "TNR" };
 }
 
 export interface Customer {
@@ -18,6 +20,9 @@ export interface CustomerTemplate {
   customerId: number;
   customerName: string;
   templateId: number | null;
+  sticker: {
+    enabledFields: Array<"side" | "format" | "type" | "other">;
+  };
   inside: TemplateField[];
   outside: TemplateField[];
 }
@@ -31,6 +36,9 @@ export interface MarkingState {
   template: CustomerTemplate | null;
   totalWeight: string;
   stickerSides: string;
+  stickerFormat: string;
+  stickerType: string;
+  stickerOther: string;
   insideRows: MarkingContent[];
   outsideRows: MarkingContent[];
   outsideDraft: TemplateField[];

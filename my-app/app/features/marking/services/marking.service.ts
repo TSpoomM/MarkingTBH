@@ -11,8 +11,8 @@ import {
 export const markingSchema = z.object({
   employeeId: z.string().trim().min(1).optional(),
   customerId: z.coerce.number().int().positive("กรุณาเลือกลูกค้า"),
-  totalWeight: z.coerce.number().positive("น้ำหนักต้องมากกว่า 0"),
-  stickerSides: z.coerce.number().int().min(1).max(4),
+  totalWeight: z.coerce.number().nonnegative(),
+  stickerSides: z.coerce.number().int().min(1).max(6),
   contentInside: z.union([
     z.record(z.string(), z.string()),
     z.array(z.record(z.string(), z.string())).min(1),

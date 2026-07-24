@@ -40,6 +40,34 @@ export class CustomerRepository {
     );
     return result.affectedRows;
   }
+
+  async createWithTemplate(
+    name: string,
+    inside: string,
+    outside: string,
+    createdBy: string,
+  ) {
+    const connection = await this.database.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const [customerResult] = await connection.execute<ResultSetHeader>(
+        "INSERT INTO tb_customer (c_name) VALUES (?)",
+        [name],
+      );
+      await connection.execute<ResultSetHeader>(
+        `INSERT INTO tb_template (c_id, inside, outside, created_by, created_date)
+         VALUES (?, ?, ?, ?, NOW())`,
+        [customerResult.insertId, inside, outside, createdBy],
+      );
+      await connection.commit();
+      return customerResult.insertId;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
 }
 
 export const customerRepository = new CustomerRepository(database);

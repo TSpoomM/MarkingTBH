@@ -4,6 +4,7 @@ import { Component } from "react";
 import Button from "@/app/components/Button";
 import Navbar from "@/app/components/Navbar";
 import MarkingComponent from "./MarkingComponent";
+import Link from "next/link";
 
 export default class Header extends MarkingComponent {
   render() {
@@ -12,7 +13,8 @@ export default class Header extends MarkingComponent {
         badge="TBH"
         title="ระบบจัดการคำสั่งซื้อ"
         subtitle="จัดทำรายการบรรจุสินค้า Inside และ Outside"
-        action={
+        action={<div className="header-actions">
+          {this.state.isAdmin && <Link className="add-customer-link" href="/customers/new">+ เพิ่ม Customer</Link>}
           <Button
             className="export-button"
             onClick={() => void this.actions.saveAndExport()}
@@ -23,7 +25,7 @@ export default class Header extends MarkingComponent {
             <DownloadIcon />
             ส่งออก PDF
           </Button>
-        }
+        </div>}
       />
     );
   }

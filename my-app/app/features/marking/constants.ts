@@ -1,13 +1,19 @@
 import type { MarkingState } from "./types";
 
-export const STICKER_SIDE_OPTIONS = [1, 2, 3, 4] as const;
+export const STICKER_SIDE_OPTIONS = [1, 2, 3, 4, 5, 6] as const;
+export const STICKER_FORMAT_OPTIONS = ["5533", "555"] as const;
+export const STICKER_TYPE_OPTIONS = ["TNR", "NON-TNR", "FCS"] as const;
+export const STICKER_OTHER_OPTIONS = ["Dome", "Inter"] as const;
 
 export const INITIAL_MARKING_STATE: MarkingState = {
   customers: [],
   customerId: "",
   template: null,
   totalWeight: "",
-  stickerSides: "2",
+  stickerSides: "",
+  stickerFormat: "",
+  stickerType: "",
+  stickerOther: "",
   insideRows: [],
   outsideRows: [],
   outsideDraft: [],

@@ -16,6 +16,9 @@ export default class OrderTable extends MarkingComponent {
     const customer = this.state.customers.find(
       (item) => String(item.id) === this.state.customerId,
     );
+    const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
+      !field.condition || field.condition.stickerType === this.state.stickerType,
+    );
 
     return (
     <>
@@ -28,12 +31,12 @@ export default class OrderTable extends MarkingComponent {
           rows={this.state.insideRows}
           onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
         />
-        {this.state.template && (this.state.template.outside.length > 0 || this.state.isAdmin) && (
+        {this.state.template && (outsideFields.length > 0 || this.state.isAdmin) && (
           <TableSection
             number="3"
             title="ข้อมูลภายนอกกล่อง (Outside)"
             subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
-            fields={this.state.template.outside}
+            fields={outsideFields}
             rows={this.state.outsideRows}
             onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
             onEdit={this.state.isAdmin ? () => this.actions.openTemplateEditor() : undefined}
@@ -44,10 +47,10 @@ export default class OrderTable extends MarkingComponent {
 
       <div className="print-sheet">
         <h1>รายการสติ๊กเกอร์สินค้า</h1>
-        <p>{customer?.name} · {this.state.totalWeight} ตัน · สติ๊กเกอร์ {this.state.stickerSides} ด้าน</p>
+        <p>{customer?.name}{this.state.stickerSides && ` · สติ๊กเกอร์ ${this.state.stickerSides} ด้าน`}</p>
         <PrintTable title="ข้อมูลภายในกล่อง (INSIDE)" fields={this.state.template?.inside ?? []} rows={this.state.insideRows} />
-        {!!this.state.template?.outside.length && (
-          <PrintTable title="ข้อมูลภายนอกกล่อง (OUTSIDE)" fields={this.state.template.outside} rows={this.state.outsideRows} />
+        {!!outsideFields.length && (
+          <PrintTable title="ข้อมูลภายนอกกล่อง (OUTSIDE)" fields={outsideFields} rows={this.state.outsideRows} />
         )}
       </div>
 
@@ -155,13 +158,27 @@ class TableSection extends Component<TableSectionProps> {
                   {fields.map((field) => (
                     <label key={field.key}>
                       <span>{field.label}{field.required && <em>*</em>}</span>
-                      <Input
-                        bare
-                        type={field.type === "textarea" ? "text" : field.type}
-                        value={row[field.key] ?? ""}
-                        onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
-                        placeholder={field.placeholder ?? `กรอก ${field.label}`}
-                      />
+                      {field.segments?.length ? (
+                        <div className="horizontal-segment-inputs">
+                          {field.segments.map((segment) => (
+                            <Input
+                              key={segment.key}
+                              bare
+                              value={row[segment.key] ?? ""}
+                              onChange={(event) => onChange(rowIndex, segment.key, event.target.value)}
+                              placeholder={segment.label}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <Input
+                          bare
+                          type={field.type === "textarea" ? "text" : field.type}
+                          value={row[field.key] ?? ""}
+                          onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
+                          placeholder={field.placeholder ?? `กรอก ${field.label}`}
+                        />
+                      )}
                     </label>
                   ))}
                 </div>
@@ -190,7 +207,7 @@ class PrintTable extends Component<PrintTableProps> {
           <thead><tr><th>#</th>{fields.map((field) => <th key={field.key}>{field.label}</th>)}</tr></thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={index}><td>{index + 1}</td>{fields.map((field) => <td key={field.key}>{row[field.key]}</td>)}</tr>
+              <tr key={index}><td>{index + 1}</td>{fields.map((field) => <td key={field.key}>{field.segments?.length ? field.segments.map((segment) => row[segment.key]).filter(Boolean).join(" / ") : row[field.key]}</td>)}</tr>
             ))}
           </tbody>
         </table>

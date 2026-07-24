@@ -3,6 +3,7 @@ import {
   CustomerRepository,
 } from "../repositories/customer.repository";
 import type { CustomerTemplate, TemplateField } from "@/app/features/marking/types";
+import type { CreateCustomerPayload } from "@/app/features/customers/types";
 
 export class CustomerService {
   constructor(private readonly repository: CustomerRepository) {}
@@ -12,6 +13,20 @@ export class CustomerService {
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_|_$/g, "");
     return key || `field_${index + 1}`;
+  }
+
+  private parseSticker(value: string | null): CustomerTemplate["sticker"] {
+    try {
+      const parsed = JSON.parse(value ?? "") as {
+        sticker?: { enabledFields?: Array<"side" | "format" | "type" | "other"> };
+      };
+      if (Array.isArray(parsed.sticker?.enabledFields)) {
+        return { enabledFields: parsed.sticker.enabledFields };
+      }
+    } catch {
+      // Template รุ่นเก่าไม่มี sticker configuration
+    }
+    return { enabledFields: ["side"] };
   }
 
   private parseFields(
@@ -25,6 +40,43 @@ export class CustomerService {
     }
     try {
       const parsed: unknown = JSON.parse(value);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const config = parsed as {
+          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string }> }>;
+          fields?: Array<Partial<TemplateField>>;
+          tables?: Array<{ name?: string; fields?: Array<Partial<TemplateField>> }>;
+        };
+        if (section === "Inside" && Array.isArray(config.groups)) {
+          const groupRows: TemplateField[] = config.groups.map((group, groupIndex) => ({
+            key: `inside_group_${groupIndex + 1}`,
+            label: String(group.label ?? `Inside ${groupIndex + 1}`),
+            type: "text",
+            required: true,
+            segments: (group.segments ?? []).map((field, fieldIndex) => ({
+              key: String(field.key ?? `inside_${groupIndex + 1}_${fieldIndex + 1}`),
+              label: String(field.label ?? `ส่วนที่ ${fieldIndex + 1}`),
+            })),
+          }));
+          const fixedRows: TemplateField[] = (config.fields ?? []).map((field, index) => ({
+            key: String(field.key ?? `inside_fixed_${index + 1}`),
+            label: String(field.label ?? `Inside ${index + 1}`),
+            type: "text",
+            required: true,
+          }));
+          return [...groupRows, ...fixedRows];
+        }
+        if (section === "Outside" && Array.isArray(config.tables)) {
+          return config.tables.flatMap((table, tableIndex) =>
+            (table.fields ?? []).map((field, fieldIndex) => ({
+              key: String(field.key ?? `outside_${tableIndex + 1}_${fieldIndex + 1}`),
+              label: `${table.name ?? `Outside ${tableIndex + 1}`} — ${field.label ?? `Field ${fieldIndex + 1}`}`,
+              type: "text" as const,
+              required: Boolean(field.required),
+              condition: field.condition,
+            })),
+          );
+        }
+      }
       if (!Array.isArray(parsed)) throw new Error(`Template ${section} ต้องเป็น JSON Array`);
       return parsed.map((item, index): TemplateField => {
         if (typeof item === "string") {
@@ -66,6 +118,24 @@ export class CustomerService {
     return this.repository.findAll();
   }
 
+  async createCustomer(input: CreateCustomerPayload, createdBy: string) {
+    const customerId = await this.repository.createWithTemplate(
+      input.name.trim(),
+      JSON.stringify({
+        version: input.configuration.version,
+        sticker: input.configuration.sticker,
+        groups: input.configuration.inside.groups,
+        fields: input.configuration.inside.fields,
+      }),
+      JSON.stringify({
+        version: input.configuration.version,
+        tables: input.configuration.outside.tables,
+      }),
+      createdBy,
+    );
+    return { id: customerId, name: input.name.trim() };
+  }
+
   async getCustomerTemplate(customerId: number): Promise<CustomerTemplate> {
     const customers = await this.repository.findAll();
     const customer = customers.find((item) => item.c_id === customerId);
@@ -77,6 +147,7 @@ export class CustomerService {
       customerId,
       customerName: customer.c_name,
       templateId: template.id,
+      sticker: this.parseSticker(template.inside),
       inside: this.parseFields(template.inside, "Inside"),
       outside: this.parseFields(template.outside, "Outside", true),
     };

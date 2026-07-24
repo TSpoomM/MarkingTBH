@@ -13,7 +13,11 @@ import type {
 } from "../types";
 
 const emptyRow = (fields: TemplateField[]): MarkingContent =>
-  Object.fromEntries(fields.map((field) => [field.key, field.defaultValue ?? ""]));
+  Object.fromEntries(fields.flatMap((field) =>
+    field.segments?.length
+      ? field.segments.map((segment) => [segment.key, ""])
+      : [[field.key, field.defaultValue ?? ""]],
+  ));
 
 export class MarkingOrdersController {
   private state: MarkingState = { ...INITIAL_MARKING_STATE };
@@ -65,6 +69,10 @@ export class MarkingOrdersController {
       const template = await this.service.getTemplate(Number(customerId));
       this.setState({
         template,
+        stickerSides: "",
+        stickerFormat: "",
+        stickerType: "",
+        stickerOther: "",
         insideRows: [emptyRow(template.inside)],
         outsideRows: template.outside.length ? [emptyRow(template.outside)] : [],
       });
@@ -77,6 +85,9 @@ export class MarkingOrdersController {
 
   setTotalWeight(totalWeight: string) { this.setState({ totalWeight }); }
   setStickerSides(stickerSides: string) { this.setState({ stickerSides }); }
+  setStickerFormat(stickerFormat: string) { this.setState({ stickerFormat }); }
+  setStickerType(stickerType: string) { this.setState({ stickerType }); }
+  setStickerOther(stickerOther: string) { this.setState({ stickerOther }); }
   dismissNotice() { this.setState({ notice: null }); }
   closeTemplateEditor() { this.setState({ isTemplateEditorOpen: false }); }
 
@@ -124,15 +135,27 @@ export class MarkingOrdersController {
   }
 
   private validate(): string {
-    const { customerId, totalWeight, template, insideRows, outsideRows } = this.state;
+    const { customerId, template, insideRows, outsideRows } = this.state;
     if (!customerId) return MESSAGES.selectCustomer;
-    if (Number(totalWeight) <= 0) return MESSAGES.enterWeight;
+    const stickerFields = template?.sticker.enabledFields ?? [];
+    if (stickerFields.includes("side") && !this.state.stickerSides) return "กรุณาเลือก Side";
+    if (stickerFields.includes("format") && !this.state.stickerFormat) return "กรุณาเลือก Format";
+    if (stickerFields.includes("type") && !this.state.stickerType) return "กรุณาเลือก Type";
+    if (stickerFields.includes("other") && !this.state.stickerOther) return "กรุณาเลือก Other";
     for (const [index, row] of insideRows.entries()) {
-      const missing = template?.inside.find((field) => field.required && !row[field.key]?.trim());
+      const missing = template?.inside.find((field) =>
+        field.required && (field.segments?.length
+          ? field.segments.some((segment) => !row[segment.key]?.trim())
+          : !row[field.key]?.trim()),
+      );
       if (missing) return `Inside แถว ${index + 1}: กรุณากรอก ${missing.label}`;
     }
     for (const [index, row] of outsideRows.entries()) {
-      const missing = template?.outside.find((field) => field.required && !row[field.key]?.trim());
+      const missing = template?.outside.find((field) =>
+        field.required &&
+        (!field.condition || field.condition.stickerType === this.state.stickerType) &&
+        !row[field.key]?.trim(),
+      );
       if (missing) return `Outside แถว ${index + 1}: กรุณากรอก ${missing.label}`;
     }
     return "";
@@ -148,9 +171,14 @@ export class MarkingOrdersController {
     try {
       const result = await this.service.saveMarking({
         customerId: Number(this.state.customerId),
-        totalWeight: Number(this.state.totalWeight),
-        stickerSides: Number(this.state.stickerSides),
-        contentInside: this.state.insideRows,
+        totalWeight: 0,
+        stickerSides: Number(this.state.stickerSides || 1),
+        contentInside: this.state.insideRows.map((row) => ({
+          ...row,
+          ...(this.state.stickerFormat && { sticker_format: this.state.stickerFormat }),
+          ...(this.state.stickerType && { sticker_type: this.state.stickerType }),
+          ...(this.state.stickerOther && { sticker_other: this.state.stickerOther }),
+        })),
         contentOutside: this.state.outsideRows,
       });
       this.setState({
