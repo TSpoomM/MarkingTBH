@@ -1,11 +1,11 @@
 import { ZodError } from "zod";
-import { saveMarking } from "../../services/marking.service";
+import { markingService } from "@/app/features/marking/services/marking.service";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const result = await saveMarking(await request.json());
+    const result = await markingService.save(await request.json());
     return Response.json(
       { data: result, message: "บันทึกข้อมูลเรียบร้อยแล้ว" },
       { status: 201 },

@@ -1,5 +1,4 @@
-import { getCustomerTemplate } from "../../../../services/customer.service";
-import { saveOutsideTemplate } from "../../../../services/customer.service";
+import { customerService } from "../../../../services/customer.service";
 import { z, ZodError } from "zod";
 
 export const runtime = "nodejs";
@@ -14,7 +13,7 @@ export async function GET(
     if (!Number.isInteger(customerId) || customerId <= 0) {
       return Response.json({ message: "รหัสลูกค้าไม่ถูกต้อง" }, { status: 400 });
     }
-    return Response.json({ data: await getCustomerTemplate(customerId) });
+    return Response.json({ data: await customerService.getCustomerTemplate(customerId) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "โหลด template ไม่สำเร็จ";
     const isMissing = message === "ไม่พบข้อมูลลูกค้า" || message.includes("ยังไม่มี");
@@ -50,7 +49,11 @@ export async function PUT(
       return Response.json({ message: "รหัสลูกค้าไม่ถูกต้อง" }, { status: 400 });
     }
     const input = updateSchema.parse(await request.json());
-    const data = await saveOutsideTemplate(customerId, input.outside, input.updatedBy);
+    const data = await customerService.saveOutsideTemplate(
+      customerId,
+      input.outside,
+      input.updatedBy,
+    );
     return Response.json({ data, message: "อัปเดต Outside Template แล้ว" });
   } catch (error) {
     if (error instanceof ZodError) {

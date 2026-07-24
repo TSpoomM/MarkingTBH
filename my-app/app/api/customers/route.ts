@@ -1,10 +1,10 @@
-import { getCustomers } from "../../services/customer.service";
+import { customerService } from "../../services/customer.service";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const rows = await getCustomers();
+    const rows = await customerService.getCustomers();
     return Response.json({
       data: rows.map((row) => ({ id: row.c_id, name: row.c_name })),
     });
