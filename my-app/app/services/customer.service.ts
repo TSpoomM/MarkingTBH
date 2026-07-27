@@ -2,7 +2,7 @@ import {
   customerRepository,
   CustomerRepository,
 } from "../repositories/customer.repository";
-import type { CustomerTemplate, TemplateField } from "@/app/features/marking/types";
+import type { CustomerTemplate, TemplateField } from "@/app/types/customer";
 import type { CreateCustomerPayload } from "@/app/features/customers/types";
 
 export class CustomerService {

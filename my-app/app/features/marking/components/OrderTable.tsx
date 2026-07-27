@@ -1,7 +1,7 @@
 "use client";
 
 import { Component } from "react";
-import type { MarkingContent, TemplateField } from "../types";
+import type { MarkingContent } from "@/app/types/marking";
 import EmptyState from "./EmptyState";
 import { SectionTitle } from "./FilterPanel";
 import Button from "@/app/components/Button";
@@ -10,6 +10,7 @@ import Input from "@/app/components/Input";
 import Modal from "@/app/components/Modal";
 import Select from "@/app/components/Select";
 import MarkingComponent from "./MarkingComponent";
+import { TemplateField } from "@/app/types/customer";
 
 export default class OrderTable extends MarkingComponent {
   render() {
@@ -21,108 +22,108 @@ export default class OrderTable extends MarkingComponent {
     );
 
     return (
-    <>
-      <div className="container table-layout">
-        <TableSection
-          number="2"
-          title="ข้อมูลภายในกล่อง (Inside)"
-          subtitle="Template มาตรฐานสำหรับข้อมูลภายในกล่อง"
-          fields={this.state.template?.inside ?? []}
-          rows={this.state.insideRows}
-          onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
-        />
-        {this.state.template && (outsideFields.length > 0 || this.state.isAdmin) && (
+      <>
+        <div className="container table-layout">
           <TableSection
-            number="3"
-            title="ข้อมูลภายนอกกล่อง (Outside)"
-            subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
-            fields={outsideFields}
-            rows={this.state.outsideRows}
-            onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
-            onEdit={this.state.isAdmin ? () => this.actions.openTemplateEditor() : undefined}
-            emptyText="ลูกค้ารายนี้ไม่มี Outside Template"
+            number="2"
+            title="ข้อมูลภายในกล่อง (Inside)"
+            subtitle="Template มาตรฐานสำหรับข้อมูลภายในกล่อง"
+            fields={this.state.template?.inside ?? []}
+            rows={this.state.insideRows}
+            onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
           />
-        )}
-      </div>
+          {this.state.template && (outsideFields.length > 0 || this.state.isAdmin) && (
+            <TableSection
+              number="3"
+              title="ข้อมูลภายนอกกล่อง (Outside)"
+              subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
+              fields={outsideFields}
+              rows={this.state.outsideRows}
+              onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
+              onEdit={this.state.isAdmin ? () => this.actions.openTemplateEditor() : undefined}
+              emptyText="ลูกค้ารายนี้ไม่มี Outside Template"
+            />
+          )}
+        </div>
 
-      <div className="print-sheet">
-        <h1>รายการสติ๊กเกอร์สินค้า</h1>
-        <p>{customer?.name}{this.state.stickerSides && ` · สติ๊กเกอร์ ${this.state.stickerSides} ด้าน`}</p>
-        <PrintTable title="ข้อมูลภายในกล่อง (INSIDE)" fields={this.state.template?.inside ?? []} rows={this.state.insideRows} />
-        {!!outsideFields.length && (
-          <PrintTable title="ข้อมูลภายนอกกล่อง (OUTSIDE)" fields={outsideFields} rows={this.state.outsideRows} />
-        )}
-      </div>
+        <div className="print-sheet">
+          <h1>รายการสติ๊กเกอร์สินค้า</h1>
+          <p>{customer?.name}{this.state.stickerSides && ` · สติ๊กเกอร์ ${this.state.stickerSides} ด้าน`}</p>
+          <PrintTable title="ข้อมูลภายในกล่อง (INSIDE)" fields={this.state.template?.inside ?? []} rows={this.state.insideRows} />
+          {!!outsideFields.length && (
+            <PrintTable title="ข้อมูลภายนอกกล่อง (OUTSIDE)" fields={outsideFields} rows={this.state.outsideRows} />
+          )}
+        </div>
 
-      <Modal
-        open={this.state.isTemplateEditorOpen}
-        title="จัดการ Outside Template"
-        subtitle={customer?.name}
-        onClose={() => this.actions.closeTemplateEditor()}
-        footer={
-          <>
-            <Button className="cancel-button" onClick={() => this.actions.closeTemplateEditor()}>ยกเลิก</Button>
-            <Button
-              className="export-button"
-              onClick={() => void this.actions.saveTemplate()}
-              loading={this.state.isSaving}
-              loadingText="กำลังบันทึก..."
-            >
-              บันทึก Template
-            </Button>
-          </>
-        }
-      >
-            <div className="editor-body">
-              {!this.state.outsideDraft.length && <div className="editor-empty">ลูกค้ารายนี้ยังไม่มี Outside Field</div>}
-              {this.state.outsideDraft.map((field, index) => (
-                <article className="editor-field" key={`${field.key}-${index}`}>
-                  <div className="editor-number">{index + 1}</div>
-                  <label>
-                    <span>ชื่อ Field</span>
-                    <Input bare value={field.label} onChange={(event) => this.actions.updateDraft(index, { label: event.target.value })} />
-                  </label>
-                  <label>
-                    <span>Key</span>
-                    <Input
-                      bare
-                      value={field.key}
-                      onChange={(event) => this.actions.updateDraft(index, {
-                        key: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
-                      })}
-                    />
-                  </label>
-                  <label>
-                    <span>ชนิดข้อมูล</span>
-                    <Select
-                      bare
-                      value={field.type}
-                      onChange={(event) => this.actions.updateDraft(index, { type: event.target.value as TemplateField["type"] })}
-                    >
-                      <option value="text">ข้อความ</option>
-                      <option value="number">ตัวเลข</option>
-                      <option value="date">วันที่</option>
-                      <option value="textarea">ข้อความหลายบรรทัด</option>
-                    </Select>
-                  </label>
-                  <label className="required-toggle">
-                    <Input
-                      bare
-                      type="checkbox"
-                      checked={field.required}
-                      onChange={(event) => this.actions.updateDraft(index, { required: event.target.checked })}
-                    />
-                    <span>บังคับกรอก</span>
-                  </label>
-                  <Button className="delete-field" onClick={() => this.actions.removeDraftField(index)}>ลบ</Button>
-                </article>
-              ))}
-              <Button className="add-field-button" onClick={() => this.actions.addDraftField()}>
-                <PlusIcon />เพิ่ม Field
+        <Modal
+          open={this.state.isTemplateEditorOpen}
+          title="จัดการ Outside Template"
+          subtitle={customer?.name}
+          onClose={() => this.actions.closeTemplateEditor()}
+          footer={
+            <>
+              <Button className="cancel-button" onClick={() => this.actions.closeTemplateEditor()}>ยกเลิก</Button>
+              <Button
+                className="export-button"
+                onClick={() => void this.actions.saveTemplate()}
+                loading={this.state.isSaving}
+                loadingText="กำลังบันทึก..."
+              >
+                บันทึก Template
               </Button>
-            </div>
-      </Modal>
-    </>
+            </>
+          }
+        >
+          <div className="editor-body">
+            {!this.state.outsideDraft.length && <div className="editor-empty">ลูกค้ารายนี้ยังไม่มี Outside Field</div>}
+            {this.state.outsideDraft.map((field, index) => (
+              <article className="editor-field" key={`${field.key}-${index}`}>
+                <div className="editor-number">{index + 1}</div>
+                <label>
+                  <span>ชื่อ Field</span>
+                  <Input bare value={field.label} onChange={(event) => this.actions.updateDraft(index, { label: event.target.value })} />
+                </label>
+                <label>
+                  <span>Key</span>
+                  <Input
+                    bare
+                    value={field.key}
+                    onChange={(event) => this.actions.updateDraft(index, {
+                      key: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
+                    })}
+                  />
+                </label>
+                <label>
+                  <span>ชนิดข้อมูล</span>
+                  <Select
+                    bare
+                    value={field.type}
+                    onChange={(event) => this.actions.updateDraft(index, { type: event.target.value as TemplateField["type"] })}
+                  >
+                    <option value="text">ข้อความ</option>
+                    <option value="number">ตัวเลข</option>
+                    <option value="date">วันที่</option>
+                    <option value="textarea">ข้อความหลายบรรทัด</option>
+                  </Select>
+                </label>
+                <label className="required-toggle">
+                  <Input
+                    bare
+                    type="checkbox"
+                    checked={field.required}
+                    onChange={(event) => this.actions.updateDraft(index, { required: event.target.checked })}
+                  />
+                  <span>บังคับกรอก</span>
+                </label>
+                <Button className="delete-field" onClick={() => this.actions.removeDraftField(index)}>ลบ</Button>
+              </article>
+            ))}
+            <Button className="add-field-button" onClick={() => this.actions.addDraftField()}>
+              <PlusIcon />เพิ่ม Field
+            </Button>
+          </div>
+        </Modal>
+      </>
     );
   }
 }

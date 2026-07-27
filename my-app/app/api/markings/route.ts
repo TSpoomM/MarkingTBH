@@ -1,5 +1,5 @@
 import { ZodError } from "zod";
-import { markingService } from "@/app/features/marking/services/marking.service";
+import { markingService } from "@/app/services/marking.service";
 
 export const runtime = "nodejs";
 

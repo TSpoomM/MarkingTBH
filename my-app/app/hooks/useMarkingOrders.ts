@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import { INITIAL_MARKING_STATE, MESSAGES } from "../constants";
+import { INITIAL_MARKING_STATE, MESSAGES } from "../types/constants";
 import {
   markingApiService,
   MarkingApiService,
@@ -10,8 +10,8 @@ import type {
   MarkingContent,
   MarkingState,
   SaveMarkingPayload,
-  TemplateField,
-} from "../types";
+} from "@/app/types/marking";
+import { TemplateField } from "@/app/types/customer";
 
 const emptyRow = (fields: TemplateField[]): MarkingContent =>
   Object.fromEntries(fields.flatMap((field) =>

@@ -1,8 +1,8 @@
 "use client";
 
 import { Component } from "react";
-import { markingOrders, MarkingOrdersController } from "../hooks/useMarkingOrders";
-import type { MarkingState } from "../types";
+import { markingOrders, MarkingOrdersController } from "../../../hooks/useMarkingOrders";
+import type { MarkingState } from "@/app/types/marking";
 
 export default abstract class MarkingComponent<
   Props = Record<string, never>,

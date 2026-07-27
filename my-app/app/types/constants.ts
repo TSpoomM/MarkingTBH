@@ -1,4 +1,4 @@
-import type { MarkingState } from "./types";
+import type { MarkingState } from "../types/marking";
 
 export const STICKER_SIDE_OPTIONS = [1, 2, 3, 4, 5, 6] as const;
 export const STICKER_FORMAT_OPTIONS = ["5533", "555"] as const;
