@@ -9,6 +9,7 @@ import {
 import type {
   MarkingContent,
   MarkingState,
+  SaveMarkingPayload,
   TemplateField,
 } from "../types";
 
@@ -91,6 +92,21 @@ export class MarkingOrdersController {
   dismissNotice() { this.setState({ notice: null }); }
   closeTemplateEditor() { this.setState({ isTemplateEditorOpen: false }); }
 
+  private buildSavePayload(): SaveMarkingPayload {
+    return {
+      customerId: Number(this.state.customerId),
+      totalWeight: Number(this.state.totalWeight || 0),
+      stickerSides: Number(this.state.stickerSides || 1),
+      contentInside: this.state.insideRows.map((row) => ({
+        ...row,
+        ...(this.state.stickerFormat && { sticker_format: this.state.stickerFormat }),
+        ...(this.state.stickerType && { sticker_type: this.state.stickerType }),
+        ...(this.state.stickerOther && { sticker_other: this.state.stickerOther }),
+      })),
+      contentOutside: this.state.outsideRows,
+    };
+  }
+
   updateRow(section: "inside" | "outside", rowIndex: number, key: string, value: string) {
     const stateKey = section === "inside" ? "insideRows" : "outsideRows";
     const rows = this.state[stateKey].map((row, index) =>
@@ -161,35 +177,42 @@ export class MarkingOrdersController {
     return "";
   }
 
-  async saveAndExport() {
+  private debugSave(label: string, payload: SaveMarkingPayload, result?: { id: number }) {
+    if (process.env.NODE_ENV === "production") return;
+    console.debug(`[Marking] ${label}`, { payload, result });
+  }
+
+  async save() {
     const validationError = this.validate();
     if (validationError) {
       this.setState({ notice: { type: "error", text: validationError } });
-      return;
+      return null;
     }
     this.setState({ isSaving: true });
     try {
-      const result = await this.service.saveMarking({
-        customerId: Number(this.state.customerId),
-        totalWeight: 0,
-        stickerSides: Number(this.state.stickerSides || 1),
-        contentInside: this.state.insideRows.map((row) => ({
-          ...row,
-          ...(this.state.stickerFormat && { sticker_format: this.state.stickerFormat }),
-          ...(this.state.stickerType && { sticker_type: this.state.stickerType }),
-          ...(this.state.stickerOther && { sticker_other: this.state.stickerOther }),
-        })),
-        contentOutside: this.state.outsideRows,
-      });
+      const payload = this.buildSavePayload();
+      this.debugSave("save:start", payload);
+      const result = await this.service.saveMarking(payload);
+      this.debugSave("save:done", payload, result);
       this.setState({
         notice: { type: "success", text: `บันทึกรายการ #${result.id} แล้ว` },
       });
-      window.setTimeout(() => window.print(), 120);
+      return result;
     } catch (error) {
       this.setState({ notice: { type: "error", text: this.errorMessage(error, MESSAGES.saveFailed) } });
+      return null;
     } finally {
       this.setState({ isSaving: false });
     }
+  }
+
+  async saveAndExport() {
+    const result = await this.save();
+    if (!result) return;
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Marking] export:print");
+    }
+    window.setTimeout(() => window.print(), 120);
   }
 
   async saveTemplate() {

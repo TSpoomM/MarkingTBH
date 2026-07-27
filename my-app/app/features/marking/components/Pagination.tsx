@@ -15,11 +15,11 @@ export default class Pagination extends MarkingComponent {
         </span>
         <Button
           className="export-button"
-          onClick={() => void this.actions.saveAndExport()}
+          onClick={() => void this.actions.save()}
           disabled={this.state.isSaving || !this.state.template}
           loading={this.state.isSaving}
         >
-          ส่งออก PDF
+          บันทึก
         </Button>
       </div>
     );
