@@ -1,5 +1,5 @@
 import type { ResultSetHeader } from "mysql2";
-import type { CreateMarkingInput } from "@/app/features/marking/types";
+import type { CreateMarkingInput } from "@/app/types/marking";
 import { database, Database } from "../lib/db";
 
 export class MarkingRepository {

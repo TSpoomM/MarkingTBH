@@ -6,7 +6,7 @@ import {
   STICKER_OTHER_OPTIONS,
   STICKER_SIDE_OPTIONS,
   STICKER_TYPE_OPTIONS,
-} from "../../../types/constants";
+} from "@/app/types/constants";
 import Alert from "@/app/components/Alert";
 import Card from "@/app/components/Card";
 import Select from "@/app/components/Select";

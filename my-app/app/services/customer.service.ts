@@ -3,7 +3,7 @@ import {
   CustomerRepository,
 } from "../repositories/customer.repository";
 import type { CustomerTemplate, TemplateField } from "@/app/types/customer";
-import type { CreateCustomerPayload } from "@/app/features/customers/types";
+import type { CreateCustomerPayload } from "@/app/types/customer-form";
 
 export class CustomerService {
   constructor(private readonly repository: CustomerRepository) {}

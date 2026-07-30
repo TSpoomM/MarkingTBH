@@ -1,9 +1,11 @@
 import type {
   Customer,
   CustomerTemplate,
-  SaveMarkingPayload,
   TemplateField,
-} from "../types";
+} from "@/app/types/customer";
+import type {
+  SaveMarkingPayload,
+} from "@/app/types/marking";
 
 type ApiEnvelope<T> = { data: T; message?: string };
 

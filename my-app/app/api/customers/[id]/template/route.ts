@@ -3,9 +3,13 @@ import { z, ZodError } from "zod";
 
 export const runtime = "nodejs";
 
+type CustomerTemplateRouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 export async function GET(
   _request: Request,
-  context: RouteContext<"/api/customers/[id]/template">,
+  context: CustomerTemplateRouteContext,
 ) {
   try {
     const { id } = await context.params;
@@ -37,7 +41,7 @@ const updateSchema = z.object({
 
 export async function PUT(
   request: Request,
-  context: RouteContext<"/api/customers/[id]/template">,
+  context: CustomerTemplateRouteContext,
 ) {
   try {
     if (request.headers.get("x-user-role") !== "admin") {

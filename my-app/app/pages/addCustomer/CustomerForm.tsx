@@ -9,7 +9,7 @@ import {
   type OutsideField,
   type OutsideTable,
   type StickerField,
-} from "../types";
+} from "@/app/types/customer-form";
 
 const createSegments = (group: InsideGroup["key"], count: number) =>
   Array.from({ length: count }, (_, index) => ({
