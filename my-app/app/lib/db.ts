@@ -5,10 +5,12 @@ const globalForDb = globalThis as unknown as {
   markingDatabase?: Database;
 };
 
-function env(name: string, fallback?: string) {
-  const value = process.env[name] ?? fallback;
-  if (value === undefined) throw new Error(`Missing environment variable: ${name}`);
-  return value;
+class Environment {
+  static get(name: string, fallback?: string) {
+    const value = process.env[name] ?? fallback;
+    if (value === undefined) throw new Error(`Missing environment variable: ${name}`);
+    return value;
+  }
 }
 
 export class Database {
@@ -16,11 +18,11 @@ export class Database {
 
   constructor(pool?: mysql.Pool) {
     this.pool = pool ?? globalForDb.markingPool ?? mysql.createPool({
-      host: env("DB_HOST", "127.0.0.1"),
-      user: env("DB_USER", "root"),
-      password: env("DB_PASSWORD", ""),
-      database: env("DB_NAME"),
-      port: Number(env("DB_PORT", "3306")),
+      host: Environment.get("DB_HOST", "127.0.0.1"),
+      user: Environment.get("DB_USER", "root"),
+      password: Environment.get("DB_PASSWORD", ""),
+      database: Environment.get("DB_NAME"),
+      port: Number(Environment.get("DB_PORT", "3306")),
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,

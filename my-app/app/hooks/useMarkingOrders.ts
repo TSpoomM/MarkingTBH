@@ -13,15 +13,6 @@ import type {
 } from "@/app/types/marking";
 import { TemplateField } from "@/app/types/customer";
 
-const emptyRow = (fields: TemplateField[]): MarkingContent =>
-  Object.fromEntries(fields.flatMap((field) =>
-    field.segments?.length
-      ? field.segments.map((segment) => [segment.key, ""])
-      : [[field.key, field.defaultValue ?? ""]],
-  ));
-
-const today = () => new Date().toISOString().slice(0, 10);
-
 export class MarkingOrdersController {
   private state: MarkingState = { ...INITIAL_MARKING_STATE };
   private listeners = new Set<() => void>();
@@ -69,7 +60,7 @@ export class MarkingOrdersController {
     }
     this.setState({ isLoading: true });
     try {
-      const productionDate = this.state.productionDate || today();
+      const productionDate = this.state.productionDate || this.today();
       const template = await this.service.getTemplate(Number(customerId));
       this.setState({
         template,
@@ -79,8 +70,8 @@ export class MarkingOrdersController {
         stickerOther: "",
         lotCount: "1",
         productionDate,
-        insideRows: [emptyRow(template.inside)],
-        outsideRows: template.outside.length ? [emptyRow(template.outside)] : [],
+        insideRows: [this.emptyRow(template.inside)],
+        outsideRows: template.outside.length ? [this.emptyRow(template.outside)] : [],
       });
       await this.refreshLotStart(customerId, productionDate);
     } catch (error) {
@@ -284,8 +275,8 @@ export class MarkingOrdersController {
       const template = await this.service.saveTemplate(Number(this.state.customerId), inside, outside);
       this.setState({
         template,
-        insideRows: template.inside.length ? [emptyRow(template.inside)] : [],
-        outsideRows: template.outside.length ? [emptyRow(template.outside)] : [],
+        insideRows: template.inside.length ? [this.emptyRow(template.inside)] : [],
+        outsideRows: template.outside.length ? [this.emptyRow(template.outside)] : [],
         isTemplateEditorOpen: false,
         notice: { type: "success", text: MESSAGES.templateSaved },
       });
@@ -298,6 +289,18 @@ export class MarkingOrdersController {
 
   private errorMessage(error: unknown, fallback: string) {
     return error instanceof Error ? error.message : fallback;
+  }
+
+  private emptyRow(fields: TemplateField[]): MarkingContent {
+    return Object.fromEntries(fields.flatMap((field) =>
+      field.segments?.length
+        ? field.segments.map((segment) => [segment.key, ""])
+        : [[field.key, field.defaultValue ?? ""]],
+    ));
+  }
+
+  private today() {
+    return new Date().toISOString().slice(0, 10);
   }
 }
 

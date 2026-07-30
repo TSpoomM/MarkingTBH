@@ -29,59 +29,7 @@ const stickerTitles: Record<StickerKind, string> = {
   customerName: "ชื่อ Customer",
 };
 
-const chunk = <T,>(items: T[], size: number) =>
-  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
-    items.slice(index * size, index * size + size),
-  );
-
-const counterValue = (field: TemplateField, lot: number, pallet: number) => {
-  const key = field.key.toLowerCase();
-  const label = field.label.toLowerCase();
-  if (key.includes("lot") || label.includes("lot")) return String(lot);
-  if (key.includes("pallet") || label.includes("pallet")) return String(pallet);
-  return "";
-};
-
-const previewCounterValue = (field: TemplateField, lotStart: number) => {
-  const key = field.key.toLowerCase();
-  const label = field.label.toLowerCase();
-  if (key.includes("lot") || label.includes("lot")) return String(lotStart || 1);
-  if (key.includes("pallet") || label.includes("pallet")) return "1";
-  return "";
-};
-
-const fieldValues = (fields: TemplateField[], row: MarkingContent | undefined, lot: number, pallet: number) =>
-  fields
-    .flatMap((field) => {
-      if (field.segments?.length) {
-        return field.segments
-          .filter((segment) => segment.showOnSticker !== false)
-          .sort((a, b) => (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0))
-          .flatMap((segment) => {
-            const value = segment.isCounter ? counterValue(field, lot, pallet) : row?.[segment.key];
-            return value ? [{ label: `${field.label} - ${segment.label}`, value, order: segment.stickerOrder ?? 0 }] : [];
-          });
-      }
-      if (field.showOnSticker === false) return [];
-      const value = row?.[field.key];
-      return value ? [{ label: field.label, value, order: field.stickerOrder ?? 0 }] : [];
-    })
-    .sort((a, b) => a.order - b.order)
-    .map(({ label, value }) => ({ label, value }));
-
-function buildStickerItems({
-  customerName,
-  format,
-  sideCount,
-  lotCount,
-  lotStart,
-  productionDate,
-  layouts,
-  insideFields,
-  outsideFields,
-  insideRow,
-  outsideRow,
-}: {
+interface StickerBuildOptions {
   customerName: string;
   format: string;
   sideCount: number;
@@ -93,13 +41,69 @@ function buildStickerItems({
   outsideFields: TemplateField[];
   insideRow: MarkingContent | undefined;
   outsideRow: MarkingContent | undefined;
-}) {
-  const palletsByLot = STICKER_FORMAT_PALLETS[format as keyof typeof STICKER_FORMAT_PALLETS];
-  if (!palletsByLot || sideCount <= 0 || lotCount <= 0 || !layouts) return [];
+}
 
-  const items: StickerItem[] = [];
+class StickerFactory {
+  static chunk<T>(items: T[], size: number) {
+    return Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+      items.slice(index * size, index * size + size),
+    );
+  }
 
-  const addLayoutItems = (kind: StickerKind, detailsForSticker: (lot: number, pallet: number) => StickerItem["details"]) => {
+  static previewCounterValue(field: TemplateField, lotStart: number) {
+    const key = field.key.toLowerCase();
+    const label = field.label.toLowerCase();
+    if (key.includes("lot") || label.includes("lot")) return String(lotStart || 1);
+    if (key.includes("pallet") || label.includes("pallet")) return "1";
+    return "";
+  }
+
+  private static counterValue(field: TemplateField, lot: number, pallet: number) {
+    const key = field.key.toLowerCase();
+    const label = field.label.toLowerCase();
+    if (key.includes("lot") || label.includes("lot")) return String(lot);
+    if (key.includes("pallet") || label.includes("pallet")) return String(pallet);
+    return "";
+  }
+
+  private static fieldValues(
+    fields: TemplateField[],
+    row: MarkingContent | undefined,
+    lot: number,
+    pallet: number,
+  ) {
+    return fields.flatMap((field) => {
+      if (field.segments?.length) {
+        return field.segments
+          .filter((segment) => segment.showOnSticker !== false)
+          .sort((a, b) => (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0))
+          .flatMap((segment) => {
+            const value = segment.isCounter
+              ? this.counterValue(field, lot, pallet)
+              : row?.[segment.key];
+            return value
+              ? [{ label: `${field.label} - ${segment.label}`, value, order: segment.stickerOrder ?? 0 }]
+              : [];
+          });
+      }
+      if (field.showOnSticker === false) return [];
+      const value = row?.[field.key];
+      return value ? [{ label: field.label, value, order: field.stickerOrder ?? 0 }] : [];
+    })
+      .sort((a, b) => a.order - b.order)
+      .map(({ label, value }) => ({ label, value }));
+  }
+
+  static build(options: StickerBuildOptions) {
+    const {
+      customerName, format, sideCount, lotCount, lotStart, productionDate,
+      layouts, insideFields, outsideFields, insideRow, outsideRow,
+    } = options;
+    const palletsByLot = STICKER_FORMAT_PALLETS[format as keyof typeof STICKER_FORMAT_PALLETS];
+    if (!palletsByLot || sideCount <= 0 || lotCount <= 0 || !layouts) return [];
+    const items: StickerItem[] = [];
+
+    const addLayoutItems = (kind: StickerKind, detailsForSticker: (lot: number, pallet: number) => StickerItem["details"]) => {
     Array.from({ length: lotCount }, (_, lotIndex) => {
       const palletCount = palletsByLot[lotIndex % palletsByLot.length];
       for (let pallet = 1; pallet <= palletCount; pallet += 1) {
@@ -117,19 +121,18 @@ function buildStickerItems({
         }
       }
     });
-  };
+    };
 
-  if (layouts.insideFrame) {
-    addLayoutItems("insideFrame", (lot, pallet) => fieldValues(insideFields, insideRow, lot, pallet));
-  }
-  if (layouts.outsideFrame) {
-    addLayoutItems("outsideFrame", (lot, pallet) => fieldValues(outsideFields, outsideRow, lot, pallet));
-  }
-  if (layouts.customerName) {
-    addLayoutItems("customerName", () => []);
-  }
+    if (layouts.insideFrame) {
+      addLayoutItems("insideFrame", (lot, pallet) => this.fieldValues(insideFields, insideRow, lot, pallet));
+    }
+    if (layouts.outsideFrame) {
+      addLayoutItems("outsideFrame", (lot, pallet) => this.fieldValues(outsideFields, outsideRow, lot, pallet));
+    }
+    if (layouts.customerName) addLayoutItems("customerName", () => []);
 
-  return items;
+    return items;
+  }
 }
 
 export default class OrderTable extends MarkingComponent {
@@ -140,7 +143,7 @@ export default class OrderTable extends MarkingComponent {
     const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
       !field.condition || field.condition.stickerType === this.state.stickerType,
     );
-    const stickerItems = buildStickerItems({
+    const stickerItems = StickerFactory.build({
       customerName: this.state.template?.customerName ?? customer?.name ?? "",
       format: this.state.stickerFormat,
       sideCount: Number(this.state.stickerSides || 0),
@@ -153,11 +156,11 @@ export default class OrderTable extends MarkingComponent {
       insideRow: this.state.insideRows[0],
       outsideRow: this.state.outsideRows[0],
     });
-    const frameStickerPages = chunk(
+    const frameStickerPages = StickerFactory.chunk(
       stickerItems.filter((item) => item.kind !== "customerName"),
       4,
     );
-    const customerNameStickerPages = chunk(
+    const customerNameStickerPages = StickerFactory.chunk(
       stickerItems.filter((item) => item.kind === "customerName"),
       32,
     );
@@ -242,7 +245,7 @@ class TableSection extends Component<TableSectionProps> {
                               inputMode={segment.isCounter ? "numeric" : undefined}
                               min={segment.isCounter ? 1 : undefined}
                               step={segment.isCounter ? 1 : undefined}
-                              value={segment.isCounter ? previewCounterValue(field, lotStart) : row[segment.key] ?? ""}
+                              value={segment.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : row[segment.key] ?? ""}
                               disabled={segment.isCounter}
                               onChange={(event) => onChange(rowIndex, segment.key, event.target.value)}
                               placeholder={segment.isCounter ? "+1" : segment.label}
