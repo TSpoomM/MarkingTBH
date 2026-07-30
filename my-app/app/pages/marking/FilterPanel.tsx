@@ -9,6 +9,7 @@ import {
 } from "@/app/types/constants";
 import Alert from "@/app/components/Alert";
 import Card from "@/app/components/Card";
+import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
 import MarkingComponent from "./MarkingComponent";
 
@@ -42,6 +43,20 @@ export default class FilterPanel extends MarkingComponent {
                 <option value={customer.id} key={customer.id}>{customer.name}</option>
               ))}
             </Select>
+            <Input
+              label="Production Date *"
+              type="date"
+              value={this.state.productionDate}
+              onChange={(event) => this.actions.setProductionDate(event.target.value)}
+            />
+            <Input
+              label="จำนวน Lot *"
+              hint={`เริ่ม LOT ${this.state.lotStart}`}
+              type="number"
+              min="1"
+              value={this.state.lotCount}
+              onChange={(event) => this.actions.setLotCount(event.target.value)}
+            />
             {this.state.template?.sticker.enabledFields.includes("side") && (
               <Select label="Side *" value={this.state.stickerSides} onChange={(event) => this.actions.setStickerSides(event.target.value)}>
                 <option value="">เลือก Side</option>

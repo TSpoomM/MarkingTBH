@@ -20,6 +20,8 @@ export async function GET() {
 
 const segmentSchema = z.object({
   key: z.string().min(1),
+  type: z.enum(["text", "number"]).optional(),
+  isCounter: z.boolean().optional(),
   label: z.string().trim().min(1, "กรุณาระบุชื่อแต่ละส่วน"),
 });
 
@@ -28,6 +30,8 @@ const outsideFieldSchema = z.object({
   label: z.string().trim().min(1, "กรุณาระบุชื่อแถว"),
   required: z.boolean(),
   condition: z.object({ stickerType: z.literal("TNR") }).optional(),
+  showOnSticker: z.boolean().optional(),
+  stickerOrder: z.number().int().min(0).optional(),
   system: z.boolean().optional(),
 });
 
@@ -38,6 +42,13 @@ const createCustomerSchema = z.object({
     sticker: z.object({
       enabledFields: z.array(z.enum(["side", "format", "type", "other"]))
         .min(1, "เลือกช่องรายละเอียดสติ๊กเกอร์อย่างน้อย 1 ช่อง"),
+      layouts: z.object({
+        insideFrame: z.boolean(),
+        outsideFrame: z.boolean(),
+        customerName: z.boolean(),
+      }).refine((layouts) => (
+        layouts.insideFrame || layouts.outsideFrame || layouts.customerName
+      ), "เลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ"),
     }),
     inside: z.object({
       groups: z.array(z.object({
@@ -68,6 +79,15 @@ export async function POST(request: Request) {
       return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
     }
     const input = createCustomerSchema.parse(await request.json());
+    if (
+      !input.configuration.sticker.enabledFields.includes("side") ||
+      !input.configuration.sticker.enabledFields.includes("format")
+    ) {
+      return Response.json(
+        { message: "ต้องเปิด Side และ Format เพื่อคำนวณจำนวนสติ๊กเกอร์" },
+        { status: 400 },
+      );
+    }
     const hasTypeField = input.configuration.sticker.enabledFields.includes("type");
     const hasTraceableField = input.configuration.outside.tables.every((table) =>
       table.fields.some((field) =>

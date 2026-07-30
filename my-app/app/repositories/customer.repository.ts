@@ -41,6 +41,16 @@ export class CustomerRepository {
     return result.affectedRows;
   }
 
+  async updateTemplate(templateId: number, inside: string, outside: string, updatedBy: string) {
+    const [result] = await this.database.pool.execute<ResultSetHeader>(
+      `UPDATE tb_template
+       SET inside = ?, outside = ?, created_by = ?, created_date = NOW()
+       WHERE id = ?`,
+      [inside, outside, updatedBy, templateId],
+    );
+    return result.affectedRows;
+  }
+
   async createWithTemplate(
     name: string,
     inside: string,

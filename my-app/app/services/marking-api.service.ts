@@ -32,6 +32,13 @@ export class MarkingApiService {
     return this.request(`/api/customers/${customerId}/template`);
   }
 
+  async getNextLotStart(customerId: number, productionDate: string): Promise<number> {
+    const result = await this.request<{ lotStart: number }>(
+      `/api/customers/${customerId}/next-lot?productionDate=${encodeURIComponent(productionDate)}`,
+    );
+    return result.lotStart;
+  }
+
   saveMarking(payload: SaveMarkingPayload): Promise<{ id: number }> {
     return this.request("/api/markings", {
       method: "POST",
@@ -40,11 +47,11 @@ export class MarkingApiService {
     });
   }
 
-  saveOutsideTemplate(customerId: number, outside: TemplateField[]): Promise<CustomerTemplate> {
+  saveTemplate(customerId: number, inside: TemplateField[], outside: TemplateField[]): Promise<CustomerTemplate> {
     return this.request(`/api/customers/${customerId}/template`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", "x-user-role": "admin" },
-      body: JSON.stringify({ outside, updatedBy: "ADMIN" }),
+      body: JSON.stringify({ inside, outside, updatedBy: "ADMIN" }),
     });
   }
 }

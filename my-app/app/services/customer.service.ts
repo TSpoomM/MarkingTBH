@@ -5,6 +5,12 @@ import {
 import type { CustomerTemplate, TemplateField } from "@/app/types/customer";
 import type { CreateCustomerPayload } from "@/app/types/customer-form";
 
+const DEFAULT_STICKER_LAYOUTS = {
+  insideFrame: true,
+  outsideFrame: true,
+  customerName: false,
+};
+
 export class CustomerService {
   constructor(private readonly repository: CustomerRepository) {}
 
@@ -15,18 +21,49 @@ export class CustomerService {
     return key || `field_${index + 1}`;
   }
 
+  private isCounterField(field: Pick<TemplateField, "key" | "label">) {
+    const key = field.key.toLowerCase();
+    const label = field.label.toLowerCase();
+    return key.includes("lot") || key.includes("pallet") || label.includes("lot") || label.includes("pallet");
+  }
+
+  private normalizeCounterSegments(field: TemplateField): TemplateField {
+    if (!field.segments?.length || !this.isCounterField(field)) return field;
+    const counterIndex = field.segments.findIndex((segment) => segment.isCounter);
+    return {
+      ...field,
+      segments: field.segments.map((segment, index) => ({
+        ...segment,
+        isCounter: counterIndex >= 0 ? index === counterIndex : index === 0,
+        type: (counterIndex >= 0 ? index === counterIndex : index === 0) ? "number" : segment.type ?? "text",
+        showOnSticker: (counterIndex >= 0 ? index === counterIndex : index === 0)
+          ? true
+          : segment.showOnSticker,
+      })),
+    };
+  }
+
   private parseSticker(value: string | null): CustomerTemplate["sticker"] {
     try {
       const parsed = JSON.parse(value ?? "") as {
-        sticker?: { enabledFields?: Array<"side" | "format" | "type" | "other"> };
+        sticker?: {
+          enabledFields?: Array<"side" | "format" | "type" | "other">;
+          layouts?: Partial<CustomerTemplate["sticker"]["layouts"]>;
+        };
       };
       if (Array.isArray(parsed.sticker?.enabledFields)) {
-        return { enabledFields: parsed.sticker.enabledFields };
+        return {
+          enabledFields: parsed.sticker.enabledFields,
+          layouts: {
+            ...DEFAULT_STICKER_LAYOUTS,
+            ...parsed.sticker.layouts,
+          },
+        };
       }
     } catch {
       // Template รุ่นเก่าไม่มี sticker configuration
     }
-    return { enabledFields: ["side"] };
+    return { enabledFields: ["side"], layouts: DEFAULT_STICKER_LAYOUTS };
   }
 
   private parseFields(
@@ -42,26 +79,62 @@ export class CustomerService {
       const parsed: unknown = JSON.parse(value);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         const config = parsed as {
-          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string }> }>;
+          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; isCounter?: boolean }> }>;
           fields?: Array<Partial<TemplateField>>;
           tables?: Array<{ name?: string; fields?: Array<Partial<TemplateField>> }>;
         };
+        if (section === "Inside" && Array.isArray(config.fields) && !Array.isArray(config.groups)) {
+          return config.fields.map((field, index): TemplateField => {
+            const label = String(field.label ?? field.key ?? `Inside ${index + 1}`);
+            return this.normalizeCounterSegments({
+              key: String(field.key ?? this.normalizeKey(label, index)),
+              label,
+              type: ["number", "date", "textarea"].includes(String(field.type))
+                ? (field.type as TemplateField["type"])
+                : "text",
+              required: Boolean(field.required),
+              placeholder: field.placeholder,
+              defaultValue: field.defaultValue,
+              segments: field.segments?.map((segment, segmentIndex) => ({
+                ...segment,
+                showOnSticker: segment.showOnSticker ?? field.showOnSticker ?? true,
+                stickerOrder: segment.stickerOrder ?? (field.stickerOrder ?? index) * 10 + segmentIndex,
+                type: segment.type,
+                isCounter: segment.isCounter,
+              })),
+              condition: field.condition,
+              showOnSticker: field.showOnSticker ?? true,
+              stickerOrder: field.stickerOrder ?? index,
+            });
+          });
+        }
         if (section === "Inside" && Array.isArray(config.groups)) {
-          const groupRows: TemplateField[] = config.groups.map((group, groupIndex) => ({
-            key: `inside_group_${groupIndex + 1}`,
-            label: String(group.label ?? `Inside ${groupIndex + 1}`),
-            type: "text",
-            required: true,
-            segments: (group.segments ?? []).map((field, fieldIndex) => ({
-              key: String(field.key ?? `inside_${groupIndex + 1}_${fieldIndex + 1}`),
-              label: String(field.label ?? `ส่วนที่ ${fieldIndex + 1}`),
-            })),
-          }));
+          const groupRows: TemplateField[] = config.groups.map((group, groupIndex) => {
+            const label = String(group.label ?? `Inside ${groupIndex + 1}`);
+            return this.normalizeCounterSegments({
+              key: `inside_group_${groupIndex + 1}`,
+              label,
+              type: "text",
+              required: true,
+              showOnSticker: true,
+              stickerOrder: groupIndex,
+              segments: (group.segments ?? []).map((field, fieldIndex) => ({
+                key: String(field.key ?? `inside_${groupIndex + 1}_${fieldIndex + 1}`),
+                label: String(field.label ?? `Section ${fieldIndex + 1}`),
+                showOnSticker: true,
+                stickerOrder: groupIndex * 10 + fieldIndex,
+                type: field.isCounter ? "number" : "text",
+                isCounter: field.isCounter,
+              })),
+            });
+          });
           const fixedRows: TemplateField[] = (config.fields ?? []).map((field, index) => ({
             key: String(field.key ?? `inside_fixed_${index + 1}`),
             label: String(field.label ?? `Inside ${index + 1}`),
             type: "text",
             required: true,
+            showOnSticker: true,
+            stickerOrder: groupRows.length + index,
           }));
           return [...groupRows, ...fixedRows];
         }
@@ -73,6 +146,8 @@ export class CustomerService {
               type: "text" as const,
               required: Boolean(field.required),
               condition: field.condition,
+              showOnSticker: field.showOnSticker ?? true,
+              stickerOrder: field.stickerOrder ?? fieldIndex,
             })),
           );
         }
@@ -85,11 +160,13 @@ export class CustomerService {
             label: item,
             type: "text",
             required: false,
+            showOnSticker: true,
+            stickerOrder: index,
           };
         }
         const field = item as Partial<TemplateField>;
         const label = String(field.label ?? field.key ?? `Field ${index + 1}`);
-        return {
+        return this.normalizeCounterSegments({
           key: String(field.key ?? this.normalizeKey(label, index)),
           label,
           type: ["number", "date", "textarea"].includes(String(field.type))
@@ -98,7 +175,16 @@ export class CustomerService {
           required: Boolean(field.required),
           placeholder: field.placeholder,
           defaultValue: field.defaultValue,
-        };
+          segments: field.segments?.map((segment, segmentIndex) => ({
+            ...segment,
+            showOnSticker: segment.showOnSticker ?? field.showOnSticker ?? true,
+            stickerOrder: segment.stickerOrder ?? (field.stickerOrder ?? index) * 10 + segmentIndex,
+            type: segment.type,
+            isCounter: segment.isCounter,
+          })),
+          showOnSticker: field.showOnSticker ?? true,
+          stickerOrder: field.stickerOrder ?? index,
+        });
       });
     } catch (error) {
       if (error instanceof Error && error.message.startsWith("Template")) throw error;
@@ -110,6 +196,8 @@ export class CustomerService {
           label,
           type: "text" as const,
           required: false,
+          showOnSticker: true,
+          stickerOrder: index,
         }));
     }
   }
@@ -153,19 +241,33 @@ export class CustomerService {
     };
   }
 
-  async saveOutsideTemplate(
+  private buildInsideTemplateJson(
+    previousInside: string | null,
+    fields: TemplateField[],
+  ) {
+    const sticker = this.parseSticker(previousInside);
+    return JSON.stringify({
+      version: 2,
+      sticker,
+      fields,
+    });
+  }
+
+  async saveTemplate(
     customerId: number,
+    insideFields: TemplateField[],
     fields: TemplateField[],
     updatedBy: string,
   ) {
     const template = await this.repository.findLatestTemplate(customerId);
     if (!template) throw new Error("ลูกค้ารายนี้ยังไม่มี Template ในฐานข้อมูล");
-    const affectedRows = await this.repository.updateOutsideTemplate(
+    const affectedRows = await this.repository.updateTemplate(
       template.id,
+      this.buildInsideTemplateJson(template.inside, insideFields),
       JSON.stringify(fields),
       updatedBy,
     );
-    if (!affectedRows) throw new Error("อัปเดต Outside Template ไม่สำเร็จ");
+    if (!affectedRows) throw new Error("อัปเดต Template ไม่สำเร็จ");
     return this.getCustomerTemplate(customerId);
   }
 }

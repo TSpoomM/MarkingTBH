@@ -4,10 +4,19 @@ export const STICKER_FORMATS = {
 } as const;
 
 export type StickerField = "side" | "format" | "type" | "other";
+export type StickerLayoutKey = "insideFrame" | "outsideFrame" | "customerName";
+
+export interface StickerLayouts {
+  insideFrame: boolean;
+  outsideFrame: boolean;
+  customerName: boolean;
+}
 
 export interface SegmentDefinition {
   key: string;
   label: string;
+  type?: "text" | "number";
+  isCounter?: boolean;
 }
 
 export interface InsideGroup {
@@ -27,6 +36,8 @@ export interface OutsideField {
   label: string;
   required: boolean;
   condition?: { stickerType: "TNR" };
+  showOnSticker?: boolean;
+  stickerOrder?: number;
   system?: boolean;
 }
 
@@ -40,6 +51,7 @@ export interface CustomerConfiguration {
   version: 2;
   sticker: {
     enabledFields: StickerField[];
+    layouts: StickerLayouts;
   };
   inside: {
     groups: InsideGroup[];

@@ -4,13 +4,133 @@ import { Component } from "react";
 import type { MarkingContent } from "@/app/types/marking";
 import EmptyState from "./EmptyState";
 import { SectionTitle } from "./FilterPanel";
-import Button from "@/app/components/Button";
 import Card from "@/app/components/Card";
 import Input from "@/app/components/Input";
-import Modal from "@/app/components/Modal";
-import Select from "@/app/components/Select";
 import MarkingComponent from "./MarkingComponent";
-import { TemplateField } from "@/app/types/customer";
+import { STICKER_FORMAT_PALLETS } from "@/app/types/constants";
+import { TemplateField, type StickerLayouts } from "@/app/types/customer";
+
+type StickerKind = "insideFrame" | "outsideFrame" | "customerName";
+
+interface StickerItem {
+  kind: StickerKind;
+  title: string;
+  customerName: string;
+  lot: number;
+  pallet: number;
+  side: number;
+  productionDate: string;
+  details: Array<{ label: string; value: string }>;
+}
+
+const stickerTitles: Record<StickerKind, string> = {
+  insideFrame: "ในกรอบ",
+  outsideFrame: "นอกกรอบ",
+  customerName: "ชื่อ Customer",
+};
+
+const chunk = <T,>(items: T[], size: number) =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, index * size + size),
+  );
+
+const counterValue = (field: TemplateField, lot: number, pallet: number) => {
+  const key = field.key.toLowerCase();
+  const label = field.label.toLowerCase();
+  if (key.includes("lot") || label.includes("lot")) return String(lot);
+  if (key.includes("pallet") || label.includes("pallet")) return String(pallet);
+  return "";
+};
+
+const previewCounterValue = (field: TemplateField, lotStart: number) => {
+  const key = field.key.toLowerCase();
+  const label = field.label.toLowerCase();
+  if (key.includes("lot") || label.includes("lot")) return String(lotStart || 1);
+  if (key.includes("pallet") || label.includes("pallet")) return "1";
+  return "";
+};
+
+const fieldValues = (fields: TemplateField[], row: MarkingContent | undefined, lot: number, pallet: number) =>
+  fields
+    .flatMap((field) => {
+      if (field.segments?.length) {
+        return field.segments
+          .filter((segment) => segment.showOnSticker !== false)
+          .sort((a, b) => (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0))
+          .flatMap((segment) => {
+            const value = segment.isCounter ? counterValue(field, lot, pallet) : row?.[segment.key];
+            return value ? [{ label: `${field.label} - ${segment.label}`, value, order: segment.stickerOrder ?? 0 }] : [];
+          });
+      }
+      if (field.showOnSticker === false) return [];
+      const value = row?.[field.key];
+      return value ? [{ label: field.label, value, order: field.stickerOrder ?? 0 }] : [];
+    })
+    .sort((a, b) => a.order - b.order)
+    .map(({ label, value }) => ({ label, value }));
+
+function buildStickerItems({
+  customerName,
+  format,
+  sideCount,
+  lotCount,
+  lotStart,
+  productionDate,
+  layouts,
+  insideFields,
+  outsideFields,
+  insideRow,
+  outsideRow,
+}: {
+  customerName: string;
+  format: string;
+  sideCount: number;
+  lotCount: number;
+  lotStart: number;
+  productionDate: string;
+  layouts: StickerLayouts | undefined;
+  insideFields: TemplateField[];
+  outsideFields: TemplateField[];
+  insideRow: MarkingContent | undefined;
+  outsideRow: MarkingContent | undefined;
+}) {
+  const palletsByLot = STICKER_FORMAT_PALLETS[format as keyof typeof STICKER_FORMAT_PALLETS];
+  if (!palletsByLot || sideCount <= 0 || lotCount <= 0 || !layouts) return [];
+
+  const items: StickerItem[] = [];
+
+  const addLayoutItems = (kind: StickerKind, detailsForSticker: (lot: number, pallet: number) => StickerItem["details"]) => {
+    Array.from({ length: lotCount }, (_, lotIndex) => {
+      const palletCount = palletsByLot[lotIndex % palletsByLot.length];
+      for (let pallet = 1; pallet <= palletCount; pallet += 1) {
+        for (let side = 1; side <= sideCount; side += 1) {
+          items.push({
+            kind,
+            title: stickerTitles[kind],
+            customerName,
+            lot: lotStart + lotIndex,
+            pallet,
+            side,
+            productionDate,
+            details: detailsForSticker(lotStart + lotIndex, pallet),
+          });
+        }
+      }
+    });
+  };
+
+  if (layouts.insideFrame) {
+    addLayoutItems("insideFrame", (lot, pallet) => fieldValues(insideFields, insideRow, lot, pallet));
+  }
+  if (layouts.outsideFrame) {
+    addLayoutItems("outsideFrame", (lot, pallet) => fieldValues(outsideFields, outsideRow, lot, pallet));
+  }
+  if (layouts.customerName) {
+    addLayoutItems("customerName", () => []);
+  }
+
+  return items;
+}
 
 export default class OrderTable extends MarkingComponent {
   render() {
@@ -20,6 +140,27 @@ export default class OrderTable extends MarkingComponent {
     const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
       !field.condition || field.condition.stickerType === this.state.stickerType,
     );
+    const stickerItems = buildStickerItems({
+      customerName: this.state.template?.customerName ?? customer?.name ?? "",
+      format: this.state.stickerFormat,
+      sideCount: Number(this.state.stickerSides || 0),
+      lotCount: Number(this.state.lotCount || 1),
+      lotStart: this.state.lotStart,
+      productionDate: this.state.productionDate,
+      layouts: this.state.template?.sticker.layouts,
+      insideFields: this.state.template?.inside ?? [],
+      outsideFields,
+      insideRow: this.state.insideRows[0],
+      outsideRow: this.state.outsideRows[0],
+    });
+    const frameStickerPages = chunk(
+      stickerItems.filter((item) => item.kind !== "customerName"),
+      4,
+    );
+    const customerNameStickerPages = chunk(
+      stickerItems.filter((item) => item.kind === "customerName"),
+      32,
+    );
 
     return (
       <>
@@ -28,9 +169,10 @@ export default class OrderTable extends MarkingComponent {
             number="2"
             title="ข้อมูลภายในกล่อง (Inside)"
             subtitle="Template มาตรฐานสำหรับข้อมูลภายในกล่อง"
-            fields={this.state.template?.inside ?? []}
-            rows={this.state.insideRows}
-            onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
+              fields={this.state.template?.inside ?? []}
+              rows={this.state.insideRows}
+              lotStart={this.state.lotStart}
+              onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
           />
           {this.state.template && (outsideFields.length > 0 || this.state.isAdmin) && (
             <TableSection
@@ -39,90 +181,22 @@ export default class OrderTable extends MarkingComponent {
               subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
               fields={outsideFields}
               rows={this.state.outsideRows}
+              lotStart={this.state.lotStart}
               onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
-              onEdit={this.state.isAdmin ? () => this.actions.openTemplateEditor() : undefined}
               emptyText="ลูกค้ารายนี้ไม่มี Outside Template"
             />
           )}
         </div>
 
         <div className="print-sheet">
-          <h1>รายการสติ๊กเกอร์สินค้า</h1>
-          <p>{customer?.name}{this.state.stickerSides && ` · สติ๊กเกอร์ ${this.state.stickerSides} ด้าน`}</p>
-          <PrintTable title="ข้อมูลภายในกล่อง (INSIDE)" fields={this.state.template?.inside ?? []} rows={this.state.insideRows} />
-          {!!outsideFields.length && (
-            <PrintTable title="ข้อมูลภายนอกกล่อง (OUTSIDE)" fields={outsideFields} rows={this.state.outsideRows} />
-          )}
+          {frameStickerPages.map((page, index) => (
+            <StickerPage items={page} key={`frame-${index}`} layout="frame" />
+          ))}
+          {customerNameStickerPages.map((page, index) => (
+            <StickerPage items={page} key={`customer-${index}`} layout="customerName" />
+          ))}
         </div>
 
-        <Modal
-          open={this.state.isTemplateEditorOpen}
-          title="จัดการ Outside Template"
-          subtitle={customer?.name}
-          onClose={() => this.actions.closeTemplateEditor()}
-          footer={
-            <>
-              <Button className="cancel-button" onClick={() => this.actions.closeTemplateEditor()}>ยกเลิก</Button>
-              <Button
-                className="export-button"
-                onClick={() => void this.actions.saveTemplate()}
-                loading={this.state.isSaving}
-                loadingText="กำลังบันทึก..."
-              >
-                บันทึก Template
-              </Button>
-            </>
-          }
-        >
-          <div className="editor-body">
-            {!this.state.outsideDraft.length && <div className="editor-empty">ลูกค้ารายนี้ยังไม่มี Outside Field</div>}
-            {this.state.outsideDraft.map((field, index) => (
-              <article className="editor-field" key={`${field.key}-${index}`}>
-                <div className="editor-number">{index + 1}</div>
-                <label>
-                  <span>ชื่อ Field</span>
-                  <Input bare value={field.label} onChange={(event) => this.actions.updateDraft(index, { label: event.target.value })} />
-                </label>
-                <label>
-                  <span>Key</span>
-                  <Input
-                    bare
-                    value={field.key}
-                    onChange={(event) => this.actions.updateDraft(index, {
-                      key: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
-                    })}
-                  />
-                </label>
-                <label>
-                  <span>ชนิดข้อมูล</span>
-                  <Select
-                    bare
-                    value={field.type}
-                    onChange={(event) => this.actions.updateDraft(index, { type: event.target.value as TemplateField["type"] })}
-                  >
-                    <option value="text">ข้อความ</option>
-                    <option value="number">ตัวเลข</option>
-                    <option value="date">วันที่</option>
-                    <option value="textarea">ข้อความหลายบรรทัด</option>
-                  </Select>
-                </label>
-                <label className="required-toggle">
-                  <Input
-                    bare
-                    type="checkbox"
-                    checked={field.required}
-                    onChange={(event) => this.actions.updateDraft(index, { required: event.target.checked })}
-                  />
-                  <span>บังคับกรอก</span>
-                </label>
-                <Button className="delete-field" onClick={() => this.actions.removeDraftField(index)}>ลบ</Button>
-              </article>
-            ))}
-            <Button className="add-field-button" onClick={() => this.actions.addDraftField()}>
-              <PlusIcon />เพิ่ม Field
-            </Button>
-          </div>
-        </Modal>
       </>
     );
   }
@@ -134,19 +208,18 @@ interface TableSectionProps {
   subtitle: string;
   fields: TemplateField[];
   rows: MarkingContent[];
+  lotStart: number;
   onChange: (row: number, key: string, value: string) => void;
-  onEdit?: () => void;
   emptyText?: string;
 }
 
 class TableSection extends Component<TableSectionProps> {
   render() {
-    const { number, title, subtitle, fields, rows, onChange, onEdit, emptyText } = this.props;
+    const { number, title, subtitle, fields, rows, lotStart, onChange, emptyText } = this.props;
     return (
       <Card className="table-panel">
         <div className="table-heading">
           <SectionTitle number={number} title={title} subtitle={subtitle} />
-          {onEdit && <Button onClick={onEdit}><EditIcon />แก้ไข Template</Button>}
         </div>
         {!fields.length ? (
           <EmptyState message={emptyText ?? "เลือกลูกค้าเพื่อโหลด Template"} />
@@ -165,9 +238,14 @@ class TableSection extends Component<TableSectionProps> {
                             <Input
                               key={segment.key}
                               bare
-                              value={row[segment.key] ?? ""}
+                              type={segment.isCounter ? "number" : "text"}
+                              inputMode={segment.isCounter ? "numeric" : undefined}
+                              min={segment.isCounter ? 1 : undefined}
+                              step={segment.isCounter ? 1 : undefined}
+                              value={segment.isCounter ? previewCounterValue(field, lotStart) : row[segment.key] ?? ""}
+                              disabled={segment.isCounter}
                               onChange={(event) => onChange(rowIndex, segment.key, event.target.value)}
-                              placeholder={segment.label}
+                              placeholder={segment.isCounter ? "+1" : segment.label}
                             />
                           ))}
                         </div>
@@ -192,39 +270,34 @@ class TableSection extends Component<TableSectionProps> {
   }
 }
 
-interface PrintTableProps {
-  title: string;
-  fields: TemplateField[];
-  rows: MarkingContent[];
-}
-
-class PrintTable extends Component<PrintTableProps> {
+class StickerPage extends Component<{ items: StickerItem[]; layout: "frame" | "customerName" }> {
   render() {
-    const { title, fields, rows } = this.props;
+    const { items, layout } = this.props;
     return (
-      <section>
-        <h2>{title}</h2>
-        <table>
-          <thead><tr><th>#</th>{fields.map((field) => <th key={field.key}>{field.label}</th>)}</tr></thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr key={index}><td>{index + 1}</td>{fields.map((field) => <td key={field.key}>{field.segments?.length ? field.segments.map((segment) => row[segment.key]).filter(Boolean).join(" / ") : row[field.key]}</td>)}</tr>
-            ))}
-          </tbody>
-        </table>
+      <section className={`sticker-page ${layout === "frame" ? "sticker-page-frame" : "sticker-page-customer"}`}>
+        {items.map((item, index) => (
+          <article className={`sticker-label ${item.kind}`} key={`${item.kind}-${item.lot}-${item.pallet}-${item.side}-${index}`}>
+            <header>
+              <strong>{item.kind === "customerName" ? item.customerName : item.title}</strong>
+              {item.kind !== "customerName" && <span>{item.customerName}</span>}
+            </header>
+            {item.kind === "customerName" ? (
+              <p>{item.customerName}</p>
+            ) : (
+              <>
+                <dl>
+                  {item.details.map((detail) => (
+                    <div key={`${detail.label}-${detail.value}`}>
+                      <dt>{detail.label}</dt>
+                      <dd>{detail.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </>
+            )}
+          </article>
+        ))}
       </section>
     );
-  }
-}
-
-class PlusIcon extends Component {
-  render() {
-    return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>;
-  }
-}
-
-class EditIcon extends Component {
-  render() {
-    return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" /></svg>;
   }
 }

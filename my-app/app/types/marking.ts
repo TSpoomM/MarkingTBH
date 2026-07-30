@@ -7,13 +7,17 @@ export interface MarkingState {
   customers: Customer[];
   customerId: string;
   template: CustomerTemplate | null;
-  totalWeight: string;
+  totalLot: string;
   stickerSides: string;
   stickerFormat: string;
   stickerType: string;
   stickerOther: string;
+  lotCount: string;
+  lotStart: number;
+  productionDate: string;
   insideRows: MarkingContent[];
   outsideRows: MarkingContent[];
+  insideDraft: TemplateField[];
   outsideDraft: TemplateField[];
   isAdmin: boolean;
   isLoading: boolean;
@@ -24,8 +28,11 @@ export interface MarkingState {
 
 export interface SaveMarkingPayload {
   customerId: number;
-  totalWeight: number;
+  totalLot: number;
   stickerSides: number;
+  lotCount: number;
+  lotStart: number;
+  productionDate: string;
   contentInside: MarkingContent[];
   contentOutside: MarkingContent[];
 }
@@ -33,8 +40,11 @@ export interface SaveMarkingPayload {
 export interface CreateMarkingInput {
   employeeId: string;
   customerId: number;
-  totalWeight: number;
+  totalLot: number;
   stickerSides: number;
+  lotCount: number;
+  lotStart: number;
+  productionDate: string;
   contentInside: MarkingContent | MarkingContent[];
   contentOutside: MarkingContent | MarkingContent[];
 }
