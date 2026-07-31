@@ -1011,7 +1011,7 @@ select {
 		margin: 8mm
 	}
 
-	.order-app>.header,
+	.header,
 	.container {
 		display: none !important
 	}
@@ -1059,7 +1059,7 @@ select {
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		justify-content: space-between;
+		justify-content: center;
 		background: #fff
 	}
 
@@ -1102,27 +1102,56 @@ select {
 		font-weight: 700
 	}
 
-	.sticker-label dl {
+	.sticker-details {
+		font-family: Arial;
 		margin: 0;
 		display: grid;
-		gap: 2mm;
-		font-size: 11px
+		gap: 5mm;
+		font-size: 26px
 	}
 
-	.sticker-label dl div {
+	.sticker-detail-row {
 		display: grid;
-		grid-template-columns: 34mm 1fr;
-		gap: 3mm;
-		border-bottom: 1px solid #bbb;
-		padding-bottom: 1.5mm
+		grid-template-columns: minmax(38mm, 1fr) 7mm minmax(45mm, 1.15fr);
+		gap: 2mm;
+		align-items: baseline;
+		break-inside: avoid
 	}
 
 	.sticker-label dt {
-		font-weight: 700
+		font-family: Arial;
+		font-size: 22px;
+		/* padding-right: 70px; */
+		font-weight: 900;
+		line-height: 1.05
 	}
 
 	.sticker-label dd {
 		margin: 0
+	}
+
+	.sticker-detail-colon {
+		font-family: Arial;
+		font-size: 26px;
+		font-weight: 900;
+		text-align: end;
+		line-height: 1.05
+	}
+
+	.sticker-detail-values {
+		font-family: Arial;
+		min-width: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1.5mm 4mm;
+		font-size: 26px;
+		font-weight: 900;
+		line-height: 1.05
+	}
+
+	.sticker-detail-values span {
+		min-width: 0;
+		overflow-wrap: anywhere
 	}
 
 	.sticker-label.customerName {

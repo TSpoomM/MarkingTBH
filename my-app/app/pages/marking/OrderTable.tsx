@@ -14,20 +14,19 @@ type StickerKind = "insideFrame" | "outsideFrame" | "customerName";
 
 interface StickerItem {
   kind: StickerKind;
-  title: string;
   customerName: string;
   lot: number;
   pallet: number;
   side: number;
   productionDate: string;
-  details: Array<{ label: string; value: string }>;
+  details: StickerDetail[];
 }
 
-const stickerTitles: Record<StickerKind, string> = {
-  insideFrame: "ในกรอบ",
-  outsideFrame: "นอกกรอบ",
-  customerName: "ชื่อ Customer",
-};
+interface StickerDetail {
+  label: string;
+  values: Array<{ label?: string; value: string }>;
+  order: number;
+}
 
 interface StickerBuildOptions {
   customerName: string;
@@ -41,6 +40,12 @@ interface StickerBuildOptions {
   outsideFields: TemplateField[];
   insideRow: MarkingContent | undefined;
   outsideRow: MarkingContent | undefined;
+}
+
+interface OutsideStickerGroup {
+  name: string;
+  order: number;
+  fields: TemplateField[];
 }
 
 class StickerFactory {
@@ -74,24 +79,53 @@ class StickerFactory {
   ) {
     return fields.flatMap((field) => {
       if (field.segments?.length) {
-        return field.segments
+        const selectedSegments = field.segments
           .filter((segment) => segment.showOnSticker !== false)
-          .sort((a, b) => (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0))
-          .flatMap((segment) => {
-            const value = segment.isCounter
-              ? this.counterValue(field, lot, pallet)
-              : row?.[segment.key];
-            return value
-              ? [{ label: `${field.label} - ${segment.label}`, value, order: segment.stickerOrder ?? 0 }]
-              : [];
-          });
+          .sort((a, b) => (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0));
+        const values = selectedSegments.flatMap((segment) => {
+          const value = segment.isCounter
+            ? this.counterValue(field, lot, pallet)
+            : row?.[segment.key];
+          return value
+            ? [{ label: segment.label, value }]
+            : [];
+        });
+        return values.length
+          ? [{ label: field.label, values, order: field.stickerOrder ?? Math.min(...selectedSegments.map((segment) => segment.stickerOrder ?? 0)) }]
+          : [];
       }
       if (field.showOnSticker === false) return [];
       const value = row?.[field.key];
-      return value ? [{ label: field.label, value, order: field.stickerOrder ?? 0 }] : [];
+      return value ? [{ label: field.label, values: [{ value }], order: field.stickerOrder ?? 0 }] : [];
     })
       .sort((a, b) => a.order - b.order)
-      .map(({ label, value }) => ({ label, value }));
+      .map(({ label, values, order }) => ({ label, values, order }));
+  }
+
+  private static splitOutsideLabel(label: string) {
+    const delimiter = label.includes(" — ") ? " — " : label.includes(" â€” ") ? " â€” " : "";
+    if (!delimiter) return { groupName: "", fieldLabel: label };
+    const [groupName, ...fieldLabelParts] = label.split(delimiter);
+    return {
+      groupName: groupName.trim(),
+      fieldLabel: (fieldLabelParts.join(delimiter).trim() || label),
+    };
+  }
+
+  private static outsideGroups(fields: TemplateField[]) {
+    const groups = new Map<string, OutsideStickerGroup>();
+    fields.forEach((field, index) => {
+      const inferred = this.splitOutsideLabel(field.label);
+      const name = field.stickerGroup?.trim() || inferred.groupName || "นอกกรอบ";
+      const group = groups.get(name) ?? { name, order: field.stickerGroupOrder ?? index, fields: [] };
+      group.order = Math.min(group.order, field.stickerGroupOrder ?? index);
+      group.fields.push({
+        ...field,
+        label: inferred.groupName ? inferred.fieldLabel : field.label,
+      });
+      groups.set(name, group);
+    });
+    return Array.from(groups.values()).sort((a, b) => a.order - b.order);
   }
 
   static build(options: StickerBuildOptions) {
@@ -104,30 +138,31 @@ class StickerFactory {
     const items: StickerItem[] = [];
 
     const addLayoutItems = (kind: StickerKind, detailsForSticker: (lot: number, pallet: number) => StickerItem["details"]) => {
-    Array.from({ length: lotCount }, (_, lotIndex) => {
-      const palletCount = palletsByLot[lotIndex % palletsByLot.length];
-      for (let pallet = 1; pallet <= palletCount; pallet += 1) {
-        for (let side = 1; side <= sideCount; side += 1) {
-          items.push({
-            kind,
-            title: stickerTitles[kind],
-            customerName,
-            lot: lotStart + lotIndex,
-            pallet,
-            side,
-            productionDate,
-            details: detailsForSticker(lotStart + lotIndex, pallet),
-          });
+      Array.from({ length: lotCount }, (_, lotIndex) => {
+        const palletCount = palletsByLot[lotIndex % palletsByLot.length];
+        for (let pallet = 1; pallet <= palletCount; pallet += 1) {
+          for (let side = 1; side <= sideCount; side += 1) {
+            items.push({
+              kind,
+              customerName,
+              lot: lotStart + lotIndex,
+              pallet,
+              side,
+              productionDate,
+              details: detailsForSticker(lotStart + lotIndex, pallet),
+            });
+          }
         }
-      }
-    });
+      });
     };
 
     if (layouts.insideFrame) {
       addLayoutItems("insideFrame", (lot, pallet) => this.fieldValues(insideFields, insideRow, lot, pallet));
     }
     if (layouts.outsideFrame) {
-      addLayoutItems("outsideFrame", (lot, pallet) => this.fieldValues(outsideFields, outsideRow, lot, pallet));
+      this.outsideGroups(outsideFields).forEach((group) => {
+        addLayoutItems("outsideFrame", (lot, pallet) => this.fieldValues(group.fields, outsideRow, lot, pallet));
+      });
     }
     if (layouts.customerName) addLayoutItems("customerName", () => []);
 
@@ -172,10 +207,10 @@ export default class OrderTable extends MarkingComponent {
             number="2"
             title="ข้อมูลภายในกล่อง (Inside)"
             subtitle="Template มาตรฐานสำหรับข้อมูลภายในกล่อง"
-              fields={this.state.template?.inside ?? []}
-              rows={this.state.insideRows}
-              lotStart={this.state.lotStart}
-              onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
+            fields={this.state.template?.inside ?? []}
+            rows={this.state.insideRows}
+            lotStart={this.state.lotStart}
+            onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
           />
           {this.state.template && (outsideFields.length > 0 || this.state.isAdmin) && (
             <TableSection
@@ -280,23 +315,25 @@ class StickerPage extends Component<{ items: StickerItem[]; layout: "frame" | "c
       <section className={`sticker-page ${layout === "frame" ? "sticker-page-frame" : "sticker-page-customer"}`}>
         {items.map((item, index) => (
           <article className={`sticker-label ${item.kind}`} key={`${item.kind}-${item.lot}-${item.pallet}-${item.side}-${index}`}>
-            <header>
-              <strong>{item.kind === "customerName" ? item.customerName : item.title}</strong>
-              {item.kind !== "customerName" && <span>{item.customerName}</span>}
-            </header>
             {item.kind === "customerName" ? (
               <p>{item.customerName}</p>
             ) : (
-              <>
-                <dl>
-                  {item.details.map((detail) => (
-                    <div key={`${detail.label}-${detail.value}`}>
-                      <dt>{detail.label}</dt>
-                      <dd>{detail.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </>
+              <dl className="sticker-details">
+                {item.details.map((detail) => (
+                  <div className="sticker-detail-row" key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}>
+                    <dt>{detail.label}</dt>
+                    {/* <dt>a</dt> */}
+                    <dd className="sticker-detail-colon">:</dd>
+                    <dd className="sticker-detail-values">
+                      {detail.values.map((value, valueIndex) => (
+                        <span key={`${value.label ?? detail.label}-${value.value}-${valueIndex}`}>
+                          {value.value}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             )}
           </article>
         ))}

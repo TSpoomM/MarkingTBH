@@ -148,6 +148,8 @@ export class CustomerService {
               condition: field.condition,
               showOnSticker: field.showOnSticker ?? true,
               stickerOrder: field.stickerOrder ?? fieldIndex,
+              stickerGroup: String(table.name ?? `Outside ${tableIndex + 1}`),
+              stickerGroupOrder: tableIndex,
             })),
           );
         }
@@ -184,6 +186,8 @@ export class CustomerService {
           })),
           showOnSticker: field.showOnSticker ?? true,
           stickerOrder: field.stickerOrder ?? index,
+          stickerGroup: field.stickerGroup,
+          stickerGroupOrder: field.stickerGroupOrder,
         });
       });
     } catch (error) {

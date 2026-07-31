@@ -18,6 +18,8 @@ export interface TemplateField {
   condition?: { stickerType: "TNR" };
   showOnSticker?: boolean;
   stickerOrder?: number;
+  stickerGroup?: string;
+  stickerGroupOrder?: number;
 }
 
 export interface Customer {

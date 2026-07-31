@@ -45,6 +45,7 @@ type StickerSelectableField = {
   key: string;
   label: string;
   parentLabel: string;
+  parentOrder: number | undefined;
   segmentLabel?: string;
   showOnSticker: boolean;
   stickerOrder: number | undefined;
@@ -79,6 +80,7 @@ const stickerSelectableFields = (fields: TemplateField[]): StickerSelectableFiel
         key: `${field.key}.${segment.key}`,
         label: `${field.label} - ${segment.label}${segment.isCounter ? " (+1)" : ""}`,
         parentLabel: field.label,
+        parentOrder: field.stickerOrder,
         segmentLabel: segment.label,
         showOnSticker: segment.showOnSticker !== false,
         stickerOrder: segment.stickerOrder,
@@ -87,6 +89,7 @@ const stickerSelectableFields = (fields: TemplateField[]): StickerSelectableFiel
         key: field.key,
         label: field.label,
         parentLabel: field.label,
+        parentOrder: field.stickerOrder,
         showOnSticker: field.showOnSticker !== false,
         stickerOrder: field.stickerOrder,
       }],
@@ -95,7 +98,7 @@ const stickerSelectableFields = (fields: TemplateField[]): StickerSelectableFiel
 const selectedStickerFields = (fields: TemplateField[]) =>
   stickerSelectableFields(fields)
     .filter((field) => field.showOnSticker)
-    .sort((a, b) => (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0));
+    .sort((a, b) => (a.parentOrder ?? a.stickerOrder ?? 0) - (b.parentOrder ?? b.stickerOrder ?? 0));
 
 const groupSelectedStickerFields = (fields: StickerSelectableField[]) =>
   fields.reduce<Array<{ label: string; fields: StickerSelectableField[] }>>((groups, field) => {
