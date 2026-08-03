@@ -30,6 +30,11 @@ export default class FilterPanel extends MarkingComponent {
             title="รายละเอียดสติ๊กเกอร์"
             subtitle="ช่องกรอกจะแสดงตาม Template ที่ Admin กำหนดให้ลูกค้า"
           />
+          <div className="workflow-strip" aria-label="ลำดับการใช้งาน">
+            <span className={this.state.customerId ? "done" : "active"}>1. เลือกลูกค้า</span>
+            <span className={this.state.template ? "done" : ""}>2. กรอกรายละเอียด</span>
+            <span className={this.state.template ? "active" : ""}>3. บันทึกหรือส่งออก PDF</span>
+          </div>
           <div className="detail-grid">
             <Select
               label="ลูกค้า"

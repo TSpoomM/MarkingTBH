@@ -258,6 +258,10 @@ class TableSection extends Component<TableSectionProps> {
       <Card className="table-panel">
         <div className="table-heading">
           <SectionTitle number={number} title={title} subtitle={subtitle} />
+          <div className="table-meta">
+            <span>{fields.length} fields</span>
+            <span>{rows.length} records</span>
+          </div>
         </div>
         {!fields.length ? (
           <EmptyState message={emptyText ?? "เลือกลูกค้าเพื่อโหลด Template"} />

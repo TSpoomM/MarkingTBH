@@ -469,6 +469,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
 
   render() {
     const hasTypeField = this.state.stickerFields.includes("type");
+    const selectedCustomer = this.state.customers.find((customer) =>
+      String(customer.id) === this.state.selectedCustomerId,
+    );
 
     return (
       <div className="customer-admin">
@@ -485,21 +488,27 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           )}
           {!this.state.checkingRole && this.state.isAdmin && (
             <>
-              <div className="customer-mode-switch">
-                <button
-                  type="button"
-                  className={this.state.mode === "edit" ? "active" : ""}
-                  onClick={() => this.changeMode("edit")}
-                >
-                  แก้ไข Customer
-                </button>
-                <button
-                  type="button"
-                  className={this.state.mode === "create" ? "active" : ""}
-                  onClick={() => this.changeMode("create")}
-                >
-                  เพิ่ม Customer
-                </button>
+              <div className="customer-admin-top">
+                <div className="customer-mode-switch" aria-label="เลือกโหมดจัดการ Customer">
+                  <button
+                    type="button"
+                    className={this.state.mode === "edit" ? "active" : ""}
+                    onClick={() => this.changeMode("edit")}
+                  >
+                    แก้ไข Template
+                  </button>
+                  <button
+                    type="button"
+                    className={this.state.mode === "create" ? "active" : ""}
+                    onClick={() => this.changeMode("create")}
+                  >
+                    เพิ่ม Customer
+                  </button>
+                </div>
+                <div className="customer-mode-help">
+                  <strong>{this.state.mode === "edit" ? "เลือก Customer เดิม แล้วปรับช่องบนสติ๊กเกอร์" : "สร้าง Customer ใหม่ แล้วกำหนดช่องที่ User ต้องกรอก"}</strong>
+                  <span>{this.state.mode === "edit" ? "เหมาะกับการแก้ Field, ลำดับ Preview และ Template ที่ใช้อยู่" : "ทำตามลำดับ 1 ถึง 4 แล้วกดบันทึกด้านล่าง"}</span>
+                </div>
               </div>
               {this.state.mode === "edit" && (
                 <section className="config-card">
@@ -535,11 +544,31 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                       ))}
                     </select>
                   </label>
+                  {!this.state.selectedCustomerId && !this.state.loadingCustomers && (
+                    <div className="customer-empty-guide">
+                      <strong>เริ่มจากเลือก Customer ที่ต้องการแก้ Template</strong>
+                      <span>หลังเลือกแล้ว ระบบจะแสดง Preview ด้านบน และ Field editor สำหรับในกรอบ/นอกกรอบด้านล่าง</span>
+                    </div>
+                  )}
                   {this.state.loadingTemplate && <div className="outside-empty"><strong>กำลังโหลด Template...</strong></div>}
                   {this.state.selectedCustomerId && !this.state.loadingTemplate && (
                     <>
+                      <div className="template-workbench-summary">
+                        <div>
+                          <span>Customer</span>
+                          <strong>{selectedCustomer?.name ?? "Customer"}</strong>
+                        </div>
+                        <div>
+                          <span>ในกรอบ</span>
+                          <strong>{this.state.templateInsideDraft.length} fields</strong>
+                        </div>
+                        <div>
+                          <span>นอกกรอบ</span>
+                          <strong>{this.state.templateOutsideDraft.length} fields</strong>
+                        </div>
+                      </div>
                       <StickerTemplatePreview
-                        customerName={this.state.customers.find((customer) => String(customer.id) === this.state.selectedCustomerId)?.name ?? "Customer"}
+                        customerName={selectedCustomer?.name ?? "Customer"}
                         insideFields={this.state.templateInsideDraft}
                         outsideFields={this.state.templateOutsideDraft}
                         onSelect={this.setPreviewSlot}
@@ -572,6 +601,12 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   {this.state.notice && (
                     <div className={`form-notice ${this.state.notice.kind}`}>{this.state.notice.text}</div>
                   )}
+                  <div className="customer-create-steps">
+                    <span className="active">1. ข้อมูล Customer</span>
+                    <span>2. ช่องบนหน้า User</span>
+                    <span>3. Inside</span>
+                    <span>4. Outside</span>
+                  </div>
                   <form onSubmit={this.submit}>
                     <section className="config-card">
                       <SectionHeading

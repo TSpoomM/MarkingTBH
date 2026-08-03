@@ -11,8 +11,8 @@ export default class Header extends MarkingComponent {
     return (
       <Navbar
         badge="TBH"
-        title="ระบบจัดการคำสั่งซื้อ"
-        subtitle="จัดทำรายการบรรจุสินค้า Inside และ Outside"
+        title="MarkingTBH"
+        subtitle="สร้าง sticker สำหรับส่งออกสินค้า"
         action={<div className="header-actions">
           {this.state.isAdmin && <Link className="add-customer-link" href="/pages/history">History</Link>}
           {this.state.isAdmin && <Link className="add-customer-link" href="/pages/manageCustomer">จัดการ Customer</Link>}

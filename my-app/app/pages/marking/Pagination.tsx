@@ -7,12 +7,15 @@ export default class Pagination extends MarkingComponent {
   render() {
     return (
       <div className="container bottom-action">
-        <span>
-          Inside {this.state.insideRows.length} ชุด
-          {this.state.template?.outside.length
-            ? ` · Outside ${this.state.outsideRows.length} ชุด`
-            : " · ลูกค้ารายนี้ไม่มี Outside"}
-        </span>
+        <div className="save-summary">
+          <strong>พร้อมบันทึกข้อมูล</strong>
+          <span>
+            Inside {this.state.insideRows.length} ชุด
+            {this.state.template?.outside.length
+              ? ` · Outside ${this.state.outsideRows.length} ชุด`
+              : " · ลูกค้ารายนี้ไม่มี Outside"}
+          </span>
+        </div>
         <Button
           className="export-button"
           onClick={() => void this.actions.save()}
