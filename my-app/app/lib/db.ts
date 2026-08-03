@@ -1,40 +1,34 @@
+// db.js
+// Create "connection pool" to connect MySQL from XAMPP
+// Use pool instead connect each time cuz faster and support multiple request 
+
 import mysql from "mysql2/promise";
 
-const globalForDb = globalThis as unknown as {
-  markingPool?: mysql.Pool;
-  markingDatabase?: Database;
-};
 
-class Environment {
-  static get(name: string, fallback?: string) {
-    const value = process.env[name] ?? fallback;
-    if (value === undefined) throw new Error(`Missing environment variable: ${name}`);
-    return value;
+// const mysql = require('mysql2/promise');
+// require('dotenv').config();
+
+export const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT),
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
+
+// Test connection when start the seerver
+export async function testConnection() {
+  try {
+    const connection = await pool.getConnection();
+    console.log('✅ connection MySQL (XAMPP) successful');
+    connection.release();
+  } catch (err) {
+    console.error('❌ connection MySQL failed:', err);
+    console.error('   check that: 1) XAMPP MySQL is running 2) DB_NAME exists 3) .env is configured correctly');
   }
 }
 
-export class Database {
-  readonly pool: mysql.Pool;
-
-  constructor(pool?: mysql.Pool) {
-    this.pool = pool ?? globalForDb.markingPool ?? mysql.createPool({
-      host: Environment.get("DB_HOST", "127.0.0.1"),
-      user: Environment.get("DB_USER", "root"),
-      password: Environment.get("DB_PASSWORD", ""),
-      database: Environment.get("DB_NAME"),
-      port: Number(Environment.get("DB_PORT", "3306")),
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-      charset: "utf8mb4",
-      decimalNumbers: true,
-    });
-  }
-}
-
-export const database = globalForDb.markingDatabase ?? new Database();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.markingPool = database.pool;
-  globalForDb.markingDatabase = database;
-}
+// module.exports = { pool, testConnection };

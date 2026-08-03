@@ -1,5 +1,6 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
-import { database, Database } from "../lib/db";
+import type { Pool } from "mysql2/promise";
+import { pool } from "../lib/db";
 
 export type CustomerRow = RowDataPacket & { c_id: number; c_name: string };
 export type TemplateRow = RowDataPacket & {
@@ -10,17 +11,17 @@ export type TemplateRow = RowDataPacket & {
 };
 
 export class CustomerRepository {
-  constructor(private readonly database: Database) {}
+  constructor(private readonly pool: Pool) {}
 
   async findAll() {
-    const [rows] = await this.database.pool.query<CustomerRow[]>(
+    const [rows] = await this.pool.query<CustomerRow[]>(
       "SELECT c_id, c_name FROM tb_customer ORDER BY c_name ASC",
     );
     return rows;
   }
 
   async findLatestTemplate(customerId: number) {
-    const [rows] = await this.database.pool.execute<TemplateRow[]>(
+    const [rows] = await this.pool.execute<TemplateRow[]>(
       `SELECT id, c_id, inside, outside
        FROM tb_template
        WHERE c_id = ?
@@ -32,7 +33,7 @@ export class CustomerRepository {
   }
 
   async updateOutsideTemplate(templateId: number, outside: string, updatedBy: string) {
-    const [result] = await this.database.pool.execute<ResultSetHeader>(
+    const [result] = await this.pool.execute<ResultSetHeader>(
       `UPDATE tb_template
        SET outside = ?, created_by = ?, created_date = NOW()
        WHERE id = ?`,
@@ -42,7 +43,7 @@ export class CustomerRepository {
   }
 
   async updateTemplate(templateId: number, inside: string, outside: string, updatedBy: string) {
-    const [result] = await this.database.pool.execute<ResultSetHeader>(
+    const [result] = await this.pool.execute<ResultSetHeader>(
       `UPDATE tb_template
        SET inside = ?, outside = ?, created_by = ?, created_date = NOW()
        WHERE id = ?`,
@@ -57,7 +58,7 @@ export class CustomerRepository {
     outside: string,
     createdBy: string,
   ) {
-    const connection = await this.database.pool.getConnection();
+    const connection = await this.pool.getConnection();
     try {
       await connection.beginTransaction();
       const [customerResult] = await connection.execute<ResultSetHeader>(
@@ -80,4 +81,4 @@ export class CustomerRepository {
   }
 }
 
-export const customerRepository = new CustomerRepository(database);
+export const customerRepository = new CustomerRepository(pool);

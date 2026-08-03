@@ -1,12 +1,13 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { CreateMarkingInput } from "@/app/types/marking";
-import { database, Database } from "../lib/db";
+import type { Pool } from "mysql2/promise";
+import { pool } from "../lib/db";
 
 export class MarkingRepository {
-  constructor(private readonly database: Database) {}
+  constructor(private readonly pool: Pool) {}
 
   async create(input: CreateMarkingInput) {
-    const [result] = await this.database.pool.execute<ResultSetHeader>(
+    const [result] = await this.pool.execute<ResultSetHeader>(
       `INSERT INTO log_marking
         (emp_id, cus_id, total_lot, sticker_sides, content_inside, content_outside, created_date)
        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
@@ -23,7 +24,7 @@ export class MarkingRepository {
   }
 
   async findLastLotEnd(customerId: number, productionYear: number) {
-    const [rows] = await this.database.pool.execute<Array<RowDataPacket & { content_inside: string | null }>>(
+    const [rows] = await this.pool.execute<Array<RowDataPacket & { content_inside: string | null }>>(
       `SELECT content_inside
        FROM log_marking
        WHERE cus_id = ?
@@ -52,4 +53,4 @@ export class MarkingRepository {
   }
 }
 
-export const markingRepository = new MarkingRepository(database);
+export const markingRepository = new MarkingRepository(pool);
