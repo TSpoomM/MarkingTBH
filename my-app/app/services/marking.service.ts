@@ -16,6 +16,7 @@ export const markingSchema = z.object({
   lotCount: z.coerce.number().int().min(1),
   lotStart: z.coerce.number().int().min(1),
   productionDate: z.string().trim().min(1),
+  actionType: z.enum(["save", "print"]).default("save"),
   contentInside: z.union([
     z.record(z.string(), z.string()),
     z.array(z.record(z.string(), z.string())).min(1),
@@ -32,11 +33,20 @@ export class MarkingService {
     private readonly employees: EmployeeRepository,
   ) {}
 
-  async save(payload: unknown) {
+  async save(payload: unknown, actingEmployeeId?: string) {
     const input = markingSchema.parse(payload);
-    const employeeId = input.employeeId ?? await this.employees.findDefaultFsId();
+    const employeeId = actingEmployeeId || input.employeeId || await this.employees.findDefaultFsId();
     if (!employeeId) throw new Error("ไม่พบข้อมูลพนักงานในระบบ");
-    const id = await this.repository.create({ ...input, employeeId });
+    const stampAction = (content: typeof input.contentInside) => {
+      const rows = Array.isArray(content) ? content : [content];
+      return rows.map((row) => ({ ...row, action_type: input.actionType }));
+    };
+    const id = await this.repository.create({
+      ...input,
+      employeeId,
+      contentInside: stampAction(input.contentInside),
+      contentOutside: stampAction(input.contentOutside),
+    });
     return { id };
   }
 }

@@ -1,4 +1,6 @@
 import { markingRepository } from "@/app/repositories/marking.repository";
+import { employeeRepository } from "@/app/repositories/employee.repository";
+import { getRequestCurrentUserId } from "@/app/lib/requestCurrentUser";
 
 export const runtime = "nodejs";
 
@@ -21,7 +23,13 @@ export async function GET(request: Request, context: NextLotRouteContext) {
       return Response.json({ message: "Production date ไม่ถูกต้อง" }, { status: 400 });
     }
 
-    const lastLotEnd = await markingRepository.findLastLotEnd(customerId, productionYear);
+    const employeeId = await getRequestCurrentUserId(request);
+    const employeeLocation = employeeId ? await employeeRepository.findLocationByFsId(employeeId) : null;
+    if (!employeeLocation) {
+      return Response.json({ message: "ไม่พบสาขาของผู้ใช้" }, { status: 400 });
+    }
+
+    const lastLotEnd = await markingRepository.findLastLotEnd(customerId, productionYear, employeeLocation);
     return Response.json({ data: { lotStart: lastLotEnd + 1 } });
   } catch (error) {
     console.error("GET /api/customers/[id]/next-lot", error);

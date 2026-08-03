@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDevAuthSession, isDevAuthBypassEnabled } from "@/app/lib/devAuth";
 import { getHrkpisSessionCookieName, readHrkpisSession } from "@/app/lib/hrkpisSession";
+import { adminAuthService } from "@/app/lib/adminAuth";
 
 export async function GET(request: NextRequest) {
   if (isDevAuthBypassEnabled) {
+    const session = getDevAuthSession();
+    const isAdmin = await adminAuthService.isUserAdmin(session.empId);
     return NextResponse.json({
       authenticated: true,
-      ...getDevAuthSession(),
+      ...session,
+      user: { role: isAdmin ? "admin" : "user" },
     });
   }
 
@@ -17,6 +21,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
+  const isAdmin = await adminAuthService.isUserAdmin(session.empId);
+
   return NextResponse.json({
     authenticated: true,
     userId: session.userId,
@@ -24,5 +30,6 @@ export async function GET(request: NextRequest) {
     userInv: session.userInv,
     imgProfile: session.imgProfile,
     yearAssessment: session.yearAssessment,
+    user: { role: isAdmin ? "admin" : "user" },
   });
 }

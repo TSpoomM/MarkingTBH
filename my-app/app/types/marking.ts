@@ -33,6 +33,7 @@ export interface SaveMarkingPayload {
   lotCount: number;
   lotStart: number;
   productionDate: string;
+  actionType?: "save" | "print";
   contentInside: MarkingContent[];
   contentOutside: MarkingContent[];
 }
@@ -45,6 +46,29 @@ export interface CreateMarkingInput {
   lotCount: number;
   lotStart: number;
   productionDate: string;
+  actionType?: "save" | "print";
   contentInside: MarkingContent | MarkingContent[];
   contentOutside: MarkingContent | MarkingContent[];
+}
+
+export interface MarkingHistoryItem {
+  id: number | string;
+  employeeId: string;
+  employeeName: string;
+  employeeLocation: string;
+  customerId: number;
+  customerName: string;
+  totalLot: number;
+  stickerSides: number;
+  lotStart: number;
+  lotEnd: number;
+  lotCount: number;
+  productionDate: string;
+  actionType: "save" | "print" | "unknown";
+  stickerFormat: string;
+  stickerType: string;
+  stickerOther: string;
+  createdDate: string;
+  inside: MarkingContent[];
+  outside: MarkingContent[];
 }

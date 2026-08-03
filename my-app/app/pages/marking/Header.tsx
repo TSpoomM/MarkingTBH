@@ -14,6 +14,7 @@ export default class Header extends MarkingComponent {
         title="ระบบจัดการคำสั่งซื้อ"
         subtitle="จัดทำรายการบรรจุสินค้า Inside และ Outside"
         action={<div className="header-actions">
+          {this.state.isAdmin && <Link className="add-customer-link" href="/pages/history">History</Link>}
           {this.state.isAdmin && <Link className="add-customer-link" href="/pages/manageCustomer">จัดการ Customer</Link>}
           <Button
             className="export-button"

@@ -1286,10 +1286,31 @@ select {
 .form-notice { padding:13px 16px; border-radius:8px; font-size:13px }
 .form-notice.error { background:#f4e5e4; border:1px solid #e6c4c3; color:#9e343a }
 .form-notice.success { background:#dcece2; border:1px solid #bcd8c6; color:#19633f }
+.history-wrap { max-width:1280px; margin:auto; padding:30px 28px 60px; display:grid; gap:18px }
+.history-filter { padding:18px; display:grid; grid-template-columns:1fr 190px 190px; gap:14px; align-items:end }
+.history-panel { overflow:hidden }
+.history-table-wrap,.history-detail-table-wrap { overflow:auto }
+.history-table,.history-detail-table { width:100%; border-collapse:collapse; font-size:13px; background:#f8faf7 }
+.history-table th,.history-table td,.history-detail-table th,.history-detail-table td { border-bottom:1px solid #d6e0d9; padding:12px 14px; text-align:left; vertical-align:top }
+.history-table th,.history-detail-table th { background:#e7eee8; color:#435148; font-size:11px; text-transform:uppercase; white-space:nowrap }
+.history-table tbody tr:hover { background:#eef4ef }
+.history-badge { min-width:82px; display:inline-flex; justify-content:center; border-radius:999px; padding:5px 9px; font-size:11px; font-weight:800 }
+.history-badge.print { background:#dcece2; color:#19633f }
+.history-badge.save { background:#e3e9f3; color:#355987 }
+.history-badge.unknown { background:#ece8dc; color:#6d5d37 }
+.history-toggle { height:32px; min-width:50px; border:1px solid #b9cbbf; border-radius:7px; background:#fff; color:var(--primary-dark); font-size:12px; font-weight:800; cursor:pointer }
+.history-details { display:grid; gap:14px; padding:8px 0 }
+.history-detail-block { display:grid; gap:8px }
+.history-detail-block h3 { margin:0; font-size:13px; color:#33433a }
+.history-detail-block p,.history-empty { margin:0; padding:28px; color:var(--muted); text-align:center; font-size:13px }
+.history-detail-table { font-size:12px }
 
 @media(max-width:700px) {
 	.header-actions .add-customer-link { display:none }
 	.customer-form-wrap { padding:18px 14px 45px }
+	.history-wrap { padding:18px 14px 45px }
+	.history-filter { grid-template-columns:1fr }
+	.history-table,.history-detail-table { min-width:760px }
 	.config-card { padding:17px }
 	.option-group,.inside-grid { grid-template-columns:1fr }
 	.fixed-field-list { grid-template-columns:1fr 1fr }

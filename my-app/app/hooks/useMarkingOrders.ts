@@ -105,7 +105,7 @@ export class MarkingOrdersController {
     }
   }
 
-  private buildSavePayload(): SaveMarkingPayload {
+  private buildSavePayload(actionType: SaveMarkingPayload["actionType"] = "save"): SaveMarkingPayload {
     return {
       customerId: Number(this.state.customerId),
       totalLot: Number(this.state.totalLot || 0),
@@ -113,6 +113,7 @@ export class MarkingOrdersController {
       lotCount: Number(this.state.lotCount || 1),
       lotStart: this.state.lotStart,
       productionDate: this.state.productionDate,
+      actionType,
       contentInside: this.state.insideRows.map((row) => ({
         ...row,
         production_date: this.state.productionDate,
@@ -216,7 +217,7 @@ export class MarkingOrdersController {
     console.debug(`[Marking] ${label}`, { payload, result });
   }
 
-  async save() {
+  async save(actionType: SaveMarkingPayload["actionType"] = "save") {
     const validationError = this.validate();
     if (validationError) {
       this.setState({ notice: { type: "error", text: validationError } });
@@ -224,7 +225,7 @@ export class MarkingOrdersController {
     }
     this.setState({ isSaving: true });
     try {
-      const payload = this.buildSavePayload();
+      const payload = this.buildSavePayload(actionType);
       this.debugSave("save:start", payload);
       const result = await this.service.saveMarking(payload);
       this.debugSave("save:done", payload, result);
@@ -241,7 +242,7 @@ export class MarkingOrdersController {
   }
 
   async saveAndExport() {
-    const result = await this.save();
+    const result = await this.save("print");
     if (!result) return;
     if (process.env.NODE_ENV !== "production") {
       console.debug("[Marking] export:print");

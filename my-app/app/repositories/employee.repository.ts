@@ -3,6 +3,7 @@ import type { Pool } from "mysql2/promise";
 import { pool } from "../lib/db";
 
 type EmployeeRow = RowDataPacket & { fs_id: string };
+type EmployeeLocationRow = RowDataPacket & { location_emp: string | null };
 
 export class EmployeeRepository {
   constructor(private readonly pool: Pool) {}
@@ -16,6 +17,17 @@ export class EmployeeRepository {
        LIMIT 1`,
     );
     return rows[0]?.fs_id ?? null;
+  }
+
+  async findLocationByFsId(fsId: string) {
+    const [rows] = await this.pool.query<EmployeeLocationRow[]>(
+      `SELECT location_emp
+       FROM tb_employee_list
+       WHERE fs_id = ?
+       LIMIT 1`,
+      [fsId],
+    );
+    return rows[0]?.location_emp?.trim() || null;
   }
 }
 
