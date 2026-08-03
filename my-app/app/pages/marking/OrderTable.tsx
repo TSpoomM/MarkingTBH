@@ -1,6 +1,7 @@
 "use client";
 
 import { Component } from "react";
+import Image from "next/image";
 import type { MarkingContent } from "@/app/types/marking";
 import EmptyState from "./EmptyState";
 import { SectionTitle } from "./FilterPanel";
@@ -19,6 +20,7 @@ interface StickerItem {
   pallet: number;
   side: number;
   productionDate: string;
+  stickerType: string;
   details: StickerDetail[];
 }
 
@@ -35,6 +37,7 @@ interface StickerBuildOptions {
   lotCount: number;
   lotStart: number;
   productionDate: string;
+  stickerType: string;
   layouts: StickerLayouts | undefined;
   insideFields: TemplateField[];
   outsideFields: TemplateField[];
@@ -47,6 +50,16 @@ interface OutsideStickerGroup {
   order: number;
   fields: TemplateField[];
 }
+
+const matchesCondition = (field: TemplateField, stickerType: string, stickerOther: string) => (
+  (!field.condition?.stickerType || field.condition.stickerType === stickerType) &&
+  (!field.condition?.stickerOther || field.condition.stickerOther === stickerOther)
+);
+
+const conditionText = (field: TemplateField) => [
+  field.condition?.stickerType && `Type = ${field.condition.stickerType}`,
+  field.condition?.stickerOther && `Other = ${field.condition.stickerOther}`,
+].filter(Boolean).join(", ");
 
 class StickerFactory {
   static chunk<T>(items: T[], size: number) {
@@ -130,7 +143,7 @@ class StickerFactory {
 
   static build(options: StickerBuildOptions) {
     const {
-      customerName, format, sideCount, lotCount, lotStart, productionDate,
+      customerName, format, sideCount, lotCount, lotStart, productionDate, stickerType,
       layouts, insideFields, outsideFields, insideRow, outsideRow,
     } = options;
     const palletsByLot = STICKER_FORMAT_PALLETS[format as keyof typeof STICKER_FORMAT_PALLETS];
@@ -149,6 +162,7 @@ class StickerFactory {
               pallet,
               side,
               productionDate,
+              stickerType,
               details: detailsForSticker(lotStart + lotIndex, pallet),
             });
           }
@@ -176,7 +190,7 @@ export default class OrderTable extends MarkingComponent {
       (item) => String(item.id) === this.state.customerId,
     );
     const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
-      !field.condition || field.condition.stickerType === this.state.stickerType,
+      matchesCondition(field, this.state.stickerType, this.state.stickerOther),
     );
     const stickerItems = StickerFactory.build({
       customerName: this.state.template?.customerName ?? customer?.name ?? "",
@@ -185,6 +199,7 @@ export default class OrderTable extends MarkingComponent {
       lotCount: Number(this.state.lotCount || 1),
       lotStart: this.state.lotStart,
       productionDate: this.state.productionDate,
+      stickerType: this.state.stickerType,
       layouts: this.state.template?.sticker.layouts,
       insideFields: this.state.template?.inside ?? [],
       outsideFields,
@@ -273,7 +288,11 @@ class TableSection extends Component<TableSectionProps> {
                 <div className="vertical-fields">
                   {fields.map((field) => (
                     <label key={field.key}>
-                      <span>{field.label}{field.required && <em>*</em>}</span>
+                      <span>
+                        {field.label}
+                        {field.required && <em>*</em>}
+                        {field.required && conditionText(field) && <small>บังคับเมื่อ {conditionText(field)}</small>}
+                      </span>
                       {field.segments?.length ? (
                         <div className="horizontal-segment-inputs">
                           {field.segments.map((segment) => (
@@ -322,22 +341,27 @@ class StickerPage extends Component<{ items: StickerItem[]; layout: "frame" | "c
             {item.kind === "customerName" ? (
               <p>{item.customerName}</p>
             ) : (
-              <dl className="sticker-details">
-                {item.details.map((detail) => (
-                  <div className="sticker-detail-row" key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}>
-                    <dt>{detail.label}</dt>
-                    {/* <dt>a</dt> */}
-                    <dd className="sticker-detail-colon">:</dd>
-                    <dd className="sticker-detail-values">
-                      {detail.values.map((value, valueIndex) => (
-                        <span key={`${value.label ?? detail.label}-${value.value}-${valueIndex}`}>
-                          {value.value}
-                        </span>
-                      ))}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <>
+                {item.stickerType === "FCS" && (
+                  <Image className="sticker-fcs-logo" src="/favicon.ico" alt="FCS logo mockup" width={64} height={64} unoptimized />
+                )}
+                <dl className="sticker-details">
+                  {item.details.map((detail) => (
+                    <div className="sticker-detail-row" key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}>
+                      <dt>{detail.label}</dt>
+                      {/* <dt>a</dt> */}
+                      <dd className="sticker-detail-colon">:</dd>
+                      <dd className="sticker-detail-values">
+                        {detail.values.map((value, valueIndex) => (
+                          <span key={`${value.label ?? detail.label}-${value.value}-${valueIndex}`}>
+                            {value.value}
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </>
             )}
           </article>
         ))}

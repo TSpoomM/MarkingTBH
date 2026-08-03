@@ -15,7 +15,10 @@ export interface TemplateField {
     stickerOrder?: number;
     isCounter?: boolean;
   }>;
-  condition?: { stickerType: "TNR" };
+  condition?: {
+    stickerType?: "TNR" | "NON-TNR" | "FCS";
+    stickerOther?: "Dome" | "Inter";
+  };
   showOnSticker?: boolean;
   stickerOrder?: number;
   stickerGroup?: string;

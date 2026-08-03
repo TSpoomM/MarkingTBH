@@ -8,8 +8,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export default class Input extends Component<InputProps> {
   render() {
-    const { label, hint, bare = false, required, ...props } = this.props;
-    const control = <input required={required} {...props} />;
+    const { label, hint, bare = false, required, className = "", ...props } = this.props;
+    const control = <input required={required} className={`app-control ${className}`.trim()} {...props} />;
     if (bare || !label) return control;
     return (
       <label className="field">

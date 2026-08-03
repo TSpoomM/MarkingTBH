@@ -6,11 +6,11 @@ import Navbar from "@/app/components/Navbar";
 import Button from "@/app/components/Button";
 import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
+import Toast from "@/app/components/Toast";
 import type { Customer, CustomerTemplate, TemplateField } from "@/app/types/customer";
 import {
   type CreateCustomerPayload,
   type InsideGroup,
-  type OutsideField,
   type OutsideTable,
   type StickerField,
   type StickerLayoutKey,
@@ -38,6 +38,7 @@ const fixedInsideFields = [
 ] as const;
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+type FieldCondition = TemplateField["condition"];
 
 type CustomerFormNotice = { kind: "error" | "success"; text: string };
 type CustomerManageMode = "edit" | "create";
@@ -110,6 +111,17 @@ const groupSelectedStickerFields = (fields: StickerSelectableField[]) =>
     return [...groups, { label: field.parentLabel, fields: [field] }];
   }, []);
 
+const conditionText = (condition: FieldCondition) => {
+  if (!condition?.stickerType && !condition?.stickerOther) return "ทุกกรณี";
+  return [
+    condition.stickerType && `Type = ${condition.stickerType}`,
+    condition.stickerOther && `Other = ${condition.stickerOther}`,
+  ].filter(Boolean).join(", ");
+};
+
+const cleanCondition = (condition: FieldCondition) =>
+  condition?.stickerType || condition?.stickerOther ? condition : undefined;
+
 interface CustomerFormState {
   mode: CustomerManageMode;
   customers: Customer[];
@@ -119,6 +131,7 @@ interface CustomerFormState {
   name: string;
   stickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
+  templateStickerLayouts: StickerLayouts;
   groups: InsideGroup[];
   tables: OutsideTable[];
   notice: CustomerFormNotice | undefined;
@@ -141,6 +154,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     name: "",
     stickerFields: ["side", "format"],
     stickerLayouts: {
+      insideFrame: true,
+      outsideFrame: true,
+      customerName: false,
+    },
+    templateStickerLayouts: {
       insideFrame: true,
       outsideFrame: true,
       customerName: false,
@@ -208,6 +226,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       selectedCustomerId: customerId,
       templateInsideDraft: [],
       templateOutsideDraft: [],
+      templateStickerLayouts: {
+        insideFrame: true,
+        outsideFrame: true,
+        customerName: false,
+      },
       templateNotice: undefined,
     });
     if (!customerId) return;
@@ -219,6 +242,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       this.setState({
         templateInsideDraft: result.data.inside.map((field) => normalizeCounterField({ ...field, showOnSticker: field.showOnSticker ?? true })),
         templateOutsideDraft: result.data.outside.map((field) => ({ ...field, showOnSticker: field.showOnSticker ?? true })),
+        templateStickerLayouts: result.data.sticker.layouts,
       });
     } catch (error) {
       this.setState({
@@ -251,7 +275,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       [key]: [
         ...this.state[key],
         {
-          key: `${section}_field_${this.state[key].length + 1}`,
+          key: `${section}_field_${uid()}`,
           label: "",
           type: "text",
           required: false,
@@ -304,8 +328,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     if (!this.state.selectedCustomerId) return;
     const cleanFields = (section: "inside" | "outside", fields: TemplateField[]) => fields.map((field, index) => normalizeCounterField({
       ...field,
-      key: field.key.trim() || `${section}_field_${index + 1}`,
+      key: field.key.trim() || `${section}_field_${uid()}`,
       label: field.label.trim(),
+      condition: cleanCondition(field.condition),
       showOnSticker: field.showOnSticker ?? true,
       stickerOrder: field.showOnSticker === false ? undefined : field.stickerOrder ?? index,
     }));
@@ -316,10 +341,18 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       return;
     }
     if (
+      !this.state.templateStickerLayouts.insideFrame &&
+      !this.state.templateStickerLayouts.outsideFrame &&
+      !this.state.templateStickerLayouts.customerName
+    ) {
+      this.setState({ templateNotice: { kind: "error", text: "เลือกรูปแบบสติ๊กเกอร์ที่ต้องพิมพ์อย่างน้อย 1 แบบ" } });
+      return;
+    }
+    if (
       new Set(inside.map((field) => field.key)).size !== inside.length ||
       new Set(outside.map((field) => field.key)).size !== outside.length
     ) {
-      this.setState({ templateNotice: { kind: "error", text: "Key ของแต่ละ Field ต้องไม่ซ้ำกัน" } });
+      this.setState({ templateNotice: { kind: "error", text: "ชื่อ Field บางรายการซ้ำกันในระบบ กรุณาลบแล้วเพิ่ม Field ใหม่อีกครั้ง" } });
       return;
     }
 
@@ -328,7 +361,12 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       const response = await fetch(`/api/customers/${this.state.selectedCustomerId}/template`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-user-role": "admin" },
-        body: JSON.stringify({ inside, outside, updatedBy: "ADMIN" }),
+        body: JSON.stringify({
+          inside,
+          outside,
+          sticker: { layouts: this.state.templateStickerLayouts },
+          updatedBy: "ADMIN",
+        }),
       });
       const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
       if (!response.ok || !result.data) throw new Error(result.message);
@@ -349,31 +387,16 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     }
   };
 
-  private traceableField(): OutsideField {
-    return {
-      key: `traceable_natural_rubber_${uid()}`,
-      label: "Traceable Natural Rubber",
-      required: true,
-      condition: { stickerType: "TNR" },
-      showOnSticker: true,
-      system: true,
-    };
-  }
-
   private changeStickerFields = (nextFields: StickerField[]) => {
-    this.setState((current) => {
-      const enabled = nextFields.includes("type");
-      return {
-        stickerFields: nextFields,
-        tables: current.tables.map((table) => {
-          const userFields = table.fields.filter((field) => !field.system);
-          return {
-            ...table,
-            fields: enabled ? [this.traceableField(), ...userFields] : userFields,
-          };
-        }),
-      };
-    });
+    this.setState({ stickerFields: nextFields });
+  };
+
+  private dismissNotice = () => {
+    this.setState({ notice: undefined });
+  };
+
+  private dismissTemplateNotice = () => {
+    this.setState({ templateNotice: undefined });
   };
 
   private toggleStickerLayout = (layout: StickerLayoutKey) => {
@@ -381,6 +404,15 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       stickerLayouts: {
         ...current.stickerLayouts,
         [layout]: !current.stickerLayouts[layout],
+      },
+    }));
+  };
+
+  private toggleTemplateStickerLayout = (layout: StickerLayoutKey) => {
+    this.setState((current) => ({
+      templateStickerLayouts: {
+        ...current.templateStickerLayouts,
+        [layout]: !current.templateStickerLayouts[layout],
       },
     }));
   };
@@ -468,7 +500,6 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   };
 
   render() {
-    const hasTypeField = this.state.stickerFields.includes("type");
     const selectedCustomer = this.state.customers.find((customer) =>
       String(customer.id) === this.state.selectedCustomerId,
     );
@@ -482,9 +513,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           action={<Link className="back-link" href="/">กลับหน้าหลัก</Link>}
         />
         <main className="customer-form-wrap">
-          {this.state.checkingRole && <div className="form-notice success">กำลังตรวจสอบสิทธิ์...</div>}
+          {this.state.checkingRole && <Toast type="success" message="กำลังตรวจสอบสิทธิ์..." />}
           {!this.state.checkingRole && !this.state.isAdmin && (
-            <div className="form-notice error">เฉพาะ Admin เท่านั้นที่จัดการ Customer และ Sticker Template ได้</div>
+            <Toast type="error" message="เฉพาะ Admin เท่านั้นที่จัดการ Customer และ Sticker Template ได้" />
           )}
           {!this.state.checkingRole && this.state.isAdmin && (
             <>
@@ -529,7 +560,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                     </Button>
                   </div>
                   {this.state.templateNotice && (
-                    <div className={`form-notice ${this.state.templateNotice.kind}`}>{this.state.templateNotice.text}</div>
+                    <Toast
+                      type={this.state.templateNotice.kind}
+                      message={this.state.templateNotice.text}
+                      onClose={this.dismissTemplateNotice}
+                    />
                   )}
                   <label className="customer-name">
                     <span>เลือก Customer</span>
@@ -567,6 +602,24 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                           <strong>{this.state.templateOutsideDraft.length} fields</strong>
                         </div>
                       </div>
+                      <OptionGroup
+                        label="รูปแบบที่ต้องพิมพ์"
+                        hint="Admin เลือกได้ว่าจะพิมพ์สติ๊กเกอร์ในกรอบ, นอกกรอบ และชื่อ Customer หรือไม่"
+                      >
+                        {([
+                          ["insideFrame", "ในกรอบ", "A4 แนวนอน 2x2"],
+                          ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
+                          ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x16"],
+                        ] as const).map(([layout, label, description]) => (
+                          <Choice
+                            key={layout}
+                            label={label}
+                            description={description}
+                            checked={this.state.templateStickerLayouts[layout]}
+                            onChange={() => this.toggleTemplateStickerLayout(layout)}
+                          />
+                        ))}
+                      </OptionGroup>
                       <StickerTemplatePreview
                         customerName={selectedCustomer?.name ?? "Customer"}
                         insideFields={this.state.templateInsideDraft}
@@ -599,7 +652,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
               {this.state.mode === "create" && (
                 <>
                   {this.state.notice && (
-                    <div className={`form-notice ${this.state.notice.kind}`}>{this.state.notice.text}</div>
+                    <Toast
+                      type={this.state.notice.kind}
+                      message={this.state.notice.text}
+                      onClose={this.dismissNotice}
+                    />
                   )}
                   <div className="customer-create-steps">
                     <span className="active">1. ข้อมูล Customer</span>
@@ -732,7 +789,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                               {
                                 id: uid(),
                                 name: `Outside ${current.tables.length + 1}`,
-                                fields: hasTypeField ? [this.traceableField()] : [],
+                                fields: [],
                               },
                             ],
                           }))}
@@ -740,11 +797,6 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                           + เพิ่ม Table
                         </button>
                       </div>
-                      {hasTypeField && (
-                        <div className="tnr-note">
-                          เมื่อ User เลือก Type = TNR ระบบจะบังคับกรอก “Traceable Natural Rubber” ในทุก Outside table
-                        </div>
-                      )}
                       {this.state.tables.length === 0 ? (
                         <div className="outside-empty">
                           <strong>ยังไม่มี Outside table</strong>
@@ -778,7 +830,6 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                                     <span>{fieldIndex + 1}</span>
                                     <input
                                       value={field.label}
-                                      disabled={field.system}
                                       onChange={(event) => this.updateTable(table.id, (item) => ({
                                         ...item,
                                         fields: item.fields.map((row) => (
@@ -791,7 +842,6 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                                       <input
                                         type="checkbox"
                                         checked={field.required}
-                                        disabled={field.system}
                                         onChange={(event) => this.updateTable(table.id, (item) => ({
                                           ...item,
                                           fields: item.fields.map((row) => (
@@ -802,19 +852,24 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                                       {" "}
                                       บังคับกรอก
                                     </label>
-                                    {field.system ? (
-                                      <em>เฉพาะ TNR</em>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={() => this.updateTable(table.id, (item) => ({
-                                          ...item,
-                                          fields: item.fields.filter((row) => row.key !== field.key),
-                                        }))}
-                                      >
-                                        ลบ
-                                      </button>
-                                    )}
+                                    <ConditionSelector
+                                      value={field.condition}
+                                      onChange={(condition) => this.updateTable(table.id, (item) => ({
+                                        ...item,
+                                        fields: item.fields.map((row) => (
+                                          row.key === field.key ? { ...row, condition } : row
+                                        )),
+                                      }))}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => this.updateTable(table.id, (item) => ({
+                                        ...item,
+                                        fields: item.fields.filter((row) => row.key !== field.key),
+                                      }))}
+                                    >
+                                      ลบ
+                                    </button>
                                   </div>
                                 ))}
                                 <button
@@ -863,6 +918,56 @@ function Choice({ label, description, checked, onChange }: { label: string; desc
   return <label className={`choice ${checked ? "selected" : ""}`}><input type="checkbox" checked={checked} onChange={onChange} /><span><b>{label}</b>{description && <small>{description}</small>}</span></label>;
 }
 
+function ConditionSelector({
+  value,
+  disabled = false,
+  onChange,
+}: {
+  value: FieldCondition;
+  disabled?: boolean;
+  onChange: (condition: FieldCondition) => void;
+}) {
+  const setType = (stickerType: string) => {
+    onChange(cleanCondition({
+      ...value,
+      stickerType: stickerType ? stickerType as NonNullable<FieldCondition>["stickerType"] : undefined,
+    }));
+  };
+  const setOther = (stickerOther: string) => {
+    onChange(cleanCondition({
+      ...value,
+      stickerOther: stickerOther ? stickerOther as NonNullable<FieldCondition>["stickerOther"] : undefined,
+    }));
+  };
+  return (
+    <div className="condition-selector">
+      <span>บังคับเมื่อ</span>
+      <select
+        value={value?.stickerType ?? ""}
+        disabled={disabled}
+        onChange={(event) => setType(event.target.value)}
+        aria-label="เงื่อนไข Type"
+      >
+        <option value="">ทุก Type</option>
+        <option value="TNR">Type = TNR</option>
+        <option value="NON-TNR">Type = NON-TNR</option>
+        <option value="FCS">Type = FCS</option>
+      </select>
+      <select
+        value={value?.stickerOther ?? ""}
+        disabled={disabled}
+        onChange={(event) => setOther(event.target.value)}
+        aria-label="เงื่อนไข Other"
+      >
+        <option value="">ทุก Other</option>
+        <option value="Dome">Other = Dome</option>
+        <option value="Inter">Other = Inter</option>
+      </select>
+      <small>{conditionText(value)}</small>
+    </div>
+  );
+}
+
 function TemplateFieldEditor({
   title,
   section,
@@ -896,16 +1001,6 @@ function TemplateFieldEditor({
                 <Input bare value={field.label} onChange={(event) => onChange(section, index, { label: event.target.value })} />
               </label>
               <label>
-                <span>Key</span>
-                <Input
-                  bare
-                  value={field.key}
-                  onChange={(event) => onChange(section, index, {
-                    key: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
-                  })}
-                />
-              </label>
-              <label>
                 <span>ชนิดข้อมูล</span>
                 <Select
                   bare
@@ -927,6 +1022,11 @@ function TemplateFieldEditor({
                 />
                 <span>บังคับกรอก</span>
               </label>
+              <ConditionSelector
+                value={field.condition}
+                disabled={!field.required}
+                onChange={(condition) => onChange(section, index, { condition })}
+              />
               <Button className="delete-field" onClick={() => onRemove(section, index)}>ลบ</Button>
             </article>
             {!!field.segments?.length && (

@@ -248,8 +248,17 @@ export class CustomerService {
   private buildInsideTemplateJson(
     previousInside: string | null,
     fields: TemplateField[],
+    stickerPatch?: Partial<CustomerTemplate["sticker"]>,
   ) {
-    const sticker = this.parseSticker(previousInside);
+    const currentSticker = this.parseSticker(previousInside);
+    const sticker = {
+      ...currentSticker,
+      ...stickerPatch,
+      layouts: {
+        ...currentSticker.layouts,
+        ...stickerPatch?.layouts,
+      },
+    };
     return JSON.stringify({
       version: 2,
       sticker,
@@ -261,13 +270,14 @@ export class CustomerService {
     customerId: number,
     insideFields: TemplateField[],
     fields: TemplateField[],
+    sticker: Partial<CustomerTemplate["sticker"]> | undefined,
     updatedBy: string,
   ) {
     const template = await this.repository.findLatestTemplate(customerId);
     if (!template) throw new Error("ลูกค้ารายนี้ยังไม่มี Template ในฐานข้อมูล");
     const affectedRows = await this.repository.updateTemplate(
       template.id,
-      this.buildInsideTemplateJson(template.inside, insideFields),
+      this.buildInsideTemplateJson(template.inside, insideFields, sticker),
       JSON.stringify(fields),
       updatedBy,
     );

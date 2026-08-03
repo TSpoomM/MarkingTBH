@@ -42,6 +42,10 @@ const fieldSchema = z.object({
   })).optional(),
   showOnSticker: z.boolean().optional(),
   stickerOrder: z.number().int().min(0).optional(),
+  condition: z.object({
+    stickerType: z.enum(["TNR", "NON-TNR", "FCS"]).optional(),
+    stickerOther: z.enum(["Dome", "Inter"]).optional(),
+  }).optional(),
   stickerGroup: z.string().optional(),
   stickerGroupOrder: z.number().int().min(0).optional(),
 });
@@ -49,6 +53,15 @@ const fieldSchema = z.object({
 const updateSchema = z.object({
   inside: z.array(fieldSchema),
   outside: z.array(fieldSchema),
+  sticker: z.object({
+    layouts: z.object({
+      insideFrame: z.boolean(),
+      outsideFrame: z.boolean(),
+      customerName: z.boolean(),
+    }).refine((layouts) => (
+      layouts.insideFrame || layouts.outsideFrame || layouts.customerName
+    ), "เลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ"),
+  }).optional(),
   updatedBy: z.string().trim().min(1).default("ADMIN"),
 });
 
@@ -70,6 +83,7 @@ export async function PUT(
       customerId,
       input.inside,
       input.outside,
+      input.sticker,
       input.updatedBy,
     );
     return Response.json({ data, message: "อัปเดต Template แล้ว" });

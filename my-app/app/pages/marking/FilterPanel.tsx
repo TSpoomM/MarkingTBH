@@ -7,7 +7,7 @@ import {
   STICKER_SIDE_OPTIONS,
   STICKER_TYPE_OPTIONS,
 } from "@/app/types/constants";
-import Alert from "@/app/components/Alert";
+import Toast from "@/app/components/Toast";
 import Card from "@/app/components/Card";
 import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
@@ -18,7 +18,7 @@ export default class FilterPanel extends MarkingComponent {
     return (
       <main className="container">
         {this.state.notice && (
-          <Alert
+          <Toast
             type={this.state.notice.type}
             message={this.state.notice.text}
             onClose={() => this.actions.dismissNotice()}

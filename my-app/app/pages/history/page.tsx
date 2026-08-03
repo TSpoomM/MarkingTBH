@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Component, Fragment, type ChangeEvent } from "react";
 import Navbar from "@/app/components/Navbar";
+import Toast from "@/app/components/Toast";
 import type { MarkingContent, MarkingHistoryItem } from "@/app/types/marking";
 
 type ApiEnvelope<T> = { data?: T; message?: string };
@@ -71,6 +72,10 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
 
   private toggleOpen = (id: string | number) => {
     this.setState((current) => ({ openId: current.openId === id ? null : id }));
+  };
+
+  private dismissNotice = () => {
+    this.setState({ notice: "" });
   };
 
   private filteredItems() {
@@ -166,7 +171,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
           action={<div className="header-actions"><Link className="back-link" href="/">กลับหน้าหลัก</Link></div>}
         />
         <main className="history-wrap">
-          {this.state.notice && <div className="form-notice error">{this.state.notice}</div>}
+          {this.state.notice && <Toast type="error" message={this.state.notice} onClose={this.dismissNotice} />}
 
           <section className="panel history-filter">
             <label className="field">

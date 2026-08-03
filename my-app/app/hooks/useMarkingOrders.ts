@@ -128,6 +128,13 @@ export class MarkingOrdersController {
     };
   }
 
+  private matchesCondition(field: TemplateField) {
+    return (
+      (!field.condition?.stickerType || field.condition.stickerType === this.state.stickerType) &&
+      (!field.condition?.stickerOther || field.condition.stickerOther === this.state.stickerOther)
+    );
+  }
+
   updateRow(section: "inside" | "outside", rowIndex: number, key: string, value: string) {
     const stateKey = section === "inside" ? "insideRows" : "outsideRows";
     const rows = this.state[stateKey].map((row, index) =>
@@ -195,7 +202,9 @@ export class MarkingOrdersController {
     if (stickerFields.includes("other") && !this.state.stickerOther) return "กรุณาเลือก Other";
     for (const [index, row] of insideRows.entries()) {
       const missing = template?.inside.find((field) =>
-        field.required && (field.segments?.length
+        field.required &&
+        this.matchesCondition(field) &&
+        (field.segments?.length
           ? field.segments.some((segment) => !segment.isCounter && !row[segment.key]?.trim())
           : !row[field.key]?.trim()),
       );
@@ -204,7 +213,7 @@ export class MarkingOrdersController {
     for (const [index, row] of outsideRows.entries()) {
       const missing = template?.outside.find((field) =>
         field.required &&
-        (!field.condition || field.condition.stickerType === this.state.stickerType) &&
+        this.matchesCondition(field) &&
         !row[field.key]?.trim(),
       );
       if (missing) return `Outside แถว ${index + 1}: กรุณากรอก ${missing.label}`;

@@ -25,7 +25,7 @@ export default class Modal extends Component<ModalProps> {
         >
           <header>
             <div><h2 id="shared-modal-title">{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
-            <Button onClick={onClose} aria-label="ปิด">×</Button>
+            <Button className="icon-button modal-close" onClick={onClose} aria-label="ปิด">×</Button>
           </header>
           {children}
           {footer && <footer>{footer}</footer>}

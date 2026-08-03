@@ -29,7 +29,10 @@ const outsideFieldSchema = z.object({
   key: z.string().min(1),
   label: z.string().trim().min(1, "กรุณาระบุชื่อแถว"),
   required: z.boolean(),
-  condition: z.object({ stickerType: z.literal("TNR") }).optional(),
+  condition: z.object({
+    stickerType: z.enum(["TNR", "NON-TNR", "FCS"]).optional(),
+    stickerOther: z.enum(["Dome", "Inter"]).optional(),
+  }).optional(),
   showOnSticker: z.boolean().optional(),
   stickerOrder: z.number().int().min(0).optional(),
   system: z.boolean().optional(),
@@ -85,19 +88,6 @@ export async function POST(request: Request) {
     ) {
       return Response.json(
         { message: "ต้องเปิด Side และ Format เพื่อคำนวณจำนวนสติ๊กเกอร์" },
-        { status: 400 },
-      );
-    }
-    const hasTypeField = input.configuration.sticker.enabledFields.includes("type");
-    const hasTraceableField = input.configuration.outside.tables.every((table) =>
-      table.fields.some((field) =>
-        field.condition?.stickerType === "TNR" &&
-        field.label.toLowerCase().includes("traceable natural rubber"),
-      ),
-    );
-    if (hasTypeField && input.configuration.outside.tables.length > 0 && !hasTraceableField) {
-      return Response.json(
-        { message: "Outside ทุกตารางต้องมี Traceable Natural Rubber สำหรับ Type TNR" },
         { status: 400 },
       );
     }

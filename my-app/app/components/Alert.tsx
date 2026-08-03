@@ -13,7 +13,7 @@ export default class Alert extends Component<AlertProps> {
     return (
       <div className={`notice ${type}`} role={type === "error" ? "alert" : "status"}>
         <span>{message}</span>
-        {onClose && <Button onClick={onClose} aria-label="ปิดข้อความ">×</Button>}
+        {onClose && <Button className="icon-button notice-close" onClick={onClose} aria-label="ปิดข้อความ">×</Button>}
       </div>
     );
   }

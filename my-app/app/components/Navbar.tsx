@@ -15,9 +15,9 @@ export default class Navbar extends Component<NavbarProps> {
         <div className="header-inner">
           <div className="logo">
             {badge && <span>{badge}</span>}
-            <div><h1>{title}</h1>{subtitle && <p>{subtitle}</p>}</div>
+            <div className="logo-copy"><h1>{title}</h1>{subtitle && <p>{subtitle}</p>}</div>
           </div>
-          {action}
+          {action && <div className="navbar-action">{action}</div>}
         </div>
       </header>
     );
