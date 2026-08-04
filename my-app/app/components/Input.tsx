@@ -1,10 +1,5 @@
-import { Component, type InputHTMLAttributes } from "react";
-
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  hint?: string;
-  bare?: boolean;
-}
+import { Component } from "react";
+import type { InputProps } from "@/app/types/ui";
 
 export default class Input extends Component<InputProps> {
   render() {

@@ -1,24 +1,8 @@
 import { pool } from "@/app/lib/db";
 import { currentUserService } from "@/app/lib/currentUser";
 import { getRequestCurrentUserId } from "@/app/lib/requestCurrentUser";
-import { RowDataPacket } from "mysql2";
-
-type EmployeeRoleRow = RowDataPacket & {
-  position: string | null;
-};
-
-type EmployeeReportAccessRow = RowDataPacket & {
-  section: string | number | null;
-  location_emp: string | null;
-};
-
-export type AdminAccess = {
-  userId: string;
-  isAdmin: boolean;
-  isBranchManager: boolean;
-  branch: string | null;
-  canAccessReport: boolean;
-};
+import type { AdminAccess } from "@/app/types/auth";
+import type { EmployeeReportAccessRow, EmployeeRoleRow } from "@/app/types/database";
 
 export class AdminAuthService {
   private getAdminUserIds(): Set<string> {

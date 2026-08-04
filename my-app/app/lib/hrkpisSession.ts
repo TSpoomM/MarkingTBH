@@ -2,6 +2,7 @@
 // can recognize a user who is already logged into hrkpis, without a separate login.
 import { readFile, stat } from "fs/promises";
 import path from "path";
+import type { HrkpisSession, PhpValue } from "@/app/types/auth";
 
 const SESSION_COOKIE_NAME = process.env.PHP_SESSION_COOKIE_NAME || "PHPSESSID";
 const SESSION_SAVE_PATH = process.env.PHP_SESSION_SAVE_PATH || "C:\\xampp\\tmp";
@@ -10,19 +11,6 @@ const SESSION_MAX_AGE_SECONDS = Number(process.env.PHP_SESSION_MAX_AGE_SECONDS) 
 // PHP session ids only ever contain this character set (session.sid_bits_per_character=6 default).
 // Validating against it before building a filesystem path also rules out path traversal.
 const VALID_SESSION_ID = /^[a-zA-Z0-9,-]{1,128}$/;
-
-export type HrkpisSession = {
-  userId: string;
-  empId: string;
-  userInv: string;
-  imgProfile?: string;
-  yearAssessment?: string;
-};
-
-type PhpValue = string | number | boolean | null | PhpValueRecord;
-interface PhpValueRecord {
-  [key: string]: PhpValue;
-}
 
 function parsePhpValue(raw: string, pos: number): [PhpValue, number] {
   const type = raw[pos];

@@ -12,6 +12,12 @@ export interface StickerLayouts {
   customerName: boolean;
 }
 
+export const DEFAULT_STICKER_LAYOUTS: StickerLayouts = {
+  insideFrame: true,
+  outsideFrame: true,
+  customerName: false,
+};
+
 export interface SegmentDefinition {
   key: string;
   label: string;

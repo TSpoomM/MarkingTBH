@@ -1,11 +1,6 @@
 import { Component } from "react";
 import Button from "./Button";
-
-export interface AlertProps {
-  type: "error" | "success";
-  message: string;
-  onClose?: () => void;
-}
+import type { AlertProps } from "@/app/types/ui";
 
 export default class Alert extends Component<AlertProps> {
   render() {

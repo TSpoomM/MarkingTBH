@@ -1,10 +1,5 @@
-import { Component, type ButtonHTMLAttributes, type ReactNode } from "react";
-
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
-  loading?: boolean;
-  loadingText?: string;
-}
+import { Component } from "react";
+import type { ButtonProps } from "@/app/types/ui";
 
 export default class Button extends Component<ButtonProps> {
   render() {

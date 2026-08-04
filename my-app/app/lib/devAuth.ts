@@ -1,4 +1,4 @@
-import type { HrkpisSession } from "./hrkpisSession";
+import type { HrkpisSession } from "@/app/types/auth";
 
 export const isDevAuthBypassEnabled =
   process.env.NODE_ENV === "development" && process.env.DEV_AUTH_BYPASS === "true";

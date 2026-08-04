@@ -1,12 +1,9 @@
 import { markingRepository } from "@/app/repositories/marking.repository";
 import { employeeRepository } from "@/app/repositories/employee.repository";
 import { getRequestCurrentUserId } from "@/app/lib/requestCurrentUser";
+import type { NextLotRouteContext } from "@/app/types/api";
 
 export const runtime = "nodejs";
-
-type NextLotRouteContext = {
-  params: Promise<{ id: string }>;
-};
 
 export async function GET(request: Request, context: NextLotRouteContext) {
   try {

@@ -1,6 +1,6 @@
 import { Component } from "react";
 import Button from "./Button";
-import { type AlertProps } from "./Alert";
+import type { AlertProps } from "@/app/types/ui";
 
 export default class Toast extends Component<AlertProps> {
   render() {

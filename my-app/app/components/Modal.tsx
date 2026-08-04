@@ -1,14 +1,6 @@
-import { Component, type ReactNode } from "react";
+import { Component } from "react";
 import Button from "./Button";
-
-export interface ModalProps {
-  open: boolean;
-  title: string;
-  subtitle?: ReactNode;
-  children: ReactNode;
-  footer?: ReactNode;
-  onClose: () => void;
-}
+import type { ModalProps } from "@/app/types/ui";
 
 export default class Modal extends Component<ModalProps> {
   render() {

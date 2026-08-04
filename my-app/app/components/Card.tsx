@@ -1,8 +1,5 @@
-import { Component, type HTMLAttributes, type ReactNode } from "react";
-
-export interface CardProps extends HTMLAttributes<HTMLElement> {
-  children: ReactNode;
-}
+import { Component } from "react";
+import type { CardProps } from "@/app/types/ui";
 
 export default class Card extends Component<CardProps> {
   render() {

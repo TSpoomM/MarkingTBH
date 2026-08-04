@@ -3,13 +3,7 @@ import {
   CustomerRepository,
 } from "../repositories/customer.repository";
 import type { CustomerTemplate, TemplateField } from "@/app/types/customer";
-import type { CreateCustomerPayload } from "@/app/types/customer-form";
-
-const DEFAULT_STICKER_LAYOUTS = {
-  insideFrame: true,
-  outsideFrame: true,
-  customerName: false,
-};
+import { DEFAULT_STICKER_LAYOUTS, type CreateCustomerPayload } from "@/app/types/customer-form";
 
 export class CustomerService {
   constructor(private readonly repository: CustomerRepository) {}

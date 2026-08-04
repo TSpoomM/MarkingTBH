@@ -9,47 +9,14 @@ import Card from "@/app/components/Card";
 import Input from "@/app/components/Input";
 import MarkingComponent from "./MarkingComponent";
 import { STICKER_FORMAT_PALLETS } from "@/app/types/constants";
-import { TemplateField, type StickerLayouts } from "@/app/types/customer";
-
-type StickerKind = "insideFrame" | "outsideFrame" | "customerName";
-
-interface StickerItem {
-  kind: StickerKind;
-  customerName: string;
-  lot: number;
-  pallet: number;
-  side: number;
-  productionDate: string;
-  stickerType: string;
-  details: StickerDetail[];
-}
-
-interface StickerDetail {
-  label: string;
-  values: Array<{ label?: string; value: string }>;
-  order: number;
-}
-
-interface StickerBuildOptions {
-  customerName: string;
-  format: string;
-  sideCount: number;
-  lotCount: number;
-  lotStart: number;
-  productionDate: string;
-  stickerType: string;
-  layouts: StickerLayouts | undefined;
-  insideFields: TemplateField[];
-  outsideFields: TemplateField[];
-  insideRow: MarkingContent | undefined;
-  outsideRow: MarkingContent | undefined;
-}
-
-interface OutsideStickerGroup {
-  name: string;
-  order: number;
-  fields: TemplateField[];
-}
+import { TemplateField } from "@/app/types/customer";
+import type {
+  OutsideStickerGroup,
+  StickerBuildOptions,
+  StickerItem,
+  StickerKind,
+  TableSectionProps,
+} from "@/app/types/marking-sticker";
 
 const matchesCondition = (field: TemplateField, stickerType: string, stickerOther: string) => (
   (!field.condition?.stickerType || field.condition.stickerType === stickerType) &&
@@ -253,17 +220,6 @@ export default class OrderTable extends MarkingComponent {
       </>
     );
   }
-}
-
-interface TableSectionProps {
-  number: string;
-  title: string;
-  subtitle: string;
-  fields: TemplateField[];
-  rows: MarkingContent[];
-  lotStart: number;
-  onChange: (row: number, key: string, value: string) => void;
-  emptyText?: string;
 }
 
 class TableSection extends Component<TableSectionProps> {

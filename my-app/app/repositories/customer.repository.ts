@@ -1,14 +1,7 @@
-import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import type { ResultSetHeader } from "mysql2";
 import type { Pool } from "mysql2/promise";
 import { pool } from "../lib/db";
-
-export type CustomerRow = RowDataPacket & { c_id: number; c_name: string };
-export type TemplateRow = RowDataPacket & {
-  id: number;
-  c_id: number;
-  inside: string | null;
-  outside: string | null;
-};
+import type { CustomerRow, TemplateRow } from "@/app/types/database";
 
 export class CustomerRepository {
   constructor(private readonly pool: Pool) {}

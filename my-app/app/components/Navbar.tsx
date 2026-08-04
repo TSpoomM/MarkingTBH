@@ -1,11 +1,5 @@
-import { Component, type ReactNode } from "react";
-
-export interface NavbarProps {
-  badge?: ReactNode;
-  title: string;
-  subtitle?: string;
-  action?: ReactNode;
-}
+import { Component } from "react";
+import type { NavbarProps } from "@/app/types/ui";
 
 export default class Navbar extends Component<NavbarProps> {
   render() {

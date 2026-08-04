@@ -1,11 +1,5 @@
-import { Component, type ReactNode, type SelectHTMLAttributes } from "react";
-
-export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  hint?: string;
-  children: ReactNode;
-  bare?: boolean;
-}
+import { Component } from "react";
+import type { SelectProps } from "@/app/types/ui";
 
 export default class Select extends Component<SelectProps> {
   render() {

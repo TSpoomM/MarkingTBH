@@ -1,11 +1,8 @@
 import { customerService } from "../../../../services/customer.service";
 import { z, ZodError } from "zod";
+import type { CustomerTemplateRouteContext } from "@/app/types/api";
 
 export const runtime = "nodejs";
-
-type CustomerTemplateRouteContext = {
-  params: Promise<{ id: string }>;
-};
 
 export async function GET(
   _request: Request,

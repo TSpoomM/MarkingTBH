@@ -1,9 +1,6 @@
-import type { RowDataPacket } from "mysql2";
 import type { Pool } from "mysql2/promise";
 import { pool } from "../lib/db";
-
-type EmployeeRow = RowDataPacket & { fs_id: string };
-type EmployeeLocationRow = RowDataPacket & { location_emp: string | null };
+import type { EmployeeLocationRow, EmployeeRow } from "@/app/types/database";
 
 export class EmployeeRepository {
   constructor(private readonly pool: Pool) {}

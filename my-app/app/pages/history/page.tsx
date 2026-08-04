@@ -5,18 +5,8 @@ import { Component, Fragment, type ChangeEvent } from "react";
 import Navbar from "@/app/components/Navbar";
 import Toast from "@/app/components/Toast";
 import type { MarkingContent, MarkingHistoryItem } from "@/app/types/marking";
-
-type ApiEnvelope<T> = { data?: T; message?: string };
-
-interface HistoryPageState {
-  items: MarkingHistoryItem[];
-  isLoading: boolean;
-  notice: string;
-  query: string;
-  action: "all" | MarkingHistoryItem["actionType"];
-  date: string;
-  openId: string | number | null;
-}
+import type { ApiEnvelope } from "@/app/types/api";
+import type { HistoryPageState } from "@/app/types/history";
 
 export default class HistoryPage extends Component<Record<string, never>, HistoryPageState> {
   private isActive = false;

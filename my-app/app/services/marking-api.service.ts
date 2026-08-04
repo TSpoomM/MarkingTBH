@@ -6,13 +6,12 @@ import type {
 import type {
   SaveMarkingPayload,
 } from "@/app/types/marking";
-
-type ApiEnvelope<T> = { data: T; message?: string };
+import type { DataApiEnvelope } from "@/app/types/api";
 
 export class MarkingApiService {
   private async request<T>(url: string, init?: RequestInit): Promise<T> {
     const response = await fetch(url, init);
-    const body = (await response.json()) as ApiEnvelope<T>;
+    const body = (await response.json()) as DataApiEnvelope<T>;
     if (!response.ok) throw new Error(body.message ?? "Request failed");
     return body.data;
   }
