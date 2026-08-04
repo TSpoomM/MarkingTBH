@@ -11,7 +11,7 @@ import type {
   MarkingState,
   SaveMarkingPayload,
 } from "@/app/types/marking";
-import { TemplateField } from "@/app/types/customer";
+import type { CounterType, TemplateField } from "@/app/types/customer";
 
 export class MarkingOrdersController {
   private state: MarkingState = { ...INITIAL_MARKING_STATE };
@@ -62,6 +62,7 @@ export class MarkingOrdersController {
     try {
       const productionDate = this.state.productionDate || this.today();
       const template = await this.service.getTemplate(Number(customerId));
+      const lotStart = await this.loadLotStart(customerId, productionDate);
       this.setState({
         template,
         stickerSides: "",
@@ -69,11 +70,11 @@ export class MarkingOrdersController {
         stickerType: "",
         stickerOther: "",
         lotCount: "1",
+        lotStart,
         productionDate,
-        insideRows: [this.emptyRow(template.inside)],
-        outsideRows: template.outside.length ? [this.emptyRow(template.outside)] : [],
+        insideRows: [this.emptyRow(template.inside, lotStart)],
+        outsideRows: template.outside.length ? [this.emptyRow(template.outside, lotStart)] : [],
       });
-      await this.refreshLotStart(customerId, productionDate);
     } catch (error) {
       this.setState({ notice: { type: "error", text: this.errorMessage(error, MESSAGES.loadFailed) } });
     } finally {
@@ -96,13 +97,22 @@ export class MarkingOrdersController {
   dismissNotice() { this.setState({ notice: null }); }
   closeTemplateEditor() { this.setState({ isTemplateEditorOpen: false }); }
 
-  private async refreshLotStart(customerId: string, productionDate: string) {
+  private async loadLotStart(customerId: string, productionDate: string) {
     try {
-      const lotStart = await this.service.getNextLotStart(Number(customerId), productionDate);
-      this.setState({ lotStart });
+      return await this.service.getNextLotStart(Number(customerId), productionDate);
     } catch {
-      this.setState({ lotStart: 1 });
+      return 1;
     }
+  }
+
+  private async refreshLotStart(customerId: string, productionDate: string) {
+    const previousLotStart = this.state.lotStart;
+    const lotStart = await this.loadLotStart(customerId, productionDate);
+    this.setState({
+      lotStart,
+      insideRows: this.withCounterDefaults(this.state.insideRows, this.state.template?.inside ?? [], lotStart, previousLotStart),
+      outsideRows: this.withCounterDefaults(this.state.outsideRows, this.state.template?.outside ?? [], lotStart, previousLotStart),
+    });
   }
 
   private buildSavePayload(actionType: SaveMarkingPayload["actionType"] = "save"): SaveMarkingPayload {
@@ -135,12 +145,29 @@ export class MarkingOrdersController {
     );
   }
 
+  private isLotCounterKey(section: "inside" | "outside", key: string) {
+    const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
+    return fields?.some((field) =>
+      field.segments?.some((segment) =>
+        segment.key === key &&
+        segment.isCounter &&
+        this.counterType(field, segment) === "lot",
+      ),
+    ) ?? key.toLowerCase().includes("lot");
+  }
+
   updateRow(section: "inside" | "outside", rowIndex: number, key: string, value: string) {
     const stateKey = section === "inside" ? "insideRows" : "outsideRows";
+    const normalizedValue = value.toUpperCase();
     const rows = this.state[stateKey].map((row, index) =>
-      index === rowIndex ? { ...row, [key]: value } : row,
+      index === rowIndex ? { ...row, [key]: normalizedValue } : row,
     );
-    this.setState({ [stateKey]: rows });
+    this.setState({
+      [stateKey]: rows,
+      ...(this.isLotCounterKey(section, key) && Number.isInteger(Number(normalizedValue)) && Number(normalizedValue) > 0
+        ? { lotStart: Number(normalizedValue) }
+        : {}),
+    });
   }
 
   openTemplateEditor() {
@@ -285,8 +312,8 @@ export class MarkingOrdersController {
       const template = await this.service.saveTemplate(Number(this.state.customerId), inside, outside);
       this.setState({
         template,
-        insideRows: template.inside.length ? [this.emptyRow(template.inside)] : [],
-        outsideRows: template.outside.length ? [this.emptyRow(template.outside)] : [],
+        insideRows: template.inside.length ? [this.emptyRow(template.inside, this.state.lotStart)] : [],
+        outsideRows: template.outside.length ? [this.emptyRow(template.outside, this.state.lotStart)] : [],
         isTemplateEditorOpen: false,
         notice: { type: "success", text: MESSAGES.templateSaved },
       });
@@ -301,12 +328,48 @@ export class MarkingOrdersController {
     return error instanceof Error ? error.message : fallback;
   }
 
-  private emptyRow(fields: TemplateField[]): MarkingContent {
+  private counterType(field: Pick<TemplateField, "key" | "label">, segment?: { counterType?: CounterType }) {
+    if (segment?.counterType) return segment.counterType;
+    const key = field.key.toLowerCase();
+    const label = field.label.toLowerCase();
+    return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
+  }
+
+  private counterDefault(
+    field: Pick<TemplateField, "key" | "label">,
+    lotStart: number,
+    segment?: { counterType?: CounterType },
+  ) {
+    return this.counterType(field, segment) === "pallet" ? "1" : String(lotStart || 1);
+  }
+
+  private emptyRow(fields: TemplateField[], lotStart = this.state.lotStart): MarkingContent {
     return Object.fromEntries(fields.flatMap((field) =>
       field.segments?.length
-        ? field.segments.map((segment) => [segment.key, ""])
-        : [[field.key, field.defaultValue ?? ""]],
+        ? field.segments.map((segment) => [segment.key, segment.isCounter ? this.counterDefault(field, lotStart, segment) : ""])
+        : [[field.key, String(field.defaultValue ?? "").toUpperCase()]],
     ));
+  }
+
+  private withCounterDefaults(
+    rows: MarkingContent[],
+    fields: TemplateField[],
+    lotStart: number,
+    previousLotStart: number,
+  ) {
+    return rows.map((row) => {
+      const nextRow = { ...row };
+      fields.forEach((field) => {
+        field.segments?.forEach((segment) => {
+          if (!segment.isCounter) return;
+          const previousDefault = this.counterDefault(field, previousLotStart, segment);
+          if (!nextRow[segment.key] || nextRow[segment.key] === previousDefault) {
+            nextRow[segment.key] = this.counterDefault(field, lotStart, segment);
+          }
+        });
+      });
+      return nextRow;
+    });
   }
 
   private today() {

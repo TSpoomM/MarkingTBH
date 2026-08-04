@@ -22,6 +22,7 @@ const segmentSchema = z.object({
   key: z.string().min(1),
   type: z.enum(["text", "number"]).optional(),
   isCounter: z.boolean().optional(),
+  counterType: z.enum(["lot", "pallet"]).optional(),
   label: z.string().trim().min(1, "กรุณาระบุชื่อแต่ละส่วน"),
 });
 

@@ -2,7 +2,7 @@ import { Component } from "react";
 import Button from "@/app/components/Button";
 import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
-import type { TemplateField } from "@/app/types/customer";
+import type { CounterType, TemplateField } from "@/app/types/customer";
 import type {
   ChoiceProps,
   ConditionSelectorProps,
@@ -23,6 +23,12 @@ export const isCounterField = (field: Pick<TemplateField, "key" | "label">) => {
   return key.includes("lot") || key.includes("pallet") || label.includes("lot") || label.includes("pallet");
 };
 
+export const inferCounterType = (field: Pick<TemplateField, "key" | "label">): CounterType => {
+  const key = field.key.toLowerCase();
+  const label = field.label.toLowerCase();
+  return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
+};
+
 export const normalizeCounterField = (field: TemplateField): TemplateField => {
   if (!field.segments?.length || !isCounterField(field)) return field;
   const counterIndex = field.segments.findIndex((segment) => segment.isCounter);
@@ -32,6 +38,9 @@ export const normalizeCounterField = (field: TemplateField): TemplateField => {
       ...segment,
       isCounter: counterIndex >= 0 ? index === counterIndex : index === 0,
       type: (counterIndex >= 0 ? index === counterIndex : index === 0) ? "number" : segment.type ?? "text",
+      counterType: (counterIndex >= 0 ? index === counterIndex : index === 0)
+        ? segment.counterType ?? inferCounterType(field)
+        : segment.counterType,
       showOnSticker: (counterIndex >= 0 ? index === counterIndex : index === 0)
         ? true
         : segment.showOnSticker,
@@ -44,7 +53,7 @@ const stickerSelectableFields = (fields: TemplateField[]): StickerSelectableFiel
     field.segments?.length
       ? field.segments.map((segment) => ({
         key: `${field.key}.${segment.key}`,
-        label: `${field.label} - ${segment.label}${segment.isCounter ? " (+1)" : ""}`,
+        label: `${field.label} - ${segment.label}${segment.isCounter ? ` (+${segment.counterType ?? inferCounterType(field)})` : ""}`,
         parentLabel: field.label,
         parentOrder: field.stickerOrder,
         segmentLabel: segment.label,
@@ -234,11 +243,29 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                                 ...item,
                                 isCounter: itemIndex === segmentIndex,
                                 type: itemIndex === segmentIndex ? "number" : "text",
+                                counterType: itemIndex === segmentIndex ? item.counterType ?? inferCounterType(field) : item.counterType,
                               })),
                             })}
                           >
                             Count
                           </button>
+                        )}
+                        {segment.isCounter && (
+                          <Select
+                            bare
+                            value={segment.counterType ?? inferCounterType(field)}
+                            onChange={(event) => onChange(section, index, {
+                              segments: field.segments?.map((item, itemIndex) =>
+                                itemIndex === segmentIndex
+                                  ? { ...item, counterType: event.target.value as CounterType }
+                                  : item,
+                              ),
+                            })}
+                            aria-label="Counter type"
+                          >
+                            <option value="lot">Lot</option>
+                            <option value="pallet">Pallet</option>
+                          </Select>
                         )}
                         <button
                           type="button"
@@ -251,6 +278,9 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                                 ...item,
                                 isCounter: countableField ? (counterIndex >= 0 ? itemIndex === counterIndex : itemIndex === 0) : item.isCounter,
                                 type: countableField && (counterIndex >= 0 ? itemIndex === counterIndex : itemIndex === 0) ? "number" : item.type ?? "text",
+                                counterType: countableField && (counterIndex >= 0 ? itemIndex === counterIndex : itemIndex === 0)
+                                  ? item.counterType ?? inferCounterType(field)
+                                  : item.counterType,
                               })),
                             });
                           }}
@@ -272,6 +302,7 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                           type: "text",
                           showOnSticker: false,
                           isCounter: false,
+                          counterType: inferCounterType(field),
                         },
                       ],
                     })}
@@ -324,11 +355,9 @@ export class StickerTemplatePreview extends Component<StickerTemplatePreviewProp
 
 class PreviewSticker extends Component<PreviewStickerProps> {
   render() {
-    const { title, section, customerName, fields, onSelect } = this.props;
-    const selectableFields = stickerSelectableFields(fields);
+    const { title, customerName, fields } = this.props;
     const selectedFields = selectedStickerFields(fields);
     const groupedFields = groupSelectedStickerFields(selectedFields);
-    const nextOrder = selectedFields.reduce((max, field) => Math.max(max, field.stickerOrder ?? 0), -1) + 1;
 
     return (
       <article className="sticker-preview-card">
@@ -342,36 +371,19 @@ class PreviewSticker extends Component<PreviewStickerProps> {
               <dt>{group.label}</dt>
               <dd>
                 <div className="sticker-preview-section-selects">
-                  {group.fields.map((selected, index) => (
-                    <select
-                      value={selected.key}
+                  {group.fields.map((selected) => (
+                    <input
+                      disabled
+                      value={selected.label}
                       key={selected.key}
                       aria-label={selected.segmentLabel ?? selected.label}
-                      onChange={(event) => onSelect(section, selected.stickerOrder ?? index, event.target.value)}
-                    >
-                      <option value="">ไม่แสดง</option>
-                      {selectableFields.map((field) => (
-                        <option value={field.key} key={field.key}>{field.label}</option>
-                      ))}
-                    </select>
+                      readOnly
+                    />
                   ))}
                 </div>
               </dd>
             </div>
           ))}
-          <div className="sticker-preview-select-row">
-            <dt>เพิ่มข้อมูล</dt>
-            <dd>
-              <select value="" onChange={(event) => onSelect(section, nextOrder, event.target.value)}>
-                <option value="">เลือก field</option>
-                {selectableFields
-                  .filter((field) => !field.showOnSticker)
-                  .map((field) => (
-                    <option value={field.key} key={field.key}>{field.label}</option>
-                  ))}
-              </select>
-            </dd>
-          </div>
         </dl>
       </article>
     );

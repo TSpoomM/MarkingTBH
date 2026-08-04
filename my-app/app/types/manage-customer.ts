@@ -139,6 +139,7 @@ export const createSegments = (group: InsideGroup["key"], count: number) =>
   Array.from({ length: count }, (_, index) => ({
     key: `${group}_${index + 1}`,
     isCounter: index === 0,
+    counterType: group === "lotNo" ? "lot" as const : "pallet" as const,
     type: index === 0 ? "number" as const : "text" as const,
     label: `ส่วนที่ ${index + 1}`,
   }));

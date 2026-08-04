@@ -1,4 +1,5 @@
 export type FieldType = "text" | "number" | "date" | "textarea";
+export type CounterType = "lot" | "pallet";
 
 export interface TemplateField {
   key: string;
@@ -14,6 +15,7 @@ export interface TemplateField {
     showOnSticker?: boolean;
     stickerOrder?: number;
     isCounter?: boolean;
+    counterType?: CounterType;
   }>;
   condition?: {
     stickerType?: "TNR" | "NON-TNR" | "FCS";

@@ -2,7 +2,7 @@ import {
   customerRepository,
   CustomerRepository,
 } from "../repositories/customer.repository";
-import type { CustomerTemplate, TemplateField } from "@/app/types/customer";
+import type { CounterType, CustomerTemplate, TemplateField } from "@/app/types/customer";
 import { DEFAULT_STICKER_LAYOUTS, type CreateCustomerPayload } from "@/app/types/customer-form";
 
 export class CustomerService {
@@ -21,6 +21,12 @@ export class CustomerService {
     return key.includes("lot") || key.includes("pallet") || label.includes("lot") || label.includes("pallet");
   }
 
+  private counterType(field: Pick<TemplateField, "key" | "label">): CounterType {
+    const key = field.key.toLowerCase();
+    const label = field.label.toLowerCase();
+    return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
+  }
+
   private normalizeCounterSegments(field: TemplateField): TemplateField {
     if (!field.segments?.length || !this.isCounterField(field)) return field;
     const counterIndex = field.segments.findIndex((segment) => segment.isCounter);
@@ -30,6 +36,9 @@ export class CustomerService {
         ...segment,
         isCounter: counterIndex >= 0 ? index === counterIndex : index === 0,
         type: (counterIndex >= 0 ? index === counterIndex : index === 0) ? "number" : segment.type ?? "text",
+        counterType: (counterIndex >= 0 ? index === counterIndex : index === 0)
+          ? segment.counterType ?? this.counterType(field)
+          : segment.counterType,
         showOnSticker: (counterIndex >= 0 ? index === counterIndex : index === 0)
           ? true
           : segment.showOnSticker,
@@ -73,7 +82,7 @@ export class CustomerService {
       const parsed: unknown = JSON.parse(value);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         const config = parsed as {
-          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; isCounter?: boolean }> }>;
+          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; isCounter?: boolean; counterType?: CounterType }> }>;
           fields?: Array<Partial<TemplateField>>;
           tables?: Array<{ name?: string; fields?: Array<Partial<TemplateField>> }>;
         };
@@ -119,6 +128,7 @@ export class CustomerService {
                 stickerOrder: groupIndex * 10 + fieldIndex,
                 type: field.isCounter ? "number" : "text",
                 isCounter: field.isCounter,
+                counterType: field.counterType,
               })),
             });
           });

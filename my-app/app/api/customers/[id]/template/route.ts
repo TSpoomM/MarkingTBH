@@ -36,6 +36,7 @@ const fieldSchema = z.object({
     showOnSticker: z.boolean().optional(),
     stickerOrder: z.number().int().min(0).optional(),
     isCounter: z.boolean().optional(),
+    counterType: z.enum(["lot", "pallet"]).optional(),
   })).optional(),
   showOnSticker: z.boolean().optional(),
   stickerOrder: z.number().int().min(0).optional(),

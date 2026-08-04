@@ -5,6 +5,7 @@ export const STICKER_FORMATS = {
 
 export type StickerField = "side" | "format" | "type" | "other";
 export type StickerLayoutKey = "insideFrame" | "outsideFrame" | "customerName";
+export type CounterType = "lot" | "pallet";
 
 export interface StickerLayouts {
   insideFrame: boolean;
@@ -23,6 +24,7 @@ export interface SegmentDefinition {
   label: string;
   type?: "text" | "number";
   isCounter?: boolean;
+  counterType?: CounterType;
 }
 
 export interface InsideGroup {

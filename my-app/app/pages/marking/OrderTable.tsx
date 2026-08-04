@@ -1,15 +1,15 @@
 "use client";
 
-import { Component } from "react";
+import { Component, type CSSProperties } from "react";
 import Image from "next/image";
 import type { MarkingContent } from "@/app/types/marking";
 import EmptyState from "./EmptyState";
 import { SectionTitle } from "./FilterPanel";
-import Card from "@/app/components/Card";
 import Input from "@/app/components/Input";
 import MarkingComponent from "./MarkingComponent";
 import { STICKER_FORMAT_PALLETS } from "@/app/types/constants";
 import { TemplateField } from "@/app/types/customer";
+import type { CounterType } from "@/app/types/customer";
 import type {
   OutsideStickerGroup,
   StickerBuildOptions,
@@ -36,19 +36,18 @@ class StickerFactory {
   }
 
   static previewCounterValue(field: TemplateField, lotStart: number) {
-    const key = field.key.toLowerCase();
-    const label = field.label.toLowerCase();
-    if (key.includes("lot") || label.includes("lot")) return String(lotStart || 1);
-    if (key.includes("pallet") || label.includes("pallet")) return "1";
-    return "";
+    return this.counterValue(field, lotStart || 1, 1);
   }
 
-  private static counterValue(field: TemplateField, lot: number, pallet: number) {
+  private static counterType(field: TemplateField, segment?: { counterType?: CounterType }) {
+    if (segment?.counterType) return segment.counterType;
     const key = field.key.toLowerCase();
     const label = field.label.toLowerCase();
-    if (key.includes("lot") || label.includes("lot")) return String(lot);
-    if (key.includes("pallet") || label.includes("pallet")) return String(pallet);
-    return "";
+    return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
+  }
+
+  private static counterValue(field: TemplateField, lot: number, pallet: number, segment?: { counterType?: CounterType }) {
+    return this.counterType(field, segment) === "pallet" ? String(pallet) : String(lot);
   }
 
   private static fieldValues(
@@ -64,7 +63,7 @@ class StickerFactory {
           .sort((a, b) => (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0));
         const values = selectedSegments.flatMap((segment) => {
           const value = segment.isCounter
-            ? this.counterValue(field, lot, pallet)
+            ? this.counterValue(field, lot, pallet, segment)
             : row?.[segment.key];
           return value
             ? [{ label: segment.label, value }]
@@ -92,18 +91,20 @@ class StickerFactory {
     };
   }
 
-  private static outsideGroups(fields: TemplateField[]) {
+  static outsideGroups(fields: TemplateField[]) {
     const groups = new Map<string, OutsideStickerGroup>();
     fields.forEach((field, index) => {
       const inferred = this.splitOutsideLabel(field.label);
       const name = field.stickerGroup?.trim() || inferred.groupName || "นอกกรอบ";
-      const group = groups.get(name) ?? { name, order: field.stickerGroupOrder ?? index, fields: [] };
+      const order = field.stickerGroupOrder ?? index;
+      const groupKey = field.stickerGroupOrder === undefined ? name : `${order}:${name}`;
+      const group = groups.get(groupKey) ?? { name, order, fields: [] };
       group.order = Math.min(group.order, field.stickerGroupOrder ?? index);
       group.fields.push({
         ...field,
         label: inferred.groupName ? inferred.fieldLabel : field.label,
       });
-      groups.set(name, group);
+      groups.set(groupKey, group);
     });
     return Array.from(groups.values()).sort((a, b) => a.order - b.order);
   }
@@ -151,7 +152,40 @@ class StickerFactory {
   }
 }
 
+const stickerLabelStyle = (item: StickerItem): CSSProperties => {
+  if (item.kind === "customerName") return {};
+
+  const maxLabelLength = Math.max(1, ...item.details.map((detail) => detail.label.length));
+  const maxValueLength = Math.max(1, ...item.details.map((detail) =>
+    detail.values.reduce((sum, value) => sum + value.value.length, 0) + Math.max(0, detail.values.length - 1) * 2,
+  ));
+  const countPressure = Math.max(0, item.details.length - 5) * 1.4;
+  const labelFit = 300 / maxLabelLength;
+  const valueFit = 500 / maxValueLength;
+  const fontSize = Math.max(6, Math.min(34, Math.floor(Math.min(labelFit, valueFit) - countPressure)));
+  const gap = Math.max(1.4, Math.min(4.5, fontSize / 6));
+
+  return {
+    "--sticker-font": `${fontSize}px`,
+    "--sticker-label-font": `${fontSize}px`,
+    "--sticker-gap": `${gap}mm`,
+  } as CSSProperties;
+};
+
 export default class OrderTable extends MarkingComponent {
+  private previewItems(items: StickerItem[]) {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+      const signature = [
+        item.kind,
+        item.details.map((detail) => `${detail.label}:${detail.values.map((value) => value.label ?? "").join("|")}`).join(";"),
+      ].join("|");
+      if (seen.has(signature)) return false;
+      seen.add(signature);
+      return true;
+    });
+  }
+
   render() {
     const customer = this.state.customers.find(
       (item) => String(item.id) === this.state.customerId,
@@ -159,6 +193,7 @@ export default class OrderTable extends MarkingComponent {
     const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
       matchesCondition(field, this.state.stickerType, this.state.stickerOther),
     );
+    const outsideGroups = StickerFactory.outsideGroups(outsideFields);
     const stickerItems = StickerFactory.build({
       customerName: this.state.template?.customerName ?? customer?.name ?? "",
       format: this.state.stickerFormat,
@@ -181,32 +216,65 @@ export default class OrderTable extends MarkingComponent {
       stickerItems.filter((item) => item.kind === "customerName"),
       32,
     );
+    const previewItems = this.previewItems(stickerItems);
 
     return (
       <>
         <div className="container table-layout">
-          <TableSection
-            number="2"
-            title="ข้อมูลภายในกล่อง (Inside)"
-            subtitle="Template มาตรฐานสำหรับข้อมูลภายในกล่อง"
-            fields={this.state.template?.inside ?? []}
-            rows={this.state.insideRows}
-            lotStart={this.state.lotStart}
-            onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
-          />
-          {this.state.template && (outsideFields.length > 0 || this.state.isAdmin) && (
+          <div className="table-column table-column-inside">
+            <div className="table-column-label">
+              <span>ในกรอบ</span>
+              <strong>Inside</strong>
+            </div>
             <TableSection
-              number="3"
-              title="ข้อมูลภายนอกกล่อง (Outside)"
-              subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
-              fields={outsideFields}
-              rows={this.state.outsideRows}
+              number="2"
+              title="ข้อมูลภายในกล่อง (Inside)"
+              subtitle="Template มาตรฐานสำหรับข้อมูลภายในกล่อง"
+              fields={this.state.template?.inside ?? []}
+              rows={this.state.insideRows}
               lotStart={this.state.lotStart}
-              onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
-              emptyText="ลูกค้ารายนี้ไม่มี Outside Template"
+              onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
             />
-          )}
+          </div>
+          <div className="table-column table-column-outside">
+            <div className="table-column-label">
+              <span>นอกกรอบ</span>
+              <strong>Outside</strong>
+            </div>
+            {this.state.template && outsideGroups.map((group, groupIndex) => (
+              <TableSection
+                key={`${group.name}-${groupIndex}`}
+                number={groupIndex === 0 ? "3" : `3.${groupIndex + 1}`}
+                title={`${group.name} (Outside)`}
+                subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
+                fields={group.fields}
+                rows={this.state.outsideRows}
+                lotStart={this.state.lotStart}
+                onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
+              />
+            ))}
+            {this.state.template && outsideGroups.length === 0 && this.state.isAdmin && (
+              <TableSection
+                number="3"
+                title="ข้อมูลภายนอกกล่อง (Outside)"
+                subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
+                fields={[]}
+                rows={[]}
+                lotStart={this.state.lotStart}
+                onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
+                emptyText="ลูกค้ารายนี้ไม่มี Outside Template"
+              />
+            )}
+          </div>
         </div>
+
+        {previewItems.length > 0 && (
+          <div className="container pdf-preview">
+            {previewItems.map((item, index) => (
+              <StickerLabel item={item} key={`preview-${item.kind}-${index}`} style={stickerLabelStyle(item)} />
+            ))}
+          </div>
+        )}
 
         <div className="print-sheet">
           {frameStickerPages.map((page, index) => (
@@ -226,7 +294,7 @@ class TableSection extends Component<TableSectionProps> {
   render() {
     const { number, title, subtitle, fields, rows, lotStart, onChange, emptyText } = this.props;
     return (
-      <Card className="table-panel">
+      <section className="table-panel">
         <div className="table-heading">
           <SectionTitle number={number} title={title} subtitle={subtitle} />
           <div className="table-meta">
@@ -259,8 +327,7 @@ class TableSection extends Component<TableSectionProps> {
                               inputMode={segment.isCounter ? "numeric" : undefined}
                               min={segment.isCounter ? 1 : undefined}
                               step={segment.isCounter ? 1 : undefined}
-                              value={segment.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : row[segment.key] ?? ""}
-                              disabled={segment.isCounter}
+                              value={row[segment.key] ?? (segment.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")}
                               onChange={(event) => onChange(rowIndex, segment.key, event.target.value)}
                               placeholder={segment.isCounter ? "+1" : segment.label}
                             />
@@ -282,46 +349,54 @@ class TableSection extends Component<TableSectionProps> {
             ))}
           </div>
         )}
-      </Card>
+      </section>
     );
   }
 }
 
-class StickerPage extends Component<{ items: StickerItem[]; layout: "frame" | "customerName" }> {
+class StickerPage extends Component<{ items: StickerItem[]; layout: "frame" | "customerName"; preview?: boolean }> {
   render() {
-    const { items, layout } = this.props;
+    const { items, layout, preview = false } = this.props;
     return (
-      <section className={`sticker-page ${layout === "frame" ? "sticker-page-frame" : "sticker-page-customer"}`}>
+      <section className={`sticker-page ${layout === "frame" ? "sticker-page-frame" : "sticker-page-customer"} ${preview ? "sticker-page-preview" : ""}`}>
         {items.map((item, index) => (
-          <article className={`sticker-label ${item.kind}`} key={`${item.kind}-${item.lot}-${item.pallet}-${item.side}-${index}`}>
-            {item.kind === "customerName" ? (
-              <p>{item.customerName}</p>
-            ) : (
-              <>
-                {item.stickerType === "FCS" && (
-                  <Image className="sticker-fcs-logo" src="/favicon.ico" alt="FCS logo mockup" width={64} height={64} unoptimized />
-                )}
-                <dl className="sticker-details">
-                  {item.details.map((detail) => (
-                    <div className="sticker-detail-row" key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}>
-                      <dt>{detail.label}</dt>
-                      {/* <dt>a</dt> */}
-                      <dd className="sticker-detail-colon">:</dd>
-                      <dd className="sticker-detail-values">
-                        {detail.values.map((value, valueIndex) => (
-                          <span key={`${value.label ?? detail.label}-${value.value}-${valueIndex}`}>
-                            {value.value}
-                          </span>
-                        ))}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </>
-            )}
-          </article>
+          <StickerLabel item={item} key={`${item.kind}-${item.lot}-${item.pallet}-${item.side}-${index}`} style={stickerLabelStyle(item)} />
         ))}
       </section>
+    );
+  }
+}
+
+class StickerLabel extends Component<{ item: StickerItem; style?: CSSProperties }> {
+  render() {
+    const { item, style } = this.props;
+    return (
+      <article className={`sticker-label ${item.kind}`} style={style}>
+        {item.kind === "customerName" ? (
+          <p>{item.customerName}</p>
+        ) : (
+          <>
+            {item.stickerType === "FCS" && (
+              <Image className="sticker-fcs-logo" src="/favicon.ico" alt="FCS logo mockup" width={64} height={64} unoptimized />
+            )}
+            <dl className="sticker-details">
+              {item.details.map((detail) => (
+                <div className="sticker-detail-row" key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}>
+                  <dt>{detail.label}</dt>
+                  <dd className="sticker-detail-colon">:</dd>
+                  <dd className="sticker-detail-values">
+                    {detail.values.map((value, valueIndex) => (
+                      <span key={`${value.label ?? detail.label}-${value.value}-${valueIndex}`}>
+                        {value.value}
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </>
+        )}
+      </article>
     );
   }
 }
