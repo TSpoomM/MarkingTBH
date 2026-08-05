@@ -37,6 +37,34 @@ const outsideFieldSchema = z.object({
   showOnSticker: z.boolean().optional(),
   stickerOrder: z.number().int().min(0).optional(),
   system: z.boolean().optional(),
+  uppercase: z.boolean().optional(),
+});
+
+const templateFieldSchema = z.object({
+  key: z.string().trim().min(1),
+  label: z.string().trim().min(1, "กรุณากรอกชื่อ Field"),
+  type: z.enum(["text", "number", "date", "textarea"]),
+  required: z.boolean(),
+  placeholder: z.string().optional(),
+  defaultValue: z.string().optional(),
+  segments: z.array(z.object({
+    key: z.string().trim().min(1),
+    label: z.string().trim().min(1),
+    type: z.enum(["text", "number", "date", "textarea"]).optional(),
+    showOnSticker: z.boolean().optional(),
+    stickerOrder: z.number().int().min(0).optional(),
+    isCounter: z.boolean().optional(),
+    counterType: z.enum(["lot", "pallet"]).optional(),
+  })).optional(),
+  condition: z.object({
+    stickerType: z.enum(["TNR", "NON-TNR", "FCS"]).optional(),
+    stickerOther: z.enum(["Dome", "Inter"]).optional(),
+  }).optional(),
+  showOnSticker: z.boolean().optional(),
+  stickerOrder: z.number().int().min(0).optional(),
+  stickerGroup: z.string().optional(),
+  stickerGroupOrder: z.number().int().min(0).optional(),
+  uppercase: z.boolean().optional(),
 });
 
 const createCustomerSchema = z.object({
@@ -75,6 +103,21 @@ const createCustomerSchema = z.object({
       })),
     }),
   }),
+  template: z.object({
+    sticker: z.object({
+      enabledFields: z.array(z.enum(["side", "format", "type", "other"]))
+        .min(1, "เลือกช่องรายละเอียดสติ๊กเกอร์อย่างน้อย 1 ช่อง"),
+      layouts: z.object({
+        insideFrame: z.boolean(),
+        outsideFrame: z.boolean(),
+        customerName: z.boolean(),
+      }).refine((layouts) => (
+        layouts.insideFrame || layouts.outsideFrame || layouts.customerName
+      ), "เลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ"),
+    }),
+    inside: z.array(templateFieldSchema),
+    outside: z.array(templateFieldSchema),
+  }).optional(),
 });
 
 export async function POST(request: Request) {

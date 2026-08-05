@@ -10,6 +10,7 @@ export interface AlertProps {
   type: "error" | "success";
   message: string;
   onClose?: () => void;
+  durationMs?: number;
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

@@ -46,6 +46,7 @@ const fieldSchema = z.object({
   }).optional(),
   stickerGroup: z.string().optional(),
   stickerGroupOrder: z.number().int().min(0).optional(),
+  uppercase: z.boolean().optional(),
 });
 
 const updateSchema = z.object({

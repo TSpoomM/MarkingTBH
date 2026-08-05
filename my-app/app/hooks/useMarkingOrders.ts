@@ -13,6 +13,41 @@ import type {
 } from "@/app/types/marking";
 import type { CounterType, TemplateField } from "@/app/types/customer";
 
+const uniqueSegmentKey = (
+  fieldKey: string,
+  segmentKey: string | undefined,
+  segmentIndex: number,
+  usedKeys: Set<string>,
+) => {
+  const fallback = `${fieldKey}_${segmentIndex + 1}`;
+  const baseKey = (segmentKey ?? "").trim() || fallback;
+  if (!usedKeys.has(baseKey)) {
+    usedKeys.add(baseKey);
+    return baseKey;
+  }
+
+  let suffix = segmentIndex + 1;
+  let nextKey = `${fieldKey}_${baseKey}_${suffix}`;
+  while (usedKeys.has(nextKey)) {
+    suffix += 1;
+    nextKey = `${fieldKey}_${baseKey}_${suffix}`;
+  }
+  usedKeys.add(nextKey);
+  return nextKey;
+};
+
+const normalizeSegmentKeys = (field: TemplateField): TemplateField => {
+  if (!field.segments?.length) return field;
+  const usedKeys = new Set<string>();
+  return {
+    ...field,
+    segments: field.segments.map((segment, index) => ({
+      ...segment,
+      key: uniqueSegmentKey(field.key, segment.key, index, usedKeys),
+    })),
+  };
+};
+
 export class MarkingOrdersController {
   private state: MarkingState = { ...INITIAL_MARKING_STATE };
   private listeners = new Set<() => void>();
@@ -145,6 +180,15 @@ export class MarkingOrdersController {
     );
   }
 
+  private shouldUppercase(section: "inside" | "outside", key: string) {
+    if (section === "inside") return true;
+    const fields = this.state.template?.outside ?? [];
+    const field = fields.find((item) =>
+      item.key === key || item.segments?.some((segment) => segment.key === key),
+    );
+    return field?.uppercase ?? true;
+  }
+
   private isLotCounterKey(section: "inside" | "outside", key: string) {
     const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
     return fields?.some((field) =>
@@ -158,7 +202,7 @@ export class MarkingOrdersController {
 
   updateRow(section: "inside" | "outside", rowIndex: number, key: string, value: string) {
     const stateKey = section === "inside" ? "insideRows" : "outsideRows";
-    const normalizedValue = value.toUpperCase();
+    const normalizedValue = this.shouldUppercase(section, key) ? value.toUpperCase() : value;
     const rows = this.state[stateKey].map((row, index) =>
       index === rowIndex ? { ...row, [key]: normalizedValue } : row,
     );
@@ -180,8 +224,8 @@ export class MarkingOrdersController {
       return;
     }
     this.setState({
-      insideDraft: this.state.template?.inside.map((field) => ({ ...field })) ?? [],
-      outsideDraft: this.state.template?.outside.map((field) => ({ ...field })) ?? [],
+      insideDraft: this.state.template?.inside.map((field) => normalizeSegmentKeys({ ...field })) ?? [],
+      outsideDraft: this.state.template?.outside.map((field) => normalizeSegmentKeys({ ...field })) ?? [],
       isTemplateEditorOpen: true,
     });
   }
@@ -190,7 +234,7 @@ export class MarkingOrdersController {
     const draftKey = section === "inside" ? "insideDraft" : "outsideDraft";
     this.setState({
       [draftKey]: this.state[draftKey].map((field, fieldIndex) =>
-        fieldIndex === index ? { ...field, ...patch } : field,
+        fieldIndex === index ? normalizeSegmentKeys({ ...field, ...patch }) : field,
       ),
     });
   }
@@ -205,6 +249,7 @@ export class MarkingOrdersController {
           label: "",
           type: "text",
           required: false,
+          uppercase: section === "outside" ? true : undefined,
         },
       ],
     });
@@ -288,11 +333,21 @@ export class MarkingOrdersController {
 
   async saveTemplate() {
     if (!this.state.customerId) return;
-    const cleanFields = (section: "inside" | "outside", fields: TemplateField[]) => fields.map((field, index) => ({
-      ...field,
-      key: field.key.trim() || `${section}_field_${index + 1}`,
-      label: field.label.trim(),
-    }));
+    const cleanFields = (section: "inside" | "outside", fields: TemplateField[]) => fields.map((field, index) => {
+      const fieldKey = field.key.trim() || `${section}_field_${index + 1}`;
+      const usedSegmentKeys = new Set<string>();
+      return {
+        ...field,
+        key: fieldKey,
+        label: field.label.trim(),
+        uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
+        segments: field.segments?.map((segment, segmentIndex) => ({
+          ...segment,
+          key: uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
+          label: segment.label.trim(),
+        })),
+      };
+    });
     const inside = cleanFields("inside", this.state.insideDraft);
     const outside = cleanFields("outside", this.state.outsideDraft);
     const cleaned = [...inside, ...outside];
@@ -347,7 +402,7 @@ export class MarkingOrdersController {
     return Object.fromEntries(fields.flatMap((field) =>
       field.segments?.length
         ? field.segments.map((segment) => [segment.key, segment.isCounter ? this.counterDefault(field, lotStart, segment) : ""])
-        : [[field.key, String(field.defaultValue ?? "").toUpperCase()]],
+        : [[field.key, field.uppercase === false ? String(field.defaultValue ?? "") : String(field.defaultValue ?? "").toUpperCase()]],
     ));
   }
 

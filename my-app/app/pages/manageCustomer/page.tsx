@@ -23,9 +23,33 @@ import CreateCustomerForm from "./CreateCustomerForm";
 import EditCustomerTemplate from "./EditCustomerTemplate";
 import {
   cleanCondition,
+  inferCounterType,
   normalizeCounterField,
+  uniqueSegmentKey,
   uid,
 } from "./CustomerManageShared";
+
+const createDefaultInsideDraft = (): TemplateField[] => [
+  ...initialGroups.map((group, groupIndex) => normalizeCounterField({
+    key: group.key,
+    label: group.label,
+    type: "text" as const,
+    required: true,
+    showOnSticker: true,
+    stickerOrder: groupIndex,
+    segments: group.segments.map((segment, segmentIndex) => ({
+      ...segment,
+      showOnSticker: true,
+      stickerOrder: groupIndex * 10 + segmentIndex,
+    })),
+  })),
+  ...fixedInsideFields.map((field, index) => ({
+    ...field,
+    type: "text" as const,
+    showOnSticker: true,
+    stickerOrder: initialGroups.length + index,
+  })),
+];
 
 export default class CustomerForm extends Component<Record<string, never>, CustomerFormState> {
   state: CustomerFormState = {
@@ -34,6 +58,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     selectedCustomerId: "",
     templateInsideDraft: [],
     templateOutsideDraft: [],
+    createInsideDraft: createDefaultInsideDraft(),
+    createOutsideDraft: [],
     name: "",
     stickerFields: ["side", "format"],
     stickerLayouts: {
@@ -147,25 +173,161 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     const key = section === "inside" ? "templateInsideDraft" : "templateOutsideDraft";
     this.setState({
       [key]: this.state[key].map((field, fieldIndex) =>
-        fieldIndex === index ? { ...field, ...patch } : field,
+        fieldIndex === index ? normalizeCounterField({ ...field, ...patch }) : field,
       ),
     } as Pick<CustomerFormState, typeof key>);
   };
 
-  private addTemplateField = (section: "inside" | "outside") => {
+  private changeCreateTemplateDraft = (
+    section: "inside" | "outside",
+    index: number,
+    patch: Partial<TemplateField>,
+  ) => {
+    const key = section === "inside" ? "createInsideDraft" : "createOutsideDraft";
+    this.setState({
+      [key]: this.state[key].map((field, fieldIndex) =>
+        fieldIndex === index ? normalizeCounterField({ ...field, ...patch }) : field,
+      ),
+    } as Pick<CustomerFormState, typeof key>);
+  };
+
+  private addTemplateField = (section: "inside" | "outside", tableOrder?: number) => {
     const key = section === "inside" ? "templateInsideDraft" : "templateOutsideDraft";
+    const outsideGroup = section === "outside"
+      ? this.outsideGroup(this.state[key] as TemplateField[], tableOrder)
+      : undefined;
+    const nextField: TemplateField = {
+      key: `${section}_field_${uid()}`,
+      label: "",
+      type: "text",
+      required: false,
+      showOnSticker: true,
+      stickerGroup: outsideGroup?.name,
+      stickerGroupOrder: outsideGroup?.order,
+      uppercase: section === "outside" ? true : undefined,
+    };
+    const currentFields = this.state[key];
+    const insertIndex = section === "outside"
+      ? this.lastOutsideGroupIndex(currentFields as TemplateField[], outsideGroup?.order ?? 0) + 1
+      : currentFields.length;
     this.setState({
       [key]: [
-        ...this.state[key],
+        ...currentFields.slice(0, insertIndex),
+        nextField,
+        ...currentFields.slice(insertIndex),
+      ],
+    } as Pick<CustomerFormState, typeof key>);
+  };
+
+  private addCreateTemplateField = (section: "inside" | "outside", tableOrder?: number) => {
+    const key = section === "inside" ? "createInsideDraft" : "createOutsideDraft";
+    const outsideGroup = section === "outside"
+      ? this.outsideGroup(this.state[key] as TemplateField[], tableOrder)
+      : undefined;
+    const nextField: TemplateField = {
+      key: `${section}_field_${uid()}`,
+      label: "",
+      type: "text",
+      required: false,
+      showOnSticker: true,
+      stickerGroup: outsideGroup?.name,
+      stickerGroupOrder: outsideGroup?.order,
+      uppercase: section === "outside" ? true : undefined,
+    };
+    const currentFields = this.state[key];
+    const insertIndex = section === "outside"
+      ? this.lastOutsideGroupIndex(currentFields as TemplateField[], outsideGroup?.order ?? 0) + 1
+      : currentFields.length;
+    this.setState({
+      [key]: [
+        ...currentFields.slice(0, insertIndex),
+        nextField,
+        ...currentFields.slice(insertIndex),
+      ],
+    } as Pick<CustomerFormState, typeof key>);
+  };
+
+  private lastOutsideGroupIndex(fields: TemplateField[], tableOrder: number) {
+    return fields.reduce((lastIndex, field, index) =>
+      (field.stickerGroupOrder ?? 0) === tableOrder ? index : lastIndex,
+    -1);
+  }
+
+  private outsideGroup(fields: TemplateField[], requestedOrder?: number) {
+    if (!fields.length) return { order: 0, name: "Outside 1" };
+    const order = requestedOrder ?? Math.max(...fields.map((field) => field.stickerGroupOrder ?? 0));
+    const field = [...fields].reverse().find((item) => (item.stickerGroupOrder ?? 0) === order);
+    return { order, name: field?.stickerGroup ?? `Outside ${order + 1}` };
+  }
+
+  private nextOutsideGroupOrder(fields: TemplateField[]) {
+    return fields.length ? Math.max(...fields.map((field) => field.stickerGroupOrder ?? 0)) + 1 : 0;
+  }
+
+  private addTemplateTable = () => {
+    const tableOrder = this.nextOutsideGroupOrder(this.state.templateOutsideDraft);
+    this.setState({
+      templateOutsideDraft: [
+        ...this.state.templateOutsideDraft,
         {
-          key: `${section}_field_${uid()}`,
+          key: `outside_field_${uid()}`,
           label: "",
           type: "text",
           required: false,
-          showOnSticker: false,
+          showOnSticker: true,
+          stickerGroup: `Outside ${tableOrder + 1}`,
+          stickerGroupOrder: tableOrder,
+          uppercase: true,
         },
       ],
-    } as Pick<CustomerFormState, typeof key>);
+    });
+  };
+
+  private addCreateTemplateTable = () => {
+    const tableOrder = this.nextOutsideGroupOrder(this.state.createOutsideDraft);
+    this.setState({
+      createOutsideDraft: [
+        ...this.state.createOutsideDraft,
+        {
+          key: `outside_field_${uid()}`,
+          label: "",
+          type: "text",
+          required: false,
+          showOnSticker: true,
+          stickerGroup: `Outside ${tableOrder + 1}`,
+          stickerGroupOrder: tableOrder,
+          uppercase: true,
+        },
+      ],
+    });
+  };
+
+  private renameTemplateTable = (tableOrder: number, name: string) => {
+    this.setState({
+      templateOutsideDraft: this.state.templateOutsideDraft.map((field) =>
+        (field.stickerGroupOrder ?? 0) === tableOrder ? { ...field, stickerGroup: name } : field,
+      ),
+    });
+  };
+
+  private renameCreateTemplateTable = (tableOrder: number, name: string) => {
+    this.setState({
+      createOutsideDraft: this.state.createOutsideDraft.map((field) =>
+        (field.stickerGroupOrder ?? 0) === tableOrder ? { ...field, stickerGroup: name } : field,
+      ),
+    });
+  };
+
+  private removeTemplateTable = (tableOrder: number) => {
+    this.setState({
+      templateOutsideDraft: this.state.templateOutsideDraft.filter((field) => (field.stickerGroupOrder ?? 0) !== tableOrder),
+    });
+  };
+
+  private removeCreateTemplateTable = (tableOrder: number) => {
+    this.setState({
+      createOutsideDraft: this.state.createOutsideDraft.filter((field) => (field.stickerGroupOrder ?? 0) !== tableOrder),
+    });
   };
 
   private removeTemplateField = (section: "inside" | "outside", index: number) => {
@@ -175,8 +337,28 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     } as Pick<CustomerFormState, typeof key>);
   };
 
+  private removeCreateTemplateField = (section: "inside" | "outside", index: number) => {
+    const key = section === "inside" ? "createInsideDraft" : "createOutsideDraft";
+    this.setState({
+      [key]: this.state[key].filter((_, fieldIndex) => fieldIndex !== index),
+    } as Pick<CustomerFormState, typeof key>);
+  };
+
   private setPreviewSlot = (section: "inside" | "outside", slotIndex: number, fieldKey: string) => {
     const key = section === "inside" ? "templateInsideDraft" : "templateOutsideDraft";
+    this.setPreviewSlotForDraft(key, slotIndex, fieldKey);
+  };
+
+  private setCreatePreviewSlot = (section: "inside" | "outside", slotIndex: number, fieldKey: string) => {
+    const key = section === "inside" ? "createInsideDraft" : "createOutsideDraft";
+    this.setPreviewSlotForDraft(key, slotIndex, fieldKey);
+  };
+
+  private setPreviewSlotForDraft = (
+    key: "templateInsideDraft" | "templateOutsideDraft" | "createInsideDraft" | "createOutsideDraft",
+    slotIndex: number,
+    fieldKey: string,
+  ) => {
     const [targetFieldKey, targetSegmentKey] = fieldKey.split(".");
     this.setState({
       [key]: this.state[key].map((field) => {
@@ -203,18 +385,52 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     } as Pick<CustomerFormState, typeof key>);
   };
 
-  private saveExistingTemplate = async () => {
-    if (!this.state.selectedCustomerId) return;
-    const cleanFields = (section: "inside" | "outside", fields: TemplateField[]) => fields.map((field, index) => normalizeCounterField({
+  private cleanTemplateFields = (section: "inside" | "outside", fields: TemplateField[]) => fields.map((field, index) => {
+    const fieldKey = field.key.trim() || `${section}_field_${uid()}`;
+    const usedSegmentKeys = new Set<string>();
+    return normalizeCounterField({
       ...field,
-      key: field.key.trim() || `${section}_field_${uid()}`,
+      key: fieldKey,
       label: field.label.trim(),
       condition: cleanCondition(field.condition),
       showOnSticker: field.showOnSticker ?? true,
       stickerOrder: field.showOnSticker === false ? undefined : field.stickerOrder ?? index,
-    }));
-    const inside = cleanFields("inside", this.state.templateInsideDraft);
-    const outside = cleanFields("outside", this.state.templateOutsideDraft);
+      uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
+      segments: field.segments?.map((segment, segmentIndex) => ({
+        ...segment,
+        key: uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
+        label: segment.label.trim(),
+        showOnSticker: segment.showOnSticker ?? true,
+        stickerOrder: segment.showOnSticker === false ? undefined : segment.stickerOrder ?? index * 10 + segmentIndex,
+        counterType: segment.counterType ?? inferCounterType({ ...field, key: fieldKey }),
+      })),
+    });
+  });
+
+  private validateTemplateDrafts = (
+    inside: TemplateField[],
+    outside: TemplateField[],
+    layouts: CustomerFormState["stickerLayouts"],
+  ): string | undefined => {
+    if ([...inside, ...outside].some((field) => !field.label || field.segments?.some((segment) => !segment.label))) {
+      return "Please fill every field name";
+    }
+    if (!layouts.insideFrame && !layouts.outsideFrame && !layouts.customerName) {
+      return "Please choose at least one sticker layout";
+    }
+    if (
+      new Set(inside.map((field) => field.key)).size !== inside.length ||
+      new Set(outside.map((field) => field.key)).size !== outside.length
+    ) {
+      return "Some field keys are duplicated. Remove and add the field again";
+    }
+    return undefined;
+  };
+
+  private saveExistingTemplate = async () => {
+    if (!this.state.selectedCustomerId) return;
+    const inside = this.cleanTemplateFields("inside", this.state.templateInsideDraft);
+    const outside = this.cleanTemplateFields("outside", this.state.templateOutsideDraft);
     if ([...inside, ...outside].some((field) => !field.label)) {
       this.setState({ templateNotice: { kind: "error", text: "กรุณากรอกชื่อ Field ให้ครบ" } });
       return;
@@ -302,12 +518,12 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         if (group.key !== groupKey) return group;
         const segments = createSegments(groupKey, count)
           .map((segment, index) => group.segments[index] ?? segment);
-        const counterIndex = segments.findIndex((segment) => segment.isCounter);
+        const hasCounter = segments.some((segment) => segment.isCounter);
         return {
           ...group,
           segments: segments.map((segment, index) => ({
             ...segment,
-            isCounter: counterIndex >= 0 ? index === counterIndex : index === 0,
+            isCounter: hasCounter ? segment.isCounter : index === 0,
           })),
         };
       }),
@@ -341,6 +557,13 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   private submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     this.setState({ notice: undefined });
+    const inside = this.cleanTemplateFields("inside", this.state.createInsideDraft);
+    const outside = this.cleanTemplateFields("outside", this.state.createOutsideDraft);
+    const validationError = this.validateTemplateDrafts(inside, outside, this.state.stickerLayouts);
+    if (validationError) {
+      this.setState({ notice: { kind: "error", text: validationError } });
+      return;
+    }
 
     const payload: CreateCustomerPayload = {
       name: this.state.name,
@@ -352,6 +575,14 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         },
         inside: { groups: this.state.groups, fields: [...fixedInsideFields] },
         outside: { tables: this.state.tables },
+      },
+      template: {
+        sticker: {
+          enabledFields: this.state.stickerFields,
+          layouts: this.state.stickerLayouts,
+        },
+        inside,
+        outside,
       },
     };
 
@@ -365,11 +596,15 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       const result = await response.json();
       if (!response.ok) throw new Error(result.message);
       this.setState({
+        name: "",
+        createInsideDraft: createDefaultInsideDraft(),
+        createOutsideDraft: [],
         notice: {
           kind: "success",
           text: `เพิ่ม ${result.data.name} เรียบร้อยแล้ว (Customer ID: ${result.data.id})`,
         },
       });
+      await this.loadCustomers();
     } catch (error) {
       this.setState({
         notice: {
@@ -444,6 +679,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   onChangeField={this.changeTemplateDraft}
                   onAddField={this.addTemplateField}
                   onRemoveField={this.removeTemplateField}
+                  onAddTable={this.addTemplateTable}
+                  onRenameTable={this.renameTemplateTable}
+                  onRemoveTable={this.removeTemplateTable}
                 />
               )}
               {this.state.mode === "create" && (
@@ -454,6 +692,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   groups={this.state.groups}
                   tables={this.state.tables}
                   fixedInsideFields={fixedInsideFields}
+                  insideDraft={this.state.createInsideDraft}
+                  outsideDraft={this.state.createOutsideDraft}
                   notice={this.state.notice}
                   saving={this.state.saving}
                   onDismissNotice={this.dismissNotice}
@@ -465,6 +705,13 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   onGroupSegmentChange={this.updateGroupSegment}
                   onTablesChange={this.updateTables}
                   onTableUpdate={this.updateTable}
+                  onSelectPreviewSlot={this.setCreatePreviewSlot}
+                  onChangeField={this.changeCreateTemplateDraft}
+                  onAddField={this.addCreateTemplateField}
+                  onRemoveField={this.removeCreateTemplateField}
+                  onAddTable={this.addCreateTemplateTable}
+                  onRenameTable={this.renameCreateTemplateTable}
+                  onRemoveTable={this.removeCreateTemplateTable}
                 />
               )}
             </>

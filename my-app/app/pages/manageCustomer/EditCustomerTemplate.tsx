@@ -31,6 +31,9 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       onChangeField,
       onAddField,
       onRemoveField,
+      onAddTable,
+      onRenameTable,
+      onRemoveTable,
     } = this.props;
 
     return (
@@ -134,6 +137,9 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
               onChange={onChangeField}
               onAdd={onAddField}
               onRemove={onRemoveField}
+              onAddTable={onAddTable}
+              onRenameTable={onRenameTable}
+              onRemoveTable={onRemoveTable}
             />
           </div>
         </>

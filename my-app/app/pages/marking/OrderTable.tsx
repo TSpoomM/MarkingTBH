@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, type CSSProperties } from "react";
+import { Component, createRef, type CSSProperties } from "react";
 import Image from "next/image";
 import type { MarkingContent } from "@/app/types/marking";
 import EmptyState from "./EmptyState";
@@ -50,6 +50,26 @@ class StickerFactory {
     return this.counterType(field, segment) === "pallet" ? String(pallet) : String(lot);
   }
 
+  private static counterDisplayValue(
+    field: TemplateField,
+    row: MarkingContent | undefined,
+    lot: number,
+    pallet: number,
+    segment: { key: string; counterType?: CounterType },
+  ) {
+    const value = this.counterValue(field, lot, pallet, segment);
+    const seed = row?.[segment.key];
+    return seed && /^\d+$/.test(seed) ? value.padStart(seed.length, "0") : value;
+  }
+
+  private static fieldValue(field: TemplateField, value: string | undefined) {
+    if (!value) return "";
+    const key = field.key.toLowerCase();
+    const label = field.label.toLowerCase();
+    const needsKg = key === "gross" || key === "nett" || label === "gross" || label === "nett";
+    return needsKg && !/\bkg\.?$/i.test(value.trim()) ? `${value} KG` : value;
+  }
+
   private static fieldValues(
     fields: TemplateField[],
     row: MarkingContent | undefined,
@@ -63,7 +83,7 @@ class StickerFactory {
           .sort((a, b) => (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0));
         const values = selectedSegments.flatMap((segment) => {
           const value = segment.isCounter
-            ? this.counterValue(field, lot, pallet, segment)
+            ? this.counterDisplayValue(field, row, lot, pallet, segment)
             : row?.[segment.key];
           return value
             ? [{ label: segment.label, value }]
@@ -74,7 +94,7 @@ class StickerFactory {
           : [];
       }
       if (field.showOnSticker === false) return [];
-      const value = row?.[field.key];
+      const value = this.fieldValue(field, row?.[field.key]);
       return value ? [{ label: field.label, values: [{ value }], order: field.stickerOrder ?? 0 }] : [];
     })
       .sort((a, b) => a.order - b.order)
@@ -155,14 +175,8 @@ class StickerFactory {
 const stickerLabelStyle = (item: StickerItem): CSSProperties => {
   if (item.kind === "customerName") return {};
 
-  const maxLabelLength = Math.max(1, ...item.details.map((detail) => detail.label.length));
-  const maxValueLength = Math.max(1, ...item.details.map((detail) =>
-    detail.values.reduce((sum, value) => sum + value.value.length, 0) + Math.max(0, detail.values.length - 1) * 2,
-  ));
   const countPressure = Math.max(0, item.details.length - 5) * 1.4;
-  const labelFit = 300 / maxLabelLength;
-  const valueFit = 500 / maxValueLength;
-  const fontSize = Math.max(6, Math.min(34, Math.floor(Math.min(labelFit, valueFit) - countPressure)));
+  const fontSize = Math.max(18, 26 - countPressure);
   const gap = Math.max(1.4, Math.min(4.5, fontSize / 6));
 
   return {
@@ -171,6 +185,53 @@ const stickerLabelStyle = (item: StickerItem): CSSProperties => {
     "--sticker-gap": `${gap}mm`,
   } as CSSProperties;
 };
+
+class AutoFitStickerValue extends Component<{ value: string }, { fontSize: number }> {
+  private readonly baseFontSize = 26;
+  private readonly minFontSize = 6;
+  private readonly ref = createRef<HTMLSpanElement>();
+  private resizeObserver: ResizeObserver | undefined;
+
+  state = { fontSize: this.baseFontSize };
+
+  componentDidMount() {
+    this.fit();
+    if (typeof ResizeObserver !== "undefined" && this.ref.current) {
+      this.resizeObserver = new ResizeObserver(() => this.fit());
+      this.resizeObserver.observe(this.ref.current);
+    }
+  }
+
+  componentDidUpdate(previousProps: { value: string }) {
+    if (previousProps.value !== this.props.value) this.fit();
+  }
+
+  componentWillUnmount() {
+    this.resizeObserver?.disconnect();
+  }
+
+  private fit = () => {
+    window.requestAnimationFrame(() => {
+      const element = this.ref.current;
+      if (!element) return;
+      element.style.fontSize = `${this.baseFontSize}px`;
+      const availableWidth = element.clientWidth;
+      const requiredWidth = element.scrollWidth;
+      const nextFontSize = requiredWidth > availableWidth && availableWidth > 0
+        ? Math.max(this.minFontSize, Math.floor(this.baseFontSize * (availableWidth / requiredWidth)))
+        : this.baseFontSize;
+      if (nextFontSize !== this.state.fontSize) this.setState({ fontSize: nextFontSize });
+    });
+  };
+
+  render() {
+    return (
+      <span ref={this.ref} style={{ fontSize: `${this.state.fontSize}px` }}>
+        {this.props.value}
+      </span>
+    );
+  }
+}
 
 export default class OrderTable extends MarkingComponent {
   private previewItems(items: StickerItem[]) {
@@ -319,14 +380,12 @@ class TableSection extends Component<TableSectionProps> {
                       </span>
                       {field.segments?.length ? (
                         <div className="horizontal-segment-inputs">
-                          {field.segments.map((segment) => (
+                          {field.segments.map((segment, segmentIndex) => (
                             <Input
-                              key={segment.key}
+                              key={`${field.key}-${segment.key}-${segmentIndex}`}
                               bare
-                              type={segment.isCounter ? "number" : "text"}
+                              type="text"
                               inputMode={segment.isCounter ? "numeric" : undefined}
-                              min={segment.isCounter ? 1 : undefined}
-                              step={segment.isCounter ? 1 : undefined}
                               value={row[segment.key] ?? (segment.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")}
                               onChange={(event) => onChange(rowIndex, segment.key, event.target.value)}
                               placeholder={segment.isCounter ? "+1" : segment.label}
@@ -386,9 +445,10 @@ class StickerLabel extends Component<{ item: StickerItem; style?: CSSProperties 
                   <dd className="sticker-detail-colon">:</dd>
                   <dd className="sticker-detail-values">
                     {detail.values.map((value, valueIndex) => (
-                      <span key={`${value.label ?? detail.label}-${value.value}-${valueIndex}`}>
-                        {value.value}
-                      </span>
+                      <AutoFitStickerValue
+                        value={value.value}
+                        key={`${value.label ?? detail.label}-${value.value}-${valueIndex}`}
+                      />
                     ))}
                   </dd>
                 </div>

@@ -845,6 +845,68 @@ select {
 	border-radius: 9px
 }
 
+.outside-field-wrap.same-table-row .editor-field {
+	border-top: 0;
+	border-radius: 0
+}
+
+.outside-editor-table-head {
+	margin-top: 8px;
+	padding: 10px;
+	display: grid;
+	grid-template-columns: 34px minmax(0, 1fr) auto;
+	gap: 9px;
+	align-items: center;
+	border: 1px solid #b8c7bd;
+	border-radius: 8px 8px 0 0;
+	background: #dce8df
+}
+
+.outside-editor-table-head+ .editor-field {
+	border-top: 0;
+	border-radius: 0
+}
+
+.outside-editor-table-head span {
+	width: 28px;
+	height: 28px;
+	display: grid;
+	place-items: center;
+	border-radius: 6px;
+	background: #f8faf8;
+	color: #314139;
+	font-size: 12px;
+	font-weight: 850
+}
+
+.outside-editor-table-head button {
+	height: 34px;
+	padding: 0 10px;
+	border: 1px solid #c7b5b5;
+	border-radius: 6px;
+	background: #fff7f7;
+	color: #8f3636;
+	font-size: 12px;
+	font-weight: 800;
+	cursor: pointer
+}
+
+.outside-add-row-button {
+	height: 38px;
+	border: 1px solid #c7d6cc;
+	border-top: 0;
+	border-radius: 0 0 8px 8px;
+	background: #f7faf6;
+	color: #0f6b48;
+	font-size: 12px;
+	font-weight: 850;
+	cursor: pointer
+}
+
+.outside-add-row-button:hover {
+	background: #eef7f1
+}
+
 .editor-segments-row {
 	display: grid;
 	grid-template-columns: 76px repeat(auto-fit, minmax(160px, 1fr)) 52px;
@@ -2464,27 +2526,28 @@ select {
 		position: fixed;
 		top: 104px;
 		right: clamp(14px, 3vw, 28px);
-		z-index: 60;
-		width: min(420px, calc(100vw - 28px));
+		z-index: 120;
+		width: min(460px, calc(100vw - 28px));
 		display: grid;
 		grid-template-columns: 34px minmax(0, 1fr) auto;
 		gap: 12px;
 		align-items: start;
-		padding: 14px;
-		border: 1px solid;
+		padding: 16px;
+		border: 2px solid;
 		border-radius: var(--radius);
-		background: rgba(255, 255, 255, .96);
-		box-shadow: var(--shadow-lg);
-		backdrop-filter: blur(14px);
+		background: #fff;
+		box-shadow: 0 22px 60px rgba(20, 33, 28, .22), 0 0 0 1px rgba(20, 33, 28, .04);
 		animation: toast-in .18s ease-out;
 	}
 
 	.app-toast.success {
-		border-color: #b9dec7;
+		border-color: #2f9461;
+		background: #f3fbf6;
 	}
 
 	.app-toast.error {
-		border-color: #efc4c6;
+		border-color: #c63d47;
+		background: #fff6f6;
 	}
 
 	.toast-mark {
@@ -2513,15 +2576,15 @@ select {
 	}
 
 	.toast-copy strong {
-		color: #17231f;
-		font-size: 13px;
+		color: #101a16;
+		font-size: 14px;
 		font-weight: 850;
 		line-height: 1.25;
 	}
 
 	.toast-copy span {
-		color: #52635d;
-		font-size: 13px;
+		color: #26352f;
+		font-size: 14px;
 		line-height: 1.45;
 		overflow-wrap: anywhere;
 	}

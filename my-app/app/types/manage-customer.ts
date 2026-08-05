@@ -29,6 +29,8 @@ export interface CustomerFormState {
   selectedCustomerId: string;
   templateInsideDraft: TemplateField[];
   templateOutsideDraft: TemplateField[];
+  createInsideDraft: TemplateField[];
+  createOutsideDraft: TemplateField[];
   name: string;
   stickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
@@ -52,6 +54,8 @@ export interface CreateCustomerFormProps {
   groups: InsideGroup[];
   tables: OutsideTable[];
   fixedInsideFields: readonly FixedInsideField[];
+  insideDraft: TemplateField[];
+  outsideDraft: TemplateField[];
   notice: CustomerFormNotice | undefined;
   saving: boolean;
   onDismissNotice: () => void;
@@ -63,6 +67,13 @@ export interface CreateCustomerFormProps {
   onGroupSegmentChange: (groupKey: InsideGroup["key"], segmentIndex: number, label: string) => void;
   onTablesChange: (updater: (tables: OutsideTable[]) => OutsideTable[]) => void;
   onTableUpdate: (tableId: string, update: (table: OutsideTable) => OutsideTable) => void;
+  onSelectPreviewSlot: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
+  onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
+  onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
+  onRemoveField: (section: "inside" | "outside", index: number) => void;
+  onAddTable: () => void;
+  onRenameTable: (tableOrder: number, name: string) => void;
+  onRemoveTable: (tableOrder: number) => void;
 }
 
 export interface EditCustomerTemplateProps {
@@ -82,8 +93,11 @@ export interface EditCustomerTemplateProps {
   onToggleLayout: (layout: StickerLayoutKey) => void;
   onSelectPreviewSlot: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
-  onAddField: (section: "inside" | "outside") => void;
+  onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
+  onAddTable: () => void;
+  onRenameTable: (tableOrder: number, name: string) => void;
+  onRemoveTable: (tableOrder: number) => void;
 }
 
 export interface SectionHeadingProps {
@@ -116,8 +130,11 @@ export interface TemplateFieldEditorProps {
   section: "inside" | "outside";
   fields: TemplateField[];
   onChange: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
-  onAdd: (section: "inside" | "outside") => void;
+  onAdd: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemove: (section: "inside" | "outside", index: number) => void;
+  onAddTable?: () => void;
+  onRenameTable?: (tableOrder: number, name: string) => void;
+  onRemoveTable?: (tableOrder: number) => void;
 }
 
 export interface StickerTemplatePreviewProps {

@@ -29,19 +29,55 @@ export const inferCounterType = (field: Pick<TemplateField, "key" | "label">): C
   return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
 };
 
-export const normalizeCounterField = (field: TemplateField): TemplateField => {
-  if (!field.segments?.length || !isCounterField(field)) return field;
-  const counterIndex = field.segments.findIndex((segment) => segment.isCounter);
+export const uniqueSegmentKey = (
+  fieldKey: string,
+  segmentKey: string | undefined,
+  segmentIndex: number,
+  usedKeys: Set<string>,
+) => {
+  const fallback = `${fieldKey}_${segmentIndex + 1}`;
+  const baseKey = (segmentKey ?? "").trim() || fallback;
+  if (!usedKeys.has(baseKey)) {
+    usedKeys.add(baseKey);
+    return baseKey;
+  }
+
+  let suffix = segmentIndex + 1;
+  let nextKey = `${fieldKey}_${baseKey}_${suffix}`;
+  while (usedKeys.has(nextKey)) {
+    suffix += 1;
+    nextKey = `${fieldKey}_${baseKey}_${suffix}`;
+  }
+  usedKeys.add(nextKey);
+  return nextKey;
+};
+
+export const normalizeSegmentKeys = (field: TemplateField): TemplateField => {
+  if (!field.segments?.length) return field;
+  const usedKeys = new Set<string>();
   return {
     ...field,
     segments: field.segments.map((segment, index) => ({
       ...segment,
-      isCounter: counterIndex >= 0 ? index === counterIndex : index === 0,
-      type: (counterIndex >= 0 ? index === counterIndex : index === 0) ? "number" : segment.type ?? "text",
-      counterType: (counterIndex >= 0 ? index === counterIndex : index === 0)
-        ? segment.counterType ?? inferCounterType(field)
+      key: uniqueSegmentKey(field.key, segment.key, index, usedKeys),
+    })),
+  };
+};
+
+export const normalizeCounterField = (field: TemplateField): TemplateField => {
+  const keyedField = normalizeSegmentKeys(field);
+  if (!keyedField.segments?.length || !isCounterField(keyedField)) return keyedField;
+  const hasCounter = keyedField.segments.some((segment) => segment.isCounter);
+  return {
+    ...keyedField,
+    segments: keyedField.segments.map((segment, index) => ({
+      ...segment,
+      isCounter: hasCounter ? segment.isCounter : index === 0,
+      type: (hasCounter ? segment.isCounter : index === 0) ? "number" : segment.type ?? "text",
+      counterType: (hasCounter ? segment.isCounter : index === 0)
+        ? segment.counterType ?? inferCounterType(keyedField)
         : segment.counterType,
-      showOnSticker: (counterIndex >= 0 ? index === counterIndex : index === 0)
+      showOnSticker: (hasCounter ? segment.isCounter : index === 0)
         ? true
         : segment.showOnSticker,
     })),
@@ -73,7 +109,10 @@ const stickerSelectableFields = (fields: TemplateField[]): StickerSelectableFiel
 const selectedStickerFields = (fields: TemplateField[]) =>
   stickerSelectableFields(fields)
     .filter((field) => field.showOnSticker)
-    .sort((a, b) => (a.parentOrder ?? a.stickerOrder ?? 0) - (b.parentOrder ?? b.stickerOrder ?? 0));
+    .sort((a, b) =>
+      (a.parentOrder ?? a.stickerOrder ?? 0) - (b.parentOrder ?? b.stickerOrder ?? 0) ||
+      (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0),
+    );
 
 const groupSelectedStickerFields = (fields: StickerSelectableField[]) =>
   fields.reduce<Array<{ label: string; fields: StickerSelectableField[] }>>((groups, field) => {
@@ -167,7 +206,17 @@ export class ConditionSelector extends Component<ConditionSelectorProps> {
 
 export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
   render() {
-    const { title, section, fields, onChange, onAdd, onRemove } = this.props;
+    const {
+      title,
+      section,
+      fields,
+      onChange,
+      onAdd,
+      onRemove,
+      onAddTable,
+      onRenameTable,
+      onRemoveTable,
+    } = this.props;
 
     return (
       <div className="template-editor-panel">
@@ -178,10 +227,34 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
         {!fields.length && <div className="editor-empty">ยังไม่มี Field</div>}
         {fields.map((field, index) => {
           const countableField = isCounterField(field);
+          const tableOrder = field.stickerGroupOrder ?? 0;
+          const previousTableOrder = fields[index - 1]?.stickerGroupOrder ?? 0;
+          const nextTableOrder = fields[index + 1]?.stickerGroupOrder ?? 0;
+          const showTableHeader = section === "outside" && (index === 0 || tableOrder !== previousTableOrder);
+          const showTableFooter = section === "outside" && (index === fields.length - 1 || tableOrder !== nextTableOrder);
+          const fieldNumber = section === "outside"
+            ? fields.slice(0, index + 1).filter((item) => (item.stickerGroupOrder ?? 0) === tableOrder).length
+            : index + 1;
           return (
-            <div className="editor-field-wrap" key={`${section}-${field.key}-${index}`}>
+            <div
+              className={`editor-field-wrap ${section === "outside" ? "outside-field-wrap" : ""} ${section === "outside" && !showTableHeader ? "same-table-row" : ""}`}
+              key={`${section}-${field.key}-${index}`}
+            >
+              {showTableHeader && (
+                <div className="outside-editor-table-head">
+                  <span>{tableOrder + 1}</span>
+                  <Input
+                    bare
+                    value={field.stickerGroup ?? `Outside ${tableOrder + 1}`}
+                    onChange={(event) => onRenameTable?.(tableOrder, event.target.value)}
+                  />
+                  <button type="button" onClick={() => onRemoveTable?.(tableOrder)}>
+                    Delete table
+                  </button>
+                </div>
+              )}
               <article className="editor-field">
-                <div className="editor-number">{index + 1}</div>
+                <div className="editor-number">{fieldNumber}</div>
                 <label>
                   <span>ชื่อ Field</span>
                   <Input bare value={field.label} onChange={(event) => onChange(section, index, { label: event.target.value })} />
@@ -208,6 +281,17 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                   />
                   <span>บังคับกรอก</span>
                 </label>
+                {section === "outside" && (
+                  <label className="required-toggle">
+                    <Input
+                      bare
+                      type="checkbox"
+                      checked={field.uppercase ?? true}
+                      onChange={(event) => onChange(section, index, { uppercase: event.target.checked })}
+                    />
+                    <span>Uppercase</span>
+                  </label>
+                )}
                 <ConditionSelector
                   value={field.condition}
                   disabled={!field.required}
@@ -219,7 +303,7 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                 <div className="editor-segments-row">
                   <span>Section</span>
                   {field.segments.map((segment, segmentIndex) => (
-                    <label key={segment.key}>
+                    <label key={`${field.key}-${segment.key}-${segmentIndex}`}>
                       <small>
                         {segmentIndex + 1}
                         {segment.isCounter ? " +1" : ""}
@@ -241,9 +325,11 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                             onClick={() => onChange(section, index, {
                               segments: field.segments?.map((item, itemIndex) => ({
                                 ...item,
-                                isCounter: itemIndex === segmentIndex,
-                                type: itemIndex === segmentIndex ? "number" : "text",
-                                counterType: itemIndex === segmentIndex ? item.counterType ?? inferCounterType(field) : item.counterType,
+                                isCounter: itemIndex === segmentIndex ? !item.isCounter : item.isCounter,
+                                type: itemIndex === segmentIndex && !item.isCounter ? "number" : item.type ?? "text",
+                                counterType: itemIndex === segmentIndex && !item.isCounter
+                                  ? item.counterType ?? inferCounterType(field)
+                                  : item.counterType,
                               })),
                             })}
                           >
@@ -272,13 +358,11 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                           disabled={(field.segments?.length ?? 0) <= 1}
                           onClick={() => {
                             const segments = field.segments?.filter((_, itemIndex) => itemIndex !== segmentIndex) ?? [];
-                            const counterIndex = segments.findIndex((item) => item.isCounter);
                             onChange(section, index, {
-                              segments: segments.map((item, itemIndex) => ({
+                              segments: segments.map((item) => ({
                                 ...item,
-                                isCounter: countableField ? (counterIndex >= 0 ? itemIndex === counterIndex : itemIndex === 0) : item.isCounter,
-                                type: countableField && (counterIndex >= 0 ? itemIndex === counterIndex : itemIndex === 0) ? "number" : item.type ?? "text",
-                                counterType: countableField && (counterIndex >= 0 ? itemIndex === counterIndex : itemIndex === 0)
+                                type: countableField && item.isCounter ? "number" : item.type ?? "text",
+                                counterType: countableField && item.isCounter
                                   ? item.counterType ?? inferCounterType(field)
                                   : item.counterType,
                               })),
@@ -300,7 +384,8 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                           key: `${field.key}_${uid()}`,
                           label: `Section ${(field.segments?.length ?? 0) + 1}`,
                           type: "text",
-                          showOnSticker: false,
+                          showOnSticker: true,
+                          stickerOrder: (field.stickerOrder ?? index) * 10 + (field.segments?.length ?? 0),
                           isCounter: false,
                           counterType: inferCounterType(field),
                         },
@@ -311,12 +396,28 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                   </button>
                 </div>
               )}
+              {showTableFooter && (
+                <button
+                  type="button"
+                  className="outside-add-row-button"
+                  onClick={() => onAdd(section, tableOrder)}
+                >
+                  Add Row
+                </button>
+              )}
             </div>
           );
         })}
+        {section === "outside" && (
+          <Button className="add-field-button" onClick={onAddTable}>
+            Add Table
+          </Button>
+        )}
+        {section !== "outside" && (
         <Button className="add-field-button" onClick={() => onAdd(section)}>
           เพิ่ม Field
         </Button>
+        )}
       </div>
     );
   }

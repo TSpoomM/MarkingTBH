@@ -25,6 +25,7 @@ export interface TemplateField {
   stickerOrder?: number;
   stickerGroup?: string;
   stickerGroupOrder?: number;
+  uppercase?: boolean;
 }
 
 export interface Customer {

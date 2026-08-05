@@ -27,19 +27,55 @@ export class CustomerService {
     return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
   }
 
-  private normalizeCounterSegments(field: TemplateField): TemplateField {
-    if (!field.segments?.length || !this.isCounterField(field)) return field;
-    const counterIndex = field.segments.findIndex((segment) => segment.isCounter);
+  private uniqueSegmentKey(
+    fieldKey: string,
+    segmentKey: string | undefined,
+    segmentIndex: number,
+    usedKeys: Set<string>,
+  ) {
+    const fallback = `${fieldKey}_${segmentIndex + 1}`;
+    const baseKey = (segmentKey ?? "").trim() || fallback;
+    if (!usedKeys.has(baseKey)) {
+      usedKeys.add(baseKey);
+      return baseKey;
+    }
+
+    let suffix = segmentIndex + 1;
+    let nextKey = `${fieldKey}_${baseKey}_${suffix}`;
+    while (usedKeys.has(nextKey)) {
+      suffix += 1;
+      nextKey = `${fieldKey}_${baseKey}_${suffix}`;
+    }
+    usedKeys.add(nextKey);
+    return nextKey;
+  }
+
+  private normalizeSegmentKeys(field: TemplateField): TemplateField {
+    if (!field.segments?.length) return field;
+    const usedKeys = new Set<string>();
     return {
       ...field,
       segments: field.segments.map((segment, index) => ({
         ...segment,
-        isCounter: counterIndex >= 0 ? index === counterIndex : index === 0,
-        type: (counterIndex >= 0 ? index === counterIndex : index === 0) ? "number" : segment.type ?? "text",
-        counterType: (counterIndex >= 0 ? index === counterIndex : index === 0)
-          ? segment.counterType ?? this.counterType(field)
+        key: this.uniqueSegmentKey(field.key, segment.key, index, usedKeys),
+      })),
+    };
+  }
+
+  private normalizeCounterSegments(field: TemplateField): TemplateField {
+    const keyedField = this.normalizeSegmentKeys(field);
+    if (!keyedField.segments?.length || !this.isCounterField(keyedField)) return keyedField;
+    const hasCounter = keyedField.segments.some((segment) => segment.isCounter);
+    return {
+      ...keyedField,
+      segments: keyedField.segments.map((segment, index) => ({
+        ...segment,
+        isCounter: hasCounter ? segment.isCounter : index === 0,
+        type: (hasCounter ? segment.isCounter : index === 0) ? "number" : segment.type ?? "text",
+        counterType: (hasCounter ? segment.isCounter : index === 0)
+          ? segment.counterType ?? this.counterType(keyedField)
           : segment.counterType,
-        showOnSticker: (counterIndex >= 0 ? index === counterIndex : index === 0)
+        showOnSticker: (hasCounter ? segment.isCounter : index === 0)
           ? true
           : segment.showOnSticker,
       })),
@@ -78,8 +114,9 @@ export class CustomerService {
       if (optional) return [];
       throw new Error(`Template ${section} ยังไม่มีข้อมูล`);
     }
+    const trimmedValue = value.trim();
     try {
-      const parsed: unknown = JSON.parse(value);
+      const parsed: unknown = JSON.parse(trimmedValue);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         const config = parsed as {
           groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; isCounter?: boolean; counterType?: CounterType }> }>;
@@ -154,6 +191,7 @@ export class CustomerService {
               stickerOrder: field.stickerOrder ?? fieldIndex,
               stickerGroup: String(table.name ?? `Outside ${tableIndex + 1}`),
               stickerGroupOrder: tableIndex,
+              uppercase: field.uppercase ?? true,
             })),
           );
         }
@@ -192,11 +230,15 @@ export class CustomerService {
           stickerOrder: field.stickerOrder ?? index,
           stickerGroup: field.stickerGroup,
           stickerGroupOrder: field.stickerGroupOrder,
+          uppercase: section === "Outside" ? field.uppercase ?? true : field.uppercase,
         });
       });
     } catch (error) {
       if (error instanceof Error && error.message.startsWith("Template")) throw error;
-      return value.split(/\r?\n|,/)
+      if (trimmedValue.startsWith("{") || trimmedValue.startsWith("[")) {
+        throw new Error(`Template ${section} JSON ไม่สมบูรณ์ อาจถูกตัดเพราะ column tb_template.${section.toLowerCase()} สั้นเกินไป`);
+      }
+      return trimmedValue.split(/\r?\n|,/)
         .map((label) => label.trim())
         .filter(Boolean)
         .map((label, index) => ({
@@ -215,18 +257,28 @@ export class CustomerService {
   }
 
   async createCustomer(input: CreateCustomerPayload, createdBy: string) {
-    const customerId = await this.repository.createWithTemplate(
-      input.name.trim(),
-      JSON.stringify({
+    const inside = input.template
+      ? JSON.stringify({
+        version: 2,
+        sticker: input.template.sticker,
+        fields: input.template.inside,
+      })
+      : JSON.stringify({
         version: input.configuration.version,
         sticker: input.configuration.sticker,
         groups: input.configuration.inside.groups,
         fields: input.configuration.inside.fields,
-      }),
-      JSON.stringify({
+      });
+    const outside = input.template
+      ? JSON.stringify(input.template.outside)
+      : JSON.stringify({
         version: input.configuration.version,
         tables: input.configuration.outside.tables,
-      }),
+      });
+    const customerId = await this.repository.createWithTemplate(
+      input.name.trim(),
+      inside,
+      outside,
       createdBy,
     );
     return { id: customerId, name: input.name.trim() };
