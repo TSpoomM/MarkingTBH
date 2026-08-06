@@ -175,8 +175,8 @@ class StickerFactory {
 const stickerLabelStyle = (item: StickerItem): CSSProperties => {
   if (item.kind === "customerName") return {};
 
-  const countPressure = Math.max(0, item.details.length - 5) * 1.4;
-  const fontSize = Math.max(18, 26 - countPressure);
+  const countPressure = Math.max(0, item.details.length - 5) * 1.1;
+  const fontSize = Math.max(22, 30 - countPressure);
   const gap = Math.max(1.4, Math.min(4.5, fontSize / 6));
 
   return {
@@ -186,24 +186,27 @@ const stickerLabelStyle = (item: StickerItem): CSSProperties => {
   } as CSSProperties;
 };
 
-class AutoFitStickerValue extends Component<{ value: string }, { fontSize: number }> {
-  private readonly baseFontSize = 26;
-  private readonly minFontSize = 6;
-  private readonly ref = createRef<HTMLSpanElement>();
+class AutoFitStickerValues extends Component<{ values: Array<{ label?: string; value: string }> }, { fontSize: number }> {
+  private readonly defaultFontSize = 30;
+  private readonly minFontSize = 10;
+  private readonly ref = createRef<HTMLElement>();
   private resizeObserver: ResizeObserver | undefined;
 
-  state = { fontSize: this.baseFontSize };
+  state = { fontSize: this.defaultFontSize };
 
   componentDidMount() {
     this.fit();
     if (typeof ResizeObserver !== "undefined" && this.ref.current) {
       this.resizeObserver = new ResizeObserver(() => this.fit());
       this.resizeObserver.observe(this.ref.current);
+      if (this.ref.current.parentElement) {
+        this.resizeObserver.observe(this.ref.current.parentElement);
+      }
     }
   }
 
-  componentDidUpdate(previousProps: { value: string }) {
-    if (previousProps.value !== this.props.value) this.fit();
+  componentDidUpdate(previousProps: { values: Array<{ label?: string; value: string }> }) {
+    if (previousProps.values !== this.props.values) this.fit();
   }
 
   componentWillUnmount() {
@@ -214,21 +217,27 @@ class AutoFitStickerValue extends Component<{ value: string }, { fontSize: numbe
     window.requestAnimationFrame(() => {
       const element = this.ref.current;
       if (!element) return;
-      element.style.fontSize = `${this.baseFontSize}px`;
+      const inheritedFontSize = Number.parseFloat(getComputedStyle(element).getPropertyValue("--sticker-font"));
+      const baseFontSize = Number.isFinite(inheritedFontSize) ? inheritedFontSize : this.defaultFontSize;
+      element.style.fontSize = `${baseFontSize}px`;
       const availableWidth = element.clientWidth;
       const requiredWidth = element.scrollWidth;
       const nextFontSize = requiredWidth > availableWidth && availableWidth > 0
-        ? Math.max(this.minFontSize, Math.floor(this.baseFontSize * (availableWidth / requiredWidth)))
-        : this.baseFontSize;
+        ? Math.max(this.minFontSize, Math.floor(baseFontSize * (availableWidth / requiredWidth)))
+        : baseFontSize;
       if (nextFontSize !== this.state.fontSize) this.setState({ fontSize: nextFontSize });
     });
   };
 
   render() {
     return (
-      <span ref={this.ref} style={{ fontSize: `${this.state.fontSize}px` }}>
-        {this.props.value}
-      </span>
+      <dd className="sticker-detail-values" ref={this.ref} style={{ fontSize: `${this.state.fontSize}px` }}>
+        {this.props.values.map((value, valueIndex) => (
+          <span key={`${value.label ?? "value"}-${value.value}-${valueIndex}`}>
+            {value.value}
+          </span>
+        ))}
+      </dd>
     );
   }
 }
@@ -443,14 +452,7 @@ class StickerLabel extends Component<{ item: StickerItem; style?: CSSProperties 
                 <div className="sticker-detail-row" key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}>
                   <dt>{detail.label}</dt>
                   <dd className="sticker-detail-colon">:</dd>
-                  <dd className="sticker-detail-values">
-                    {detail.values.map((value, valueIndex) => (
-                      <AutoFitStickerValue
-                        value={value.value}
-                        key={`${value.label ?? detail.label}-${value.value}-${valueIndex}`}
-                      />
-                    ))}
-                  </dd>
+                  <AutoFitStickerValues values={detail.values} />
                 </div>
               ))}
             </dl>

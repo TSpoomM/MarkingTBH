@@ -164,6 +164,10 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
           {this.state.notice && <Toast type="error" message={this.state.notice} onClose={this.dismissNotice} />}
 
           <section className="panel history-filter">
+            <div className="history-filter-title">
+              <strong>ค้นหารายการ</strong>
+              <span>{filteredItems.length} จาก {this.state.items.length} รายการ</span>
+            </div>
             <label className="field">
               <span>ค้นหา</span>
               <input value={this.state.query} onChange={this.setQuery} placeholder="ชื่อผู้บันทึก, สาขา, ลูกค้า, LOT" />

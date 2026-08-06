@@ -272,15 +272,17 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                     <option value="textarea">ข้อความหลายบรรทัด</option>
                   </Select>
                 </label>
-                <label className="required-toggle">
-                  <Input
-                    bare
-                    type="checkbox"
-                    checked={field.required}
-                    onChange={(event) => onChange(section, index, { required: event.target.checked })}
-                  />
-                  <span>บังคับกรอก</span>
-                </label>
+                {section === "outside" && (
+                  <label className="required-toggle">
+                    <Input
+                      bare
+                      type="checkbox"
+                      checked={field.required}
+                      onChange={(event) => onChange(section, index, { required: event.target.checked })}
+                    />
+                    <span>บังคับกรอก</span>
+                  </label>
+                )}
                 {section === "outside" && (
                   <label className="required-toggle">
                     <Input
@@ -292,23 +294,26 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                     <span>Uppercase</span>
                   </label>
                 )}
-                <ConditionSelector
-                  value={field.condition}
-                  disabled={!field.required}
-                  onChange={(condition) => onChange(section, index, { condition })}
-                />
+                {section === "outside" && (
+                  <ConditionSelector
+                    value={field.condition}
+                    disabled={!field.required}
+                    onChange={(condition) => onChange(section, index, { condition })}
+                  />
+                )}
                 <Button className="delete-field" onClick={() => onRemove(section, index)}>ลบ</Button>
               </article>
               {!!field.segments?.length && (
                 <div className="editor-segments-row">
-                  <span>Section</span>
+                  <div className="editor-segments-title">Sections</div>
                   {field.segments.map((segment, segmentIndex) => (
-                    <label key={`${field.key}-${segment.key}-${segmentIndex}`}>
-                      <small>
-                        {segmentIndex + 1}
-                        {segment.isCounter ? " +1" : ""}
-                      </small>
-                      <div className="editor-segment-control">
+                    <div className="editor-segment-card" key={`${field.key}-${segment.key}-${segmentIndex}`}>
+                      <div className="editor-segment-head">
+                        <strong>Section {segmentIndex + 1}</strong>
+                        {segment.isCounter && <span>Count</span>}
+                      </div>
+                      <label className="editor-segment-name">
+                        <span>ชื่อ Section</span>
                         <Input
                           bare
                           value={segment.label}
@@ -318,6 +323,8 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                             ),
                           })}
                         />
+                      </label>
+                      <div className="editor-segment-actions" aria-label={`ตั้งค่า Section ${segmentIndex + 1}`}>
                         {countableField && (
                           <button
                             type="button"
@@ -337,21 +344,24 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                           </button>
                         )}
                         {segment.isCounter && (
-                          <Select
-                            bare
-                            value={segment.counterType ?? inferCounterType(field)}
-                            onChange={(event) => onChange(section, index, {
-                              segments: field.segments?.map((item, itemIndex) =>
-                                itemIndex === segmentIndex
-                                  ? { ...item, counterType: event.target.value as CounterType }
-                                  : item,
-                              ),
-                            })}
-                            aria-label="Counter type"
-                          >
-                            <option value="lot">Lot</option>
-                            <option value="pallet">Pallet</option>
-                          </Select>
+                          <label className="counter-type-control">
+                            <span>นับแบบ</span>
+                            <Select
+                              bare
+                              value={segment.counterType ?? inferCounterType(field)}
+                              onChange={(event) => onChange(section, index, {
+                                segments: field.segments?.map((item, itemIndex) =>
+                                  itemIndex === segmentIndex
+                                    ? { ...item, counterType: event.target.value as CounterType }
+                                    : item,
+                                ),
+                              })}
+                              aria-label="Counter type"
+                            >
+                              <option value="lot">Lot</option>
+                              <option value="pallet">Pallet</option>
+                            </Select>
+                          </label>
                         )}
                         <button
                           type="button"
@@ -372,7 +382,7 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                           ลบ
                         </button>
                       </div>
-                    </label>
+                    </div>
                   ))}
                   <button
                     type="button"

@@ -51,6 +51,14 @@ const createDefaultInsideDraft = (): TemplateField[] => [
   })),
 ];
 
+const normalizeInsideField = (field: TemplateField): TemplateField =>
+  normalizeCounterField({
+    ...field,
+    required: true,
+    condition: undefined,
+    showOnSticker: field.showOnSticker ?? true,
+  });
+
 export default class CustomerForm extends Component<Record<string, never>, CustomerFormState> {
   state: CustomerFormState = {
     mode: "edit",
@@ -149,7 +157,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
       if (!response.ok || !result.data) throw new Error(result.message);
       this.setState({
-        templateInsideDraft: result.data.inside.map((field) => normalizeCounterField({ ...field, showOnSticker: field.showOnSticker ?? true })),
+        templateInsideDraft: result.data.inside.map((field) => normalizeInsideField(field)),
         templateOutsideDraft: result.data.outside.map((field) => ({ ...field, showOnSticker: field.showOnSticker ?? true })),
         templateStickerLayouts: result.data.sticker.layouts,
       });
@@ -173,7 +181,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     const key = section === "inside" ? "templateInsideDraft" : "templateOutsideDraft";
     this.setState({
       [key]: this.state[key].map((field, fieldIndex) =>
-        fieldIndex === index ? normalizeCounterField({ ...field, ...patch }) : field,
+        fieldIndex === index
+          ? section === "inside"
+            ? normalizeInsideField({ ...field, ...patch })
+            : normalizeCounterField({ ...field, ...patch })
+          : field,
       ),
     } as Pick<CustomerFormState, typeof key>);
   };
@@ -186,7 +198,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     const key = section === "inside" ? "createInsideDraft" : "createOutsideDraft";
     this.setState({
       [key]: this.state[key].map((field, fieldIndex) =>
-        fieldIndex === index ? normalizeCounterField({ ...field, ...patch }) : field,
+        fieldIndex === index
+          ? section === "inside"
+            ? normalizeInsideField({ ...field, ...patch })
+            : normalizeCounterField({ ...field, ...patch })
+          : field,
       ),
     } as Pick<CustomerFormState, typeof key>);
   };
@@ -200,7 +216,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       key: `${section}_field_${uid()}`,
       label: "",
       type: "text",
-      required: false,
+      required: section === "inside",
       showOnSticker: true,
       stickerGroup: outsideGroup?.name,
       stickerGroupOrder: outsideGroup?.order,
@@ -228,7 +244,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       key: `${section}_field_${uid()}`,
       label: "",
       type: "text",
-      required: false,
+      required: section === "inside",
       showOnSticker: true,
       stickerGroup: outsideGroup?.name,
       stickerGroupOrder: outsideGroup?.order,
@@ -392,7 +408,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       ...field,
       key: fieldKey,
       label: field.label.trim(),
-      condition: cleanCondition(field.condition),
+      required: section === "inside" ? true : field.required,
+      condition: section === "inside" ? undefined : cleanCondition(field.condition),
       showOnSticker: field.showOnSticker ?? true,
       stickerOrder: field.showOnSticker === false ? undefined : field.stickerOrder ?? index,
       uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
@@ -466,7 +483,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
       if (!response.ok || !result.data) throw new Error(result.message);
       this.setState({
-        templateInsideDraft: result.data.inside.map((field) => normalizeCounterField({ ...field, showOnSticker: field.showOnSticker ?? true })),
+        templateInsideDraft: result.data.inside.map((field) => normalizeInsideField(field)),
         templateOutsideDraft: result.data.outside.map((field) => ({ ...field, showOnSticker: field.showOnSticker ?? true })),
         templateNotice: { kind: "success", text: "บันทึก Sticker Template แล้ว" },
       });
