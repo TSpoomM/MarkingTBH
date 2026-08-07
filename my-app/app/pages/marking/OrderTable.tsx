@@ -397,7 +397,7 @@ export default class OrderTable extends MarkingComponent {
     );
     const fscLogoStickerPages = StickerFactory.chunk(
       stickerItems.filter((item) => item.kind === "fscLogo"),
-      16,
+      4,
     );
     const previewItems = this.previewItems(stickerItems);
 

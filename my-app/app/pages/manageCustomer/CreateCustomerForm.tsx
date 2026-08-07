@@ -89,7 +89,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 ["insideFrame", "ในกรอบ", "A4 แนวนอน 2x2"],
                 ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
                 ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x8"],
-                ["fscLogo", "โลโก้ FSC", "A4 แนวนอน 8x2"],
+                ["fscLogo", "โลโก้ FSC", "A4 แนวตั้ง 2x2"],
               ] as const).map(([layout, label, description]) => (
                 <Choice
                   key={layout}
