@@ -178,24 +178,28 @@ const stickerLabelStyle = (item: StickerItem): CSSProperties => {
   const countPressure = Math.max(0, item.details.length - 5) * 1.1;
   const fontSize = Math.max(22, 30 - countPressure);
   const gap = Math.max(1.4, Math.min(4.5, fontSize / 6));
+  const longestLabelLength = Math.max(...item.details.map((detail) => detail.label.length), 0);
+  const labelColumnMm = Math.min(58, Math.max(34, longestLabelLength * 4));
 
   return {
     "--sticker-font": `${fontSize}px`,
     "--sticker-label-font": `${fontSize}px`,
     "--sticker-gap": `${gap}mm`,
+    "--sticker-label-column": `${labelColumnMm}mm`,
   } as CSSProperties;
 };
 
-class AutoFitStickerValues extends Component<{ values: Array<{ label?: string; value: string }> }, { fontSize: number }> {
+class AutoFitStickerRow extends Component<{ detail: StickerItem["details"][number] }, { fontSize: number }> {
   private readonly defaultFontSize = 30;
-  private readonly minFontSize = 10;
-  private readonly ref = createRef<HTMLElement>();
+  private readonly minFontSize = 4;
+  private readonly ref = createRef<HTMLDivElement>();
   private resizeObserver: ResizeObserver | undefined;
 
   state = { fontSize: this.defaultFontSize };
 
   componentDidMount() {
     this.fit();
+    window.addEventListener("beforeprint", this.fitNow);
     if (typeof ResizeObserver !== "undefined" && this.ref.current) {
       this.resizeObserver = new ResizeObserver(() => this.fit());
       this.resizeObserver.observe(this.ref.current);
@@ -205,39 +209,50 @@ class AutoFitStickerValues extends Component<{ values: Array<{ label?: string; v
     }
   }
 
-  componentDidUpdate(previousProps: { values: Array<{ label?: string; value: string }> }) {
-    if (previousProps.values !== this.props.values) this.fit();
+  componentDidUpdate(previousProps: { detail: StickerItem["details"][number] }) {
+    if (previousProps.detail !== this.props.detail) this.fit();
   }
 
   componentWillUnmount() {
+    window.removeEventListener("beforeprint", this.fitNow);
     this.resizeObserver?.disconnect();
   }
 
-  private fit = () => {
-    window.requestAnimationFrame(() => {
-      const element = this.ref.current;
-      if (!element) return;
-      const inheritedFontSize = Number.parseFloat(getComputedStyle(element).getPropertyValue("--sticker-font"));
-      const baseFontSize = Number.isFinite(inheritedFontSize) ? inheritedFontSize : this.defaultFontSize;
-      element.style.fontSize = `${baseFontSize}px`;
-      const availableWidth = element.clientWidth;
-      const requiredWidth = element.scrollWidth;
-      const nextFontSize = requiredWidth > availableWidth && availableWidth > 0
-        ? Math.max(this.minFontSize, Math.floor(baseFontSize * (availableWidth / requiredWidth)))
-        : baseFontSize;
-      if (nextFontSize !== this.state.fontSize) this.setState({ fontSize: nextFontSize });
-    });
+  private fitNow = () => {
+    const element = this.ref.current;
+    if (!element) return;
+    const inheritedFontSize = Number.parseFloat(getComputedStyle(element).getPropertyValue("--sticker-font"));
+    const baseFontSize = Number.isFinite(inheritedFontSize) ? inheritedFontSize : this.defaultFontSize;
+    element.style.fontSize = `${baseFontSize}px`;
+    const availableWidth = element.clientWidth;
+    const requiredWidth = element.scrollWidth;
+    const nextFontSize = requiredWidth > availableWidth && availableWidth > 0
+      ? Math.max(this.minFontSize, Math.floor(baseFontSize * (availableWidth / requiredWidth)))
+      : baseFontSize;
+    element.style.fontSize = `${nextFontSize}px`;
+    if (nextFontSize !== this.state.fontSize) this.setState({ fontSize: nextFontSize });
   };
 
+  private fit = () => window.requestAnimationFrame(this.fitNow);
+
   render() {
+    const { detail } = this.props;
     return (
-      <dd className="sticker-detail-values" ref={this.ref} style={{ fontSize: `${this.state.fontSize}px` }}>
-        {this.props.values.map((value, valueIndex) => (
-          <span key={`${value.label ?? "value"}-${value.value}-${valueIndex}`}>
-            {value.value}
-          </span>
-        ))}
-      </dd>
+      <div
+        className="sticker-detail-row"
+        ref={this.ref}
+        style={{ "--sticker-row-font": `${this.state.fontSize}px` } as CSSProperties}
+      >
+        <dt>{detail.label}</dt>
+        <dd className="sticker-detail-colon">:</dd>
+        <dd className="sticker-detail-values">
+          {detail.values.map((value, valueIndex) => (
+            <span key={`${value.label ?? "value"}-${value.value}-${valueIndex}`}>
+              {value.value}
+            </span>
+          ))}
+        </dd>
+      </div>
     );
   }
 }
@@ -293,13 +308,13 @@ export default class OrderTable extends MarkingComponent {
         <div className="container table-layout">
           <div className="table-column table-column-inside">
             <div className="table-column-label">
-              <span>ในกรอบ</span>
-              <strong>Inside</strong>
+              <span>สติ๊กเกอร์</span>
+              <strong>ในกรอบ</strong>
             </div>
             <TableSection
               number="2"
-              title="ข้อมูลภายในกล่อง (Inside)"
-              subtitle="Template มาตรฐานสำหรับข้อมูลภายในกล่อง"
+              title="ข้อมูลสำหรับสติ๊กเกอร์ในกรอบ"
+              subtitle="รายละเอียดหลักที่พิมพ์บนฉลากภายในกล่อง"
               fields={this.state.template?.inside ?? []}
               rows={this.state.insideRows}
               lotStart={this.state.lotStart}
@@ -308,15 +323,15 @@ export default class OrderTable extends MarkingComponent {
           </div>
           <div className="table-column table-column-outside">
             <div className="table-column-label">
-              <span>นอกกรอบ</span>
-              <strong>Outside</strong>
+              <span>สติ๊กเกอร์</span>
+              <strong>นอกกรอบ</strong>
             </div>
             {this.state.template && outsideGroups.map((group, groupIndex) => (
               <TableSection
                 key={`${group.name}-${groupIndex}`}
                 number={groupIndex === 0 ? "3" : `3.${groupIndex + 1}`}
-                title={`${group.name} (Outside)`}
-                subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
+                title={`${group.name} (สติ๊กเกอร์นอกกรอบ)`}
+                subtitle={`ช่องข้อมูลเฉพาะสำหรับลูกค้า ${customer?.name ?? "ที่เลือก"}`}
                 fields={group.fields}
                 rows={this.state.outsideRows}
                 lotStart={this.state.lotStart}
@@ -326,13 +341,13 @@ export default class OrderTable extends MarkingComponent {
             {this.state.template && outsideGroups.length === 0 && this.state.isAdmin && (
               <TableSection
                 number="3"
-                title="ข้อมูลภายนอกกล่อง (Outside)"
-                subtitle={`Template เฉพาะของ ${customer?.name ?? "ลูกค้าที่เลือก"}`}
+                title="ข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
+                subtitle={`ช่องข้อมูลเฉพาะสำหรับลูกค้า ${customer?.name ?? "ที่เลือก"}`}
                 fields={[]}
                 rows={[]}
                 lotStart={this.state.lotStart}
                 onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
-                emptyText="ลูกค้ารายนี้ไม่มี Outside Template"
+                emptyText="ลูกค้ารายนี้ยังไม่ได้ตั้งค่าสติ๊กเกอร์นอกกรอบ"
               />
             )}
           </div>
@@ -368,17 +383,17 @@ class TableSection extends Component<TableSectionProps> {
         <div className="table-heading">
           <SectionTitle number={number} title={title} subtitle={subtitle} />
           <div className="table-meta">
-            <span>{fields.length} fields</span>
-            <span>{rows.length} records</span>
+            <span>{fields.length} ช่องข้อมูล</span>
+            <span>{rows.length} ชุดข้อมูล</span>
           </div>
         </div>
         {!fields.length ? (
-          <EmptyState message={emptyText ?? "เลือกลูกค้าเพื่อโหลด Template"} />
+          <EmptyState message={emptyText ?? "เลือกลูกค้าเพื่อโหลดรูปแบบช่องข้อมูล"} />
         ) : (
           <div className="vertical-records">
             {rows.map((row, rowIndex) => (
               <article className="record-card" key={rowIndex}>
-                <header><div><span>{String(rowIndex + 1).padStart(2, "0")}</span><b>ข้อมูลสติ๊กเกอร์</b></div></header>
+                <header><div><span>{String(rowIndex + 1).padStart(2, "0")}</span><b>ชุดข้อมูลสำหรับพิมพ์</b></div></header>
                 <div className="vertical-fields">
                   {fields.map((field) => (
                     <label key={field.key}>
@@ -449,11 +464,10 @@ class StickerLabel extends Component<{ item: StickerItem; style?: CSSProperties 
             )}
             <dl className="sticker-details">
               {item.details.map((detail) => (
-                <div className="sticker-detail-row" key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}>
-                  <dt>{detail.label}</dt>
-                  <dd className="sticker-detail-colon">:</dd>
-                  <AutoFitStickerValues values={detail.values} />
-                </div>
+                <AutoFitStickerRow
+                  detail={detail}
+                  key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}
+                />
               ))}
             </dl>
           </>

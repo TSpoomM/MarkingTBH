@@ -459,6 +459,7 @@ select {
 	--sticker-font: 18px;
 	--sticker-label-font: 15px;
 	--sticker-gap: 10px;
+	--sticker-label-column: 34%;
 	font-family: Arial, sans-serif;
 	font-weight: 700;
 	min-width: 0;
@@ -491,9 +492,11 @@ select {
 
 .pdf-preview .sticker-detail-row {
 	display: grid;
-	grid-template-columns: max-content 14px minmax(0, 1fr);
+	grid-template-columns: minmax(0, var(--sticker-label-column)) 14px minmax(0, 1fr);
 	gap: 8px;
-	align-items: baseline
+	align-items: baseline;
+	font-size: var(--sticker-row-font, var(--sticker-font));
+	white-space: nowrap
 }
 
 .pdf-preview .sticker-label dt,
@@ -505,16 +508,20 @@ select {
 }
 
 .pdf-preview .sticker-label dt {
-	font-size: var(--sticker-label-font);
+	font-size: inherit;
 	white-space: nowrap;
 	max-width: 100%;
-	overflow: hidden;
+	overflow: visible;
 	text-overflow: clip
 }
 
 .pdf-preview .sticker-detail-colon,
 .pdf-preview .sticker-detail-values {
-	font-size: var(--sticker-font)
+	font-size: inherit
+}
+
+.pdf-preview .sticker-detail-colon {
+	text-align: center
 }
 
 .pdf-preview .sticker-detail-values {
@@ -522,7 +529,7 @@ select {
 	display: flex;
 	flex-wrap: nowrap;
 	gap: 4px 5px;
-	overflow: hidden;
+	overflow: visible;
 	white-space: nowrap
 }
 
@@ -1292,6 +1299,7 @@ select {
 		--sticker-font: 30px;
 		--sticker-label-font: 25px;
 		--sticker-gap: 4.5mm;
+		--sticker-label-column: 34%;
 		font-family: Arial, sans-serif;
 		font-weight: 700;
 		border: 0;
@@ -1365,21 +1373,23 @@ select {
 
 	.sticker-detail-row {
 		display: grid;
-		grid-template-columns: max-content 5mm minmax(0, 1fr);
+		grid-template-columns: minmax(0, var(--sticker-label-column)) 5mm minmax(0, 1fr);
 		gap: 2mm;
 		align-items: baseline;
+		font-size: var(--sticker-row-font, var(--sticker-font));
+		white-space: nowrap;
 		break-inside: avoid
 	}
 
 	.sticker-label dt {
 		font-family: Arial;
-		font-size: var(--sticker-label-font);
+		font-size: inherit;
 		/* padding-right: 70px; */
 		font-weight: 700;
 		line-height: 1.05;
 		white-space: nowrap;
 		max-width: 100%;
-		overflow: hidden;
+		overflow: visible;
 		text-overflow: clip
 	}
 
@@ -1389,7 +1399,7 @@ select {
 
 	.sticker-detail-colon {
 		font-family: Arial;
-		font-size: var(--sticker-font);
+		font-size: inherit;
 		font-weight: 700;
 		text-align: end;
 		line-height: 1.05
@@ -1401,10 +1411,10 @@ select {
 		display: flex;
 		flex-wrap: nowrap;
 		gap: 1mm 2mm;
-		font-size: var(--sticker-font);
+		font-size: inherit;
 		font-weight: 700;
 		line-height: 1.05;
-		overflow: hidden;
+		overflow: visible;
 		white-space: nowrap
 	}
 

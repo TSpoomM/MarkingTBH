@@ -10,10 +10,10 @@ export default class Pagination extends MarkingComponent {
         <div className="save-summary">
           <strong>พร้อมบันทึกข้อมูล</strong>
           <span>
-            Inside {this.state.insideRows.length} ชุด
+            สติ๊กเกอร์ในกรอบ {this.state.insideRows.length} ชุด
             {this.state.template?.outside.length
-              ? ` · Outside ${this.state.outsideRows.length} ชุด`
-              : " · ลูกค้ารายนี้ไม่มี Outside"}
+              ? ` · สติ๊กเกอร์นอกกรอบ ${this.state.outsideRows.length} ชุด`
+              : " · ลูกค้ารายนี้ไม่มีสติ๊กเกอร์นอกกรอบ"}
           </span>
         </div>
         <Button

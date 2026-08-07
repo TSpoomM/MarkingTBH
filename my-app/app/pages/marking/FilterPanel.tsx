@@ -29,7 +29,7 @@ export default class FilterPanel extends MarkingComponent {
           <SectionTitle
             number="1"
             title="รายละเอียดสติ๊กเกอร์"
-            subtitle="ช่องกรอกจะแสดงตาม Template ที่ Admin กำหนดให้ลูกค้า"
+            subtitle="ช่องกรอกจะแสดงตามรูปแบบสติ๊กเกอร์ที่ Admin กำหนดให้ลูกค้า"
           />
           {/* <div className="workflow-strip" aria-label="ลำดับการใช้งาน">
             <span className={this.state.customerId ? "done" : "active"}>1. เลือกลูกค้า</span>
@@ -39,7 +39,7 @@ export default class FilterPanel extends MarkingComponent {
           <div className="detail-grid">
             <Select
               label="ลูกค้า"
-              hint={this.state.template ? `Template ภายนอก ${this.state.template.outside.length} ช่องข้อมูล` : undefined}
+              hint={this.state.template ? `สติ๊กเกอร์นอกกรอบมี ${this.state.template.outside.length} ช่องข้อมูล` : undefined}
               value={this.state.customerId}
               onChange={(event) => void this.actions.selectCustomer(event.target.value)}
               disabled={this.state.isLoading}
