@@ -90,15 +90,15 @@ class StickerFactory {
             : [];
         });
         return values.length
-          ? [{ label: field.label, values, order: field.stickerOrder ?? Math.min(...selectedSegments.map((segment) => segment.stickerOrder ?? 0)) }]
+          ? [{ label: field.label, values, order: field.stickerOrder ?? Math.min(...selectedSegments.map((segment) => segment.stickerOrder ?? 0)), fontScale: field.fontScale }]
           : [];
       }
       if (field.showOnSticker === false) return [];
       const value = this.fieldValue(field, row?.[field.key]);
-      return value ? [{ label: field.label, values: [{ value }], order: field.stickerOrder ?? 0 }] : [];
+      return value ? [{ label: field.label, values: [{ value }], order: field.stickerOrder ?? 0, fontScale: field.fontScale }] : [];
     })
       .sort((a, b) => a.order - b.order)
-      .map(({ label, values, order }) => ({ label, values, order }));
+      .map(({ label, values, order, fontScale }) => ({ label, values, order, fontScale }));
   }
 
   private static splitOutsideLabel(label: string) {
@@ -167,6 +167,7 @@ class StickerFactory {
       });
     }
     if (layouts.customerName) addLayoutItems("customerName", () => []);
+    if (layouts.fscLogo) addLayoutItems("fscLogo", () => []);
 
     return items;
   }
@@ -189,9 +190,88 @@ const stickerLabelStyle = (item: StickerItem): CSSProperties => {
   } as CSSProperties;
 };
 
-class AutoFitStickerRow extends Component<{ detail: StickerItem["details"][number] }, { fontSize: number }> {
+const FONT_SCALE_MULTIPLIERS: Record<NonNullable<StickerItem["details"][number]["fontScale"]>, number> = {
+  normal: 1,
+  large: 1.35,
+  xlarge: 1.7,
+};
+
+// Layer A: shrinks the whole card (font + gap) only as far as needed to stop the
+// row COUNT from overflowing the card vertically. It never touches per-row width fit.
+class AutoFitStickerDetails extends Component<{ details: StickerItem["details"] }, { scale: number }> {
+  private readonly minScale = 0.15;
+  private readonly ref = createRef<HTMLDListElement>();
+  private resizeObserver: ResizeObserver | undefined;
+
+  state = { scale: 1 };
+
+  componentDidMount() {
+    this.fit();
+    window.addEventListener("beforeprint", this.fitNow);
+    if (typeof ResizeObserver !== "undefined" && this.ref.current) {
+      this.resizeObserver = new ResizeObserver(() => this.fit());
+      this.resizeObserver.observe(this.ref.current);
+      if (this.ref.current.parentElement) {
+        this.resizeObserver.observe(this.ref.current.parentElement);
+      }
+    }
+  }
+
+  componentDidUpdate(previousProps: { details: StickerItem["details"] }) {
+    if (previousProps.details !== this.props.details) this.fit();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("beforeprint", this.fitNow);
+    this.resizeObserver?.disconnect();
+  }
+
+  private fitNow = () => {
+    const element = this.ref.current;
+    if (!element) return;
+    element.style.setProperty("--sticker-fit-scale", "1");
+    const availableHeight = element.clientHeight;
+    const requiredHeight = element.scrollHeight;
+    const heightRatio = availableHeight > 0 && requiredHeight > availableHeight
+      ? availableHeight / requiredHeight
+      : 1;
+    const nextScale = Math.max(this.minScale, Math.min(1, heightRatio));
+    element.style.setProperty("--sticker-fit-scale", `${nextScale}`);
+    if (Math.abs(nextScale - this.state.scale) > 0.01) this.setState({ scale: nextScale });
+  };
+
+  private fit = () => window.requestAnimationFrame(this.fitNow);
+
+  render() {
+    const { details } = this.props;
+    return (
+      <dl
+        className="sticker-details"
+        ref={this.ref}
+        style={{ "--sticker-fit-scale": this.state.scale } as CSSProperties}
+      >
+        {details.map((detail) => (
+          <AutoFitStickerRow
+            detail={detail}
+            cardScale={this.state.scale}
+            key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}
+          />
+        ))}
+      </dl>
+    );
+  }
+}
+
+// Layer B: each row independently shrinks its OWN font size until its text fits on
+// one line. Text is never wrapped and never clipped — a verify loop keeps nudging the
+// size down (past any single-pass rounding error) until scrollWidth truly fits.
+class AutoFitStickerRow extends Component<
+  { detail: StickerItem["details"][number]; cardScale: number },
+  { fontSize: number }
+> {
   private readonly defaultFontSize = 30;
-  private readonly minFontSize = 4;
+  private readonly minFontSize = 5;
+  private readonly maxVerifyPasses = 30;
   private readonly ref = createRef<HTMLDivElement>();
   private resizeObserver: ResizeObserver | undefined;
 
@@ -209,8 +289,10 @@ class AutoFitStickerRow extends Component<{ detail: StickerItem["details"][numbe
     }
   }
 
-  componentDidUpdate(previousProps: { detail: StickerItem["details"][number] }) {
-    if (previousProps.detail !== this.props.detail) this.fit();
+  componentDidUpdate(previousProps: { detail: StickerItem["details"][number]; cardScale: number }) {
+    if (previousProps.detail !== this.props.detail || previousProps.cardScale !== this.props.cardScale) {
+      this.fit();
+    }
   }
 
   componentWillUnmount() {
@@ -222,15 +304,27 @@ class AutoFitStickerRow extends Component<{ detail: StickerItem["details"][numbe
     const element = this.ref.current;
     if (!element) return;
     const inheritedFontSize = Number.parseFloat(getComputedStyle(element).getPropertyValue("--sticker-font"));
-    const baseFontSize = Number.isFinite(inheritedFontSize) ? inheritedFontSize : this.defaultFontSize;
-    element.style.fontSize = `${baseFontSize}px`;
-    const availableWidth = element.clientWidth;
-    const requiredWidth = element.scrollWidth;
-    const nextFontSize = requiredWidth > availableWidth && availableWidth > 0
-      ? Math.max(this.minFontSize, Math.floor(baseFontSize * (availableWidth / requiredWidth)))
-      : baseFontSize;
-    element.style.fontSize = `${nextFontSize}px`;
-    if (nextFontSize !== this.state.fontSize) this.setState({ fontSize: nextFontSize });
+    const rowScale = FONT_SCALE_MULTIPLIERS[this.props.detail.fontScale ?? "normal"];
+    const baseFontSize = (Number.isFinite(inheritedFontSize) ? inheritedFontSize : this.defaultFontSize)
+      * this.props.cardScale * rowScale;
+
+    let fontSize = baseFontSize;
+    element.style.fontSize = `${fontSize}px`;
+    let availableWidth = element.clientWidth;
+    let requiredWidth = element.scrollWidth;
+    if (availableWidth > 0 && requiredWidth > availableWidth) {
+      fontSize = Math.max(this.minFontSize, fontSize * (availableWidth / requiredWidth));
+      element.style.fontSize = `${fontSize}px`;
+      for (let pass = 0; pass < this.maxVerifyPasses; pass += 1) {
+        availableWidth = element.clientWidth;
+        requiredWidth = element.scrollWidth;
+        if (requiredWidth <= availableWidth || fontSize <= this.minFontSize) break;
+        fontSize = Math.max(this.minFontSize, fontSize - 1);
+        element.style.fontSize = `${fontSize}px`;
+      }
+    }
+
+    if (Math.abs(fontSize - this.state.fontSize) > 0.5) this.setState({ fontSize });
   };
 
   private fit = () => window.requestAnimationFrame(this.fitNow);
@@ -294,12 +388,16 @@ export default class OrderTable extends MarkingComponent {
       outsideRow: this.state.outsideRows[0],
     });
     const frameStickerPages = StickerFactory.chunk(
-      stickerItems.filter((item) => item.kind !== "customerName"),
+      stickerItems.filter((item) => item.kind === "insideFrame" || item.kind === "outsideFrame"),
       4,
     );
     const customerNameStickerPages = StickerFactory.chunk(
       stickerItems.filter((item) => item.kind === "customerName"),
-      32,
+      16,
+    );
+    const fscLogoStickerPages = StickerFactory.chunk(
+      stickerItems.filter((item) => item.kind === "fscLogo"),
+      16,
     );
     const previewItems = this.previewItems(stickerItems);
 
@@ -367,6 +465,9 @@ export default class OrderTable extends MarkingComponent {
           ))}
           {customerNameStickerPages.map((page, index) => (
             <StickerPage items={page} key={`customer-${index}`} layout="customerName" />
+          ))}
+          {fscLogoStickerPages.map((page, index) => (
+            <StickerPage items={page} key={`fsc-${index}`} layout="fsc" />
           ))}
         </div>
 
@@ -437,11 +538,17 @@ class TableSection extends Component<TableSectionProps> {
   }
 }
 
-class StickerPage extends Component<{ items: StickerItem[]; layout: "frame" | "customerName"; preview?: boolean }> {
+const STICKER_PAGE_CLASS: Record<"frame" | "customerName" | "fsc", string> = {
+  frame: "sticker-page-frame",
+  customerName: "sticker-page-customer",
+  fsc: "sticker-page-fsc",
+};
+
+class StickerPage extends Component<{ items: StickerItem[]; layout: "frame" | "customerName" | "fsc"; preview?: boolean }> {
   render() {
     const { items, layout, preview = false } = this.props;
     return (
-      <section className={`sticker-page ${layout === "frame" ? "sticker-page-frame" : "sticker-page-customer"} ${preview ? "sticker-page-preview" : ""}`}>
+      <section className={`sticker-page ${STICKER_PAGE_CLASS[layout]} ${preview ? "sticker-page-preview" : ""}`}>
         {items.map((item, index) => (
           <StickerLabel item={item} key={`${item.kind}-${item.lot}-${item.pallet}-${item.side}-${index}`} style={stickerLabelStyle(item)} />
         ))}
@@ -457,20 +564,10 @@ class StickerLabel extends Component<{ item: StickerItem; style?: CSSProperties 
       <article className={`sticker-label ${item.kind}`} style={style}>
         {item.kind === "customerName" ? (
           <p>{item.customerName}</p>
+        ) : item.kind === "fscLogo" ? (
+          <Image className="sticker-fsc-logo" src="/FSC_Logo.png" alt="FSC logo" width={200} height={300} unoptimized />
         ) : (
-          <>
-            {item.stickerType === "FCS" && (
-              <Image className="sticker-fcs-logo" src="/favicon.ico" alt="FCS logo mockup" width={64} height={64} unoptimized />
-            )}
-            <dl className="sticker-details">
-              {item.details.map((detail) => (
-                <AutoFitStickerRow
-                  detail={detail}
-                  key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}
-                />
-              ))}
-            </dl>
-          </>
+          <AutoFitStickerDetails details={item.details} />
         )}
       </article>
     );

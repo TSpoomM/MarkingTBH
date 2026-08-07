@@ -43,21 +43,15 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
             onClose={onDismissNotice}
           />
         )}
-        <div className="customer-create-steps">
-          <span className="active">1. Customer</span>
-          <span className="active">2. User fields</span>
-          <span className="active">3. Sticker layout</span>
-          <span className="active">4. Template</span>
-        </div>
         <form onSubmit={onSubmit}>
           <section className="config-card">
             <SectionHeading
               number="1"
-              title="Add Customer"
-              subtitle="Create the customer and finish the sticker template in one save"
+              title="เพิ่ม Customer"
+              subtitle="กรอกชื่อลูกค้าและตั้งค่าสติ๊กเกอร์ให้ครบ แล้วบันทึกในขั้นตอนเดียว"
             />
             <label className="customer-name">
-              <span>Customer name *</span>
+              <span>ชื่อ Customer *</span>
               <input
                 value={name}
                 onChange={(event) => onNameChange(event.target.value)}
@@ -65,14 +59,14 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               />
             </label>
             <OptionGroup
-              label="Fields shown to user *"
-              hint="Side and Format are required for sticker quantity calculation"
+              label="ช่องข้อมูลที่ผู้พิมพ์ต้องเลือก *"
+              hint="Side และ Format จำเป็นสำหรับคำนวณจำนวนสติ๊กเกอร์"
             >
               {([
-                ["side", "Side", "User selects 1-6"],
-                ["format", "Format", "User selects 5533 or 555"],
-                ["type", "Type", "User selects TNR, NON-TNR or FCS"],
-                ["other", "Other", "User selects Dome or Inter"],
+                ["side", "Side", "ผู้พิมพ์เลือกจำนวนด้าน 1-6"],
+                ["format", "Format", "ผู้พิมพ์เลือกรูปแบบ 5533 หรือ 555"],
+                ["type", "Type", "ผู้พิมพ์เลือก TNR, NON-TNR หรือ FCS"],
+                ["other", "Other", "ผู้พิมพ์เลือก Dome หรือ Inter"],
               ] as const).map(([field, label, description]) => (
                 <Choice
                   key={field}
@@ -88,13 +82,14 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               ))}
             </OptionGroup>
             <OptionGroup
-              label="Sticker layouts to print *"
-              hint="Choose at least one output format for this customer"
+              label="รูปแบบสติ๊กเกอร์ที่ต้องพิมพ์ *"
+              hint="เลือกอย่างน้อย 1 รูปแบบสำหรับลูกค้ารายนี้"
             >
               {([
-                ["insideFrame", "Inside frame", "A4 landscape 2x2"],
-                ["outsideFrame", "Outside frame", "A4 landscape 2x2"],
-                ["customerName", "Customer name", "A4 portrait 2x16"],
+                ["insideFrame", "ในกรอบ", "A4 แนวนอน 2x2"],
+                ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
+                ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x8"],
+                ["fscLogo", "โลโก้ FSC", "A4 แนวนอน 8x2"],
               ] as const).map(([layout, label, description]) => (
                 <Choice
                   key={layout}
@@ -110,8 +105,8 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
           <section className="config-card">
             <SectionHeading
               number="2"
-              title="Sticker Template"
-              subtitle="Set fields, required rules, conditions, counter segments and sticker preview before creating"
+              title="ตั้งค่า Sticker Template"
+              subtitle="กำหนด Field, เงื่อนไขบังคับ, Segment ตัวนับ และดู Preview ก่อนสร้าง Customer"
             />
             <StickerTemplatePreview
               customerName={name.trim() || "Customer"}
@@ -121,7 +116,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
             />
             <div className="template-manager-grid">
               <TemplateFieldEditor
-                title="Inside sticker"
+                title="Sticker ในกรอบ"
                 section="inside"
                 fields={insideDraft}
                 onChange={onChangeField}
@@ -129,7 +124,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 onRemove={onRemoveField}
               />
               <TemplateFieldEditor
-                title="Outside sticker"
+                title="Sticker นอกกรอบ"
                 section="outside"
                 fields={outsideDraft}
                 onChange={onChangeField}
@@ -143,9 +138,9 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
           </section>
 
           <div className="form-actions">
-            <Link href="/">Cancel</Link>
+            <Link href="/">ยกเลิก</Link>
             <button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save customer"}
+              {saving ? "กำลังบันทึก..." : "สร้าง Customer"}
             </button>
           </div>
         </form>

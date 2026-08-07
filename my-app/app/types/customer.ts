@@ -1,5 +1,6 @@
 export type FieldType = "text" | "number" | "date" | "textarea";
 export type CounterType = "lot" | "pallet";
+export type FontScale = "normal" | "large" | "xlarge";
 
 export interface TemplateField {
   key: string;
@@ -26,6 +27,7 @@ export interface TemplateField {
   stickerGroup?: string;
   stickerGroupOrder?: number;
   uppercase?: boolean;
+  fontScale?: FontScale;
 }
 
 export interface Customer {
@@ -37,6 +39,7 @@ export interface StickerLayouts {
   insideFrame: boolean;
   outsideFrame: boolean;
   customerName: boolean;
+  fscLogo: boolean;
 }
 
 export interface CustomerTemplate {

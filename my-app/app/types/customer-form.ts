@@ -6,19 +6,21 @@ export const STICKER_FORMATS = {
 } as const;
 
 export type StickerField = "side" | "format" | "type" | "other";
-export type StickerLayoutKey = "insideFrame" | "outsideFrame" | "customerName";
+export type StickerLayoutKey = "insideFrame" | "outsideFrame" | "customerName" | "fscLogo";
 export type CounterType = "lot" | "pallet";
 
 export interface StickerLayouts {
   insideFrame: boolean;
   outsideFrame: boolean;
   customerName: boolean;
+  fscLogo: boolean;
 }
 
 export const DEFAULT_STICKER_LAYOUTS: StickerLayouts = {
   insideFrame: true,
   outsideFrame: true,
   customerName: false,
+  fscLogo: false,
 };
 
 export interface SegmentDefinition {

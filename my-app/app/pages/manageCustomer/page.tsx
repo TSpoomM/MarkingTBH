@@ -74,11 +74,13 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       insideFrame: true,
       outsideFrame: true,
       customerName: false,
+      fscLogo: false,
     },
     templateStickerLayouts: {
       insideFrame: true,
       outsideFrame: true,
       customerName: false,
+      fscLogo: false,
     },
     groups: initialGroups.map((group) => ({
       ...group,
@@ -147,6 +149,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         insideFrame: true,
         outsideFrame: true,
         customerName: false,
+        fscLogo: false,
       },
       templateNotice: undefined,
     });
@@ -432,7 +435,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     if ([...inside, ...outside].some((field) => !field.label || field.segments?.some((segment) => !segment.label))) {
       return "Please fill every field name";
     }
-    if (!layouts.insideFrame && !layouts.outsideFrame && !layouts.customerName) {
+    if (!layouts.insideFrame && !layouts.outsideFrame && !layouts.customerName && !layouts.fscLogo) {
       return "Please choose at least one sticker layout";
     }
     if (
@@ -455,7 +458,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     if (
       !this.state.templateStickerLayouts.insideFrame &&
       !this.state.templateStickerLayouts.outsideFrame &&
-      !this.state.templateStickerLayouts.customerName
+      !this.state.templateStickerLayouts.customerName &&
+      !this.state.templateStickerLayouts.fscLogo
     ) {
       this.setState({ templateNotice: { kind: "error", text: "เลือกรูปแบบสติ๊กเกอร์ที่ต้องพิมพ์อย่างน้อย 1 แบบ" } });
       return;

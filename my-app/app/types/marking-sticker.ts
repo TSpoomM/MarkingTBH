@@ -1,12 +1,13 @@
-import type { TemplateField, StickerLayouts } from "@/app/types/customer";
+import type { FontScale, TemplateField, StickerLayouts } from "@/app/types/customer";
 import type { MarkingContent } from "@/app/types/marking";
 
-export type StickerKind = "insideFrame" | "outsideFrame" | "customerName";
+export type StickerKind = "insideFrame" | "outsideFrame" | "customerName" | "fscLogo";
 
 export interface StickerDetail {
   label: string;
   values: Array<{ label?: string; value: string }>;
   order: number;
+  fontScale?: FontScale;
 }
 
 export interface StickerItem {

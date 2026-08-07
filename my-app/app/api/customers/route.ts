@@ -38,6 +38,7 @@ const outsideFieldSchema = z.object({
   stickerOrder: z.number().int().min(0).optional(),
   system: z.boolean().optional(),
   uppercase: z.boolean().optional(),
+  fontScale: z.enum(["normal", "large", "xlarge"]).optional(),
 });
 
 const templateFieldSchema = z.object({
@@ -65,6 +66,7 @@ const templateFieldSchema = z.object({
   stickerGroup: z.string().optional(),
   stickerGroupOrder: z.number().int().min(0).optional(),
   uppercase: z.boolean().optional(),
+  fontScale: z.enum(["normal", "large", "xlarge"]).optional(),
 });
 
 const createCustomerSchema = z.object({
@@ -78,8 +80,9 @@ const createCustomerSchema = z.object({
         insideFrame: z.boolean(),
         outsideFrame: z.boolean(),
         customerName: z.boolean(),
+        fscLogo: z.boolean(),
       }).refine((layouts) => (
-        layouts.insideFrame || layouts.outsideFrame || layouts.customerName
+        layouts.insideFrame || layouts.outsideFrame || layouts.customerName || layouts.fscLogo
       ), "เลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ"),
     }),
     inside: z.object({
@@ -111,8 +114,9 @@ const createCustomerSchema = z.object({
         insideFrame: z.boolean(),
         outsideFrame: z.boolean(),
         customerName: z.boolean(),
+        fscLogo: z.boolean(),
       }).refine((layouts) => (
-        layouts.insideFrame || layouts.outsideFrame || layouts.customerName
+        layouts.insideFrame || layouts.outsideFrame || layouts.customerName || layouts.fscLogo
       ), "เลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ"),
     }),
     inside: z.array(templateFieldSchema),

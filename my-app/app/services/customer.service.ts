@@ -145,6 +145,7 @@ export class CustomerService {
               condition: field.condition,
               showOnSticker: field.showOnSticker ?? true,
               stickerOrder: field.stickerOrder ?? index,
+              fontScale: field.fontScale,
             });
           });
         }
@@ -192,6 +193,7 @@ export class CustomerService {
               stickerGroup: String(table.name ?? `Outside ${tableIndex + 1}`),
               stickerGroupOrder: tableIndex,
               uppercase: field.uppercase ?? true,
+              fontScale: field.fontScale,
             })),
           );
         }
@@ -231,6 +233,7 @@ export class CustomerService {
           stickerGroup: field.stickerGroup,
           stickerGroupOrder: field.stickerGroupOrder,
           uppercase: section === "Outside" ? field.uppercase ?? true : field.uppercase,
+          fontScale: field.fontScale,
         });
       });
     } catch (error) {

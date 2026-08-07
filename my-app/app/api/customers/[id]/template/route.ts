@@ -47,6 +47,7 @@ const fieldSchema = z.object({
   stickerGroup: z.string().optional(),
   stickerGroupOrder: z.number().int().min(0).optional(),
   uppercase: z.boolean().optional(),
+  fontScale: z.enum(["normal", "large", "xlarge"]).optional(),
 });
 
 const updateSchema = z.object({
@@ -57,8 +58,9 @@ const updateSchema = z.object({
       insideFrame: z.boolean(),
       outsideFrame: z.boolean(),
       customerName: z.boolean(),
+      fscLogo: z.boolean(),
     }).refine((layouts) => (
-      layouts.insideFrame || layouts.outsideFrame || layouts.customerName
+      layouts.insideFrame || layouts.outsideFrame || layouts.customerName || layouts.fscLogo
     ), "เลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ"),
   }).optional(),
   updatedBy: z.string().trim().min(1).default("ADMIN"),

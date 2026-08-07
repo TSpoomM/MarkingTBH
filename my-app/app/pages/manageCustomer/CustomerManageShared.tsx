@@ -294,6 +294,18 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                     <span>Uppercase</span>
                   </label>
                 )}
+                <label className="field-font-scale">
+                  <span>ขนาดตัวอักษรบนสติ๊กเกอร์</span>
+                  <Select
+                    bare
+                    value={field.fontScale ?? "normal"}
+                    onChange={(event) => onChange(section, index, { fontScale: event.target.value as TemplateField["fontScale"] })}
+                  >
+                    <option value="normal">ปกติ</option>
+                    <option value="large">ใหญ่</option>
+                    <option value="xlarge">ใหญ่พิเศษ</option>
+                  </Select>
+                </label>
                 {section === "outside" && (
                   <ConditionSelector
                     value={field.condition}

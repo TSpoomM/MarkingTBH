@@ -423,7 +423,169 @@ select {
 }
 
 .print-sheet {
+	position: absolute;
+	top: 0;
+	left: -100000px;
+	visibility: hidden;
+	pointer-events: none;
+	padding: 0;
+	color: #111;
+	background: #fff
+}
+
+.print-sheet .sticker-page {
+	break-after: page;
+	page-break-after: always;
+	margin: 0;
+	display: grid;
+	gap: 4mm
+}
+
+.print-sheet .sticker-page:last-child {
+	break-after: auto;
+	page-break-after: auto
+}
+
+.print-sheet .sticker-page-frame {
+	page: stickerFrame;
+	width: 281mm;
+	height: 194mm;
+	grid-template-columns: repeat(2, 1fr);
+	grid-template-rows: repeat(2, 1fr)
+}
+
+.print-sheet .sticker-page-customer {
+	page: stickerCustomer;
+	width: 194mm;
+	height: 281mm;
+	grid-template-columns: repeat(2, 1fr);
+	grid-template-rows: repeat(8, 1fr);
+	gap: 1.5mm 3mm
+}
+
+.print-sheet .sticker-label {
+	--sticker-font: 30px;
+	--sticker-label-font: 25px;
+	--sticker-gap: 4.5mm;
+	--sticker-label-column: 34%;
+	font-family: Arial, sans-serif;
+	font-weight: 700;
+	border: 0;
+	padding: 4.5mm;
+	overflow: hidden;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: stretch;
+	background: #fff
+}
+
+.print-sheet .sticker-page-fsc {
+	page: stickerFsc;
+	width: 281mm;
+	height: 194mm;
+	grid-template-columns: repeat(8, 1fr);
+	grid-template-rows: repeat(2, 1fr);
+	gap: 1.5mm
+}
+
+.print-sheet .sticker-label.fscLogo {
+	padding: 1.5mm;
+	align-items: center;
+	justify-content: center;
+	text-align: center
+}
+
+.print-sheet .sticker-fsc-logo {
+	width: 30mm;
+	height: 45mm;
+	object-fit: contain
+}
+
+.print-sheet .sticker-details {
+	flex: 1;
+	min-height: 0;
+	font-family: Arial;
+	margin: 0;
+	display: grid;
+	grid-auto-rows: minmax(min-content, 1fr);
+	align-items: center;
+	gap: calc(var(--sticker-gap) * var(--sticker-fit-scale, 1));
+	font-size: var(--sticker-font)
+}
+
+.print-sheet .sticker-detail-row {
+	display: grid;
+	grid-template-columns: minmax(min-content, var(--sticker-label-column)) 5mm minmax(0, 1fr);
+	gap: 2mm;
+	align-items: baseline;
+	font-size: var(--sticker-row-font, var(--sticker-font));
+	white-space: nowrap;
+	break-inside: avoid
+}
+
+.print-sheet .sticker-label dt {
+	font-family: Arial;
+	font-size: inherit;
+	font-weight: 700;
+	line-height: 1.05;
+	white-space: nowrap;
+	max-width: 100%;
+	overflow: visible;
+	text-overflow: clip
+}
+
+.print-sheet .sticker-label dd {
+	margin: 0
+}
+
+.print-sheet .sticker-detail-colon {
+	font-family: Arial;
+	font-size: inherit;
+	font-weight: 700;
+	text-align: end;
+	line-height: 1.05
+}
+
+.print-sheet .sticker-detail-values {
+	font-family: Arial;
+	min-width: 0;
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 1mm 2mm;
+	font-size: inherit;
+	font-weight: 700;
+	line-height: 1.05;
+	overflow: visible;
+	white-space: nowrap
+}
+
+.print-sheet .sticker-detail-values span {
+	flex: 0 0 auto;
+	min-width: max-content;
+	max-width: none;
+	white-space: nowrap;
+	overflow: visible;
+	text-overflow: clip
+}
+
+.print-sheet .sticker-label.customerName {
+	padding: 1.5mm 3mm;
+	align-items: center;
+	justify-content: center;
+	text-align: center
+}
+
+.print-sheet .sticker-label.customerName header {
 	display: none
+}
+
+.print-sheet .sticker-label.customerName p {
+	margin: 0;
+	font-family: Arial, sans-serif;
+	font-size: 24px;
+	font-weight: 700;
+	line-height: 1.15
 }
 
 .pdf-preview {
@@ -462,6 +624,7 @@ select {
 	--sticker-label-column: 34%;
 	font-family: Arial, sans-serif;
 	font-weight: 700;
+	position: relative;
 	min-width: 0;
 	min-height: 0;
 	display: flex;
@@ -475,6 +638,27 @@ select {
 	overflow: hidden
 }
 
+.pdf-preview .sticker-page-fsc {
+	grid-template-columns: repeat(8, minmax(0, 1fr));
+	aspect-ratio: 281 / 194
+}
+
+.pdf-preview .sticker-label.fscLogo {
+	aspect-ratio: auto;
+	min-height: 70px;
+	padding: 6px;
+	align-items: center;
+	justify-content: center;
+	text-align: center
+}
+
+.pdf-preview .sticker-fsc-logo {
+	width: 60%;
+	height: auto;
+	max-height: 80%;
+	object-fit: contain
+}
+
 .pdf-preview .sticker-label.customerName {
 	aspect-ratio: auto;
 	min-height: 90px
@@ -482,17 +666,18 @@ select {
 
 .pdf-preview .sticker-details {
 	flex: 1;
+	min-height: 0;
 	margin: 0;
 	display: grid;
-	grid-auto-rows: minmax(0, 1fr);
+	grid-auto-rows: minmax(min-content, 1fr);
 	align-items: center;
-	gap: clamp(5px, var(--sticker-gap), 14px);
+	gap: clamp(5px, calc(var(--sticker-gap) * var(--sticker-fit-scale, 1)), 14px);
 	font-family: Arial, sans-serif
 }
 
 .pdf-preview .sticker-detail-row {
 	display: grid;
-	grid-template-columns: minmax(0, var(--sticker-label-column)) 14px minmax(0, 1fr);
+	grid-template-columns: minmax(min-content, var(--sticker-label-column)) 14px minmax(0, 1fr);
 	gap: 8px;
 	align-items: baseline;
 	font-size: var(--sticker-row-font, var(--sticker-font));
@@ -848,6 +1033,10 @@ select {
 .editor-field-wrap {
 	display: grid;
 	gap: 0
+}
+
+.editor-field .field-font-scale {
+	grid-column: 1 / -1
 }
 
 .editor-field-wrap .editor-field {
@@ -1249,76 +1438,25 @@ select {
 		margin: 8mm
 	}
 
+	@page stickerFsc {
+		size: A4 landscape;
+		margin: 8mm
+	}
+
 	.header,
 	.container {
 		display: none !important
 	}
 
 	.print-sheet {
-		display: block;
-		padding: 0;
-		color: #111;
-		background: #fff
+		position: static;
+		left: auto;
+		visibility: visible;
+		pointer-events: auto
 	}
 
 	.pdf-preview {
 		display: none !important
-	}
-
-	.sticker-page {
-		break-after: page;
-		page-break-after: always;
-		margin: 0;
-		display: grid;
-		gap: 4mm
-	}
-
-	.sticker-page:last-child {
-		break-after: auto;
-		page-break-after: auto
-	}
-
-	.sticker-page-frame {
-		page: stickerFrame;
-		width: 281mm;
-		height: 194mm;
-		grid-template-columns: repeat(2, 1fr);
-		grid-template-rows: repeat(2, 1fr)
-	}
-
-	.sticker-page-customer {
-		page: stickerCustomer;
-		width: 194mm;
-		height: 281mm;
-		grid-template-columns: repeat(2, 1fr);
-		grid-template-rows: repeat(16, 1fr);
-		gap: 1.5mm 3mm
-	}
-
-	.sticker-label {
-		--sticker-font: 30px;
-		--sticker-label-font: 25px;
-		--sticker-gap: 4.5mm;
-		--sticker-label-column: 34%;
-		font-family: Arial, sans-serif;
-		font-weight: 700;
-		border: 0;
-		padding: 4.5mm;
-		overflow: hidden;
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		justify-content: stretch;
-		background: #fff
-	}
-
-	.sticker-fcs-logo {
-		position: absolute;
-		top: 4mm;
-		right: 4mm;
-		width: 16mm;
-		height: 16mm;
-		object-fit: contain
 	}
 
 	.sticker-label header {
@@ -1358,92 +1496,6 @@ select {
 		margin: 0 0 3mm;
 		font-size: 11px;
 		font-weight: 700
-	}
-
-	.sticker-details {
-		flex: 1;
-		font-family: Arial;
-		margin: 0;
-		display: grid;
-		grid-auto-rows: minmax(0, 1fr);
-		align-items: center;
-		gap: var(--sticker-gap);
-		font-size: var(--sticker-font)
-	}
-
-	.sticker-detail-row {
-		display: grid;
-		grid-template-columns: minmax(0, var(--sticker-label-column)) 5mm minmax(0, 1fr);
-		gap: 2mm;
-		align-items: baseline;
-		font-size: var(--sticker-row-font, var(--sticker-font));
-		white-space: nowrap;
-		break-inside: avoid
-	}
-
-	.sticker-label dt {
-		font-family: Arial;
-		font-size: inherit;
-		/* padding-right: 70px; */
-		font-weight: 700;
-		line-height: 1.05;
-		white-space: nowrap;
-		max-width: 100%;
-		overflow: visible;
-		text-overflow: clip
-	}
-
-	.sticker-label dd {
-		margin: 0
-	}
-
-	.sticker-detail-colon {
-		font-family: Arial;
-		font-size: inherit;
-		font-weight: 700;
-		text-align: end;
-		line-height: 1.05
-	}
-
-	.sticker-detail-values {
-		font-family: Arial;
-		min-width: 0;
-		display: flex;
-		flex-wrap: nowrap;
-		gap: 1mm 2mm;
-		font-size: inherit;
-		font-weight: 700;
-		line-height: 1.05;
-		overflow: visible;
-		white-space: nowrap
-	}
-
-	.sticker-detail-values span {
-		flex: 0 0 auto;
-		min-width: max-content;
-		max-width: none;
-		white-space: nowrap;
-		overflow: visible;
-		text-overflow: clip
-	}
-
-	.sticker-label.customerName {
-		padding: 1.5mm 3mm;
-		align-items: center;
-		justify-content: center;
-		text-align: center
-	}
-
-	.sticker-label.customerName header {
-		display: none
-	}
-
-	.sticker-label.customerName p {
-		margin: 0;
-		font-family: Arial, sans-serif;
-		font-size: 24px;
-		font-weight: 700;
-		line-height: 1.15
 	}
 
 	.print-sheet>h1 {
@@ -2105,33 +2157,6 @@ select {
 		font-size: 12px;
 	}
 
-	.customer-create-steps {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 10px;
-	}
-
-	.customer-create-steps span {
-		min-height: 38px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 6px 10px;
-		border: 1px solid var(--border);
-		border-radius: 8px;
-		background: #fff;
-		color: var(--muted);
-		font-size: 12px;
-		font-weight: 800;
-		text-align: center;
-	}
-
-	.customer-create-steps span.active {
-		border-color: rgba(15, 118, 110, .28);
-		background: var(--primary-soft);
-		color: var(--primary-dark);
-	}
-
 	.customer-name {
 		margin: 20px 0 0;
 		padding: 14px;
@@ -2354,8 +2379,7 @@ select {
 
 	.template-manager-grid,
 	.sticker-preview-grid,
-	.template-workbench-summary,
-	.customer-create-steps {
+	.template-workbench-summary {
 		grid-template-columns: 1fr;
 	}
 
@@ -2891,7 +2915,6 @@ select {
 	}
 
 	.workflow-strip span,
-	.customer-create-steps span,
 	.table-meta span,
 	.history-badge,
 	.template-draft-heading span {
@@ -3046,8 +3069,7 @@ select {
 		padding: 14px;
 	}
 
-	.workflow-strip span,
-	.customer-create-steps span {
+	.workflow-strip span {
 		justify-content: flex-start;
 		text-align: left;
 	}
@@ -3181,15 +3203,6 @@ select {
 
 	.choice small {
 		font-size: 13px;
-	}
-
-	.customer-create-steps {
-		gap: 12px;
-	}
-
-	.customer-create-steps span {
-		min-height: 48px;
-		font-size: 14px;
 	}
 
 	.template-workbench-summary {
