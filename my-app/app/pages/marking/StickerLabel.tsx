@@ -1,0 +1,41 @@
+"use client";
+
+import { Component, type CSSProperties } from "react";
+import Image from "next/image";
+import AutoFitStickerDetails from "./AutoFitStickerDetails";
+import type { StickerItem } from "@/app/types/marking-sticker";
+
+export default class StickerLabel extends Component<{ item: StickerItem }> {
+  private style(): CSSProperties {
+    const { item } = this.props;
+    if (item.kind === "customerName") return {};
+
+    const countPressure = Math.max(0, item.details.length - 5) * 1.1;
+    const fontSize = Math.max(22, 30 - countPressure);
+    const gap = Math.max(1.4, Math.min(4.5, fontSize / 6));
+    const longestLabelLength = Math.max(...item.details.map((detail) => detail.label.length), 0);
+    const labelColumnMm = Math.min(58, Math.max(34, longestLabelLength * 4));
+
+    return {
+      "--sticker-font": `${fontSize}px`,
+      "--sticker-label-font": `${fontSize}px`,
+      "--sticker-gap": `${gap}mm`,
+      "--sticker-label-column": `${labelColumnMm}mm`,
+    } as CSSProperties;
+  }
+
+  render() {
+    const { item } = this.props;
+    return (
+      <article className={`sticker-label ${item.kind}`} style={this.style()}>
+        {item.kind === "customerName" ? (
+          <p>{item.customerName}</p>
+        ) : item.kind === "fscLogo" ? (
+          <Image className="sticker-fsc-logo" src="/FSC_Logo.png" alt="FSC logo" width={200} height={300} unoptimized />
+        ) : (
+          <AutoFitStickerDetails details={item.details} />
+        )}
+      </article>
+    );
+  }
+}

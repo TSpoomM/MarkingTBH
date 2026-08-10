@@ -2,209 +2,12 @@ import { Component } from "react";
 import Button from "@/app/components/Button";
 import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
+import ConditionSelector from "./ConditionSelector";
+import TemplateFieldUtils from "./TemplateFieldUtils";
 import type { CounterType, TemplateField } from "@/app/types/customer";
-import type {
-  ChoiceProps,
-  ConditionSelectorProps,
-  FieldCondition,
-  OptionGroupProps,
-  PreviewStickerProps,
-  SectionHeadingProps,
-  StickerSelectableField,
-  StickerTemplatePreviewProps,
-  TemplateFieldEditorProps,
-} from "@/app/types/manage-customer";
+import type { TemplateFieldEditorProps } from "@/app/types/manage-customer";
 
-export const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-export const isCounterField = (field: Pick<TemplateField, "key" | "label">) => {
-  const key = field.key.toLowerCase();
-  const label = field.label.toLowerCase();
-  return key.includes("lot") || key.includes("pallet") || label.includes("lot") || label.includes("pallet");
-};
-
-export const inferCounterType = (field: Pick<TemplateField, "key" | "label">): CounterType => {
-  const key = field.key.toLowerCase();
-  const label = field.label.toLowerCase();
-  return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
-};
-
-export const uniqueSegmentKey = (
-  fieldKey: string,
-  segmentKey: string | undefined,
-  segmentIndex: number,
-  usedKeys: Set<string>,
-) => {
-  const fallback = `${fieldKey}_${segmentIndex + 1}`;
-  const baseKey = (segmentKey ?? "").trim() || fallback;
-  if (!usedKeys.has(baseKey)) {
-    usedKeys.add(baseKey);
-    return baseKey;
-  }
-
-  let suffix = segmentIndex + 1;
-  let nextKey = `${fieldKey}_${baseKey}_${suffix}`;
-  while (usedKeys.has(nextKey)) {
-    suffix += 1;
-    nextKey = `${fieldKey}_${baseKey}_${suffix}`;
-  }
-  usedKeys.add(nextKey);
-  return nextKey;
-};
-
-export const normalizeSegmentKeys = (field: TemplateField): TemplateField => {
-  if (!field.segments?.length) return field;
-  const usedKeys = new Set<string>();
-  return {
-    ...field,
-    segments: field.segments.map((segment, index) => ({
-      ...segment,
-      key: uniqueSegmentKey(field.key, segment.key, index, usedKeys),
-    })),
-  };
-};
-
-export const normalizeCounterField = (field: TemplateField): TemplateField => {
-  const keyedField = normalizeSegmentKeys(field);
-  if (!keyedField.segments?.length || !isCounterField(keyedField)) return keyedField;
-  const hasCounter = keyedField.segments.some((segment) => segment.isCounter);
-  return {
-    ...keyedField,
-    segments: keyedField.segments.map((segment, index) => ({
-      ...segment,
-      isCounter: hasCounter ? segment.isCounter : index === 0,
-      type: (hasCounter ? segment.isCounter : index === 0) ? "number" : segment.type ?? "text",
-      counterType: (hasCounter ? segment.isCounter : index === 0)
-        ? segment.counterType ?? inferCounterType(keyedField)
-        : segment.counterType,
-      showOnSticker: (hasCounter ? segment.isCounter : index === 0)
-        ? true
-        : segment.showOnSticker,
-    })),
-  };
-};
-
-const stickerSelectableFields = (fields: TemplateField[]): StickerSelectableField[] =>
-  fields.flatMap((field) =>
-    field.segments?.length
-      ? field.segments.map((segment) => ({
-        key: `${field.key}.${segment.key}`,
-        label: `${field.label} - ${segment.label}${segment.isCounter ? ` (+${segment.counterType ?? inferCounterType(field)})` : ""}`,
-        parentLabel: field.label,
-        parentOrder: field.stickerOrder,
-        segmentLabel: segment.label,
-        showOnSticker: segment.showOnSticker !== false,
-        stickerOrder: segment.stickerOrder,
-      }))
-      : [{
-        key: field.key,
-        label: field.label,
-        parentLabel: field.label,
-        parentOrder: field.stickerOrder,
-        showOnSticker: field.showOnSticker !== false,
-        stickerOrder: field.stickerOrder,
-      }],
-  );
-
-const selectedStickerFields = (fields: TemplateField[]) =>
-  stickerSelectableFields(fields)
-    .filter((field) => field.showOnSticker)
-    .sort((a, b) =>
-      (a.parentOrder ?? a.stickerOrder ?? 0) - (b.parentOrder ?? b.stickerOrder ?? 0) ||
-      (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0),
-    );
-
-const groupSelectedStickerFields = (fields: StickerSelectableField[]) =>
-  fields.reduce<Array<{ label: string; fields: StickerSelectableField[] }>>((groups, field) => {
-    const group = groups.find((item) => item.label === field.parentLabel);
-    if (group) {
-      group.fields.push(field);
-      return groups;
-    }
-    return [...groups, { label: field.parentLabel, fields: [field] }];
-  }, []);
-
-const conditionText = (condition: FieldCondition) => {
-  if (!condition?.stickerType && !condition?.stickerOther) return "ทุกกรณี";
-  return [
-    condition.stickerType && `Type = ${condition.stickerType}`,
-    condition.stickerOther && `Other = ${condition.stickerOther}`,
-  ].filter(Boolean).join(", ");
-};
-
-export const cleanCondition = (condition: FieldCondition) =>
-  condition?.stickerType || condition?.stickerOther ? condition : undefined;
-
-export class SectionHeading extends Component<SectionHeadingProps> {
-  render() {
-    const { number, title, subtitle } = this.props;
-    return <div className="config-heading"><span>{number}</span><div><h2>{title}</h2><p>{subtitle}</p></div></div>;
-  }
-}
-
-export class OptionGroup extends Component<OptionGroupProps> {
-  render() {
-    const { label, hint, children } = this.props;
-    return <div className="option-group"><div><strong>{label}</strong>{hint && <small>{hint}</small>}</div><div className="choice-list">{children}</div></div>;
-  }
-}
-
-export class Choice extends Component<ChoiceProps> {
-  render() {
-    const { label, description, checked, onChange } = this.props;
-    return <label className={`choice ${checked ? "selected" : ""}`}><input type="checkbox" checked={checked} onChange={onChange} /><span><b>{label}</b>{description && <small>{description}</small>}</span></label>;
-  }
-}
-
-export class ConditionSelector extends Component<ConditionSelectorProps> {
-  private setType = (stickerType: string) => {
-    this.props.onChange(cleanCondition({
-      ...this.props.value,
-      stickerType: stickerType ? stickerType as NonNullable<FieldCondition>["stickerType"] : undefined,
-    }));
-  };
-
-  private setOther = (stickerOther: string) => {
-    this.props.onChange(cleanCondition({
-      ...this.props.value,
-      stickerOther: stickerOther ? stickerOther as NonNullable<FieldCondition>["stickerOther"] : undefined,
-    }));
-  };
-
-  render() {
-    const { value, disabled = false } = this.props;
-
-    return (
-      <div className="condition-selector">
-        <span>บังคับเมื่อ</span>
-        <select
-          value={value?.stickerType ?? ""}
-          disabled={disabled}
-          onChange={(event) => this.setType(event.target.value)}
-          aria-label="เงื่อนไข Type"
-        >
-          <option value="">ทุก Type</option>
-          <option value="TNR">Type = TNR</option>
-          <option value="NON-TNR">Type = NON-TNR</option>
-          <option value="FCS">Type = FCS</option>
-        </select>
-        <select
-          value={value?.stickerOther ?? ""}
-          disabled={disabled}
-          onChange={(event) => this.setOther(event.target.value)}
-          aria-label="เงื่อนไข Other"
-        >
-          <option value="">ทุก Other</option>
-          <option value="Dome">Other = Dome</option>
-          <option value="Inter">Other = Inter</option>
-        </select>
-        <small>{conditionText(value)}</small>
-      </div>
-    );
-  }
-}
-
-export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
+export default class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
   render() {
     const {
       title,
@@ -226,7 +29,7 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
         </div>
         {!fields.length && <div className="editor-empty">ยังไม่มี Field</div>}
         {fields.map((field, index) => {
-          const countableField = isCounterField(field);
+          const countableField = TemplateFieldUtils.isCounterField(field);
           const tableOrder = field.stickerGroupOrder ?? 0;
           const previousTableOrder = fields[index - 1]?.stickerGroupOrder ?? 0;
           const nextTableOrder = fields[index + 1]?.stickerGroupOrder ?? 0;
@@ -347,7 +150,7 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                                 isCounter: itemIndex === segmentIndex ? !item.isCounter : item.isCounter,
                                 type: itemIndex === segmentIndex && !item.isCounter ? "number" : item.type ?? "text",
                                 counterType: itemIndex === segmentIndex && !item.isCounter
-                                  ? item.counterType ?? inferCounterType(field)
+                                  ? item.counterType ?? TemplateFieldUtils.inferCounterType(field)
                                   : item.counterType,
                               })),
                             })}
@@ -360,7 +163,7 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                             <span>นับแบบ</span>
                             <Select
                               bare
-                              value={segment.counterType ?? inferCounterType(field)}
+                              value={segment.counterType ?? TemplateFieldUtils.inferCounterType(field)}
                               onChange={(event) => onChange(section, index, {
                                 segments: field.segments?.map((item, itemIndex) =>
                                   itemIndex === segmentIndex
@@ -385,7 +188,7 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                                 ...item,
                                 type: countableField && item.isCounter ? "number" : item.type ?? "text",
                                 counterType: countableField && item.isCounter
-                                  ? item.counterType ?? inferCounterType(field)
+                                  ? item.counterType ?? TemplateFieldUtils.inferCounterType(field)
                                   : item.counterType,
                               })),
                             });
@@ -403,13 +206,13 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
                       segments: [
                         ...(field.segments ?? []),
                         {
-                          key: `${field.key}_${uid()}`,
+                          key: `${field.key}_${TemplateFieldUtils.uid()}`,
                           label: `Section ${(field.segments?.length ?? 0) + 1}`,
                           type: "text",
                           showOnSticker: true,
                           stickerOrder: (field.stickerOrder ?? index) * 10 + (field.segments?.length ?? 0),
                           isCounter: false,
-                          counterType: inferCounterType(field),
+                          counterType: TemplateFieldUtils.inferCounterType(field),
                         },
                       ],
                     })}
@@ -441,74 +244,6 @@ export class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
         </Button>
         )}
       </div>
-    );
-  }
-}
-
-export class StickerTemplatePreview extends Component<StickerTemplatePreviewProps> {
-  render() {
-    const { customerName, insideFields, outsideFields, onSelect } = this.props;
-
-    return (
-      <div className="sticker-preview-wrap">
-        <div className="template-draft-heading">
-          <h3>Preview Sticker</h3>
-          <span>ตัวอย่าง 1 ดวง</span>
-        </div>
-        <div className="sticker-preview-grid">
-          <PreviewSticker
-            title="ในกรอบ"
-            section="inside"
-            customerName={customerName}
-            fields={insideFields}
-            onSelect={onSelect}
-          />
-          <PreviewSticker
-            title="นอกกรอบ"
-            section="outside"
-            customerName={customerName}
-            fields={outsideFields}
-            onSelect={onSelect}
-          />
-        </div>
-      </div>
-    );
-  }
-}
-
-class PreviewSticker extends Component<PreviewStickerProps> {
-  render() {
-    const { title, customerName, fields } = this.props;
-    const selectedFields = selectedStickerFields(fields);
-    const groupedFields = groupSelectedStickerFields(selectedFields);
-
-    return (
-      <article className="sticker-preview-card">
-        <header>
-          <strong>{title}</strong>
-          <span>{customerName}</span>
-        </header>
-        <dl>
-          {groupedFields.map((group) => (
-            <div className="sticker-preview-select-row" key={group.label}>
-              <dt>{group.label}</dt>
-              <dd>
-                <div className="sticker-preview-section-selects">
-                  {group.fields.map((selected) => (
-                    <input
-                      disabled
-                      value={selected.label}
-                      key={selected.key}
-                      aria-label={selected.segmentLabel ?? selected.label}
-                      readOnly
-                    />
-                  ))}
-                </div>
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </article>
     );
   }
 }

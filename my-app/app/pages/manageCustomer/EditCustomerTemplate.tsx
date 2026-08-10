@@ -2,13 +2,11 @@ import { Component } from "react";
 import Button from "@/app/components/Button";
 import Toast from "@/app/components/Toast";
 import type { EditCustomerTemplateProps } from "@/app/types/manage-customer";
-import {
-  Choice,
-  OptionGroup,
-  SectionHeading,
-  StickerTemplatePreview,
-  TemplateFieldEditor,
-} from "./CustomerManageShared";
+import Choice from "./Choice";
+import OptionGroup from "./OptionGroup";
+import SectionHeading from "./SectionHeading";
+import StickerTemplatePreview from "./StickerTemplatePreview";
+import TemplateFieldEditor from "./TemplateFieldEditor";
 
 export default class EditCustomerTemplate extends Component<EditCustomerTemplateProps> {
   render() {

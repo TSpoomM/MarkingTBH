@@ -2,13 +2,11 @@ import Link from "next/link";
 import { Component } from "react";
 import Toast from "@/app/components/Toast";
 import type { CreateCustomerFormProps } from "@/app/types/manage-customer";
-import {
-  Choice,
-  OptionGroup,
-  SectionHeading,
-  StickerTemplatePreview,
-  TemplateFieldEditor,
-} from "./CustomerManageShared";
+import Choice from "./Choice";
+import OptionGroup from "./OptionGroup";
+import SectionHeading from "./SectionHeading";
+import StickerTemplatePreview from "./StickerTemplatePreview";
+import TemplateFieldEditor from "./TemplateFieldEditor";
 
 export default class CreateCustomerForm extends Component<CreateCustomerFormProps> {
   render() {

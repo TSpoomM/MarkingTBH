@@ -1,6 +1,5 @@
 "use client";
 
-import { Component } from "react";
 import {
   STICKER_FORMAT_OPTIONS,
   STICKER_OTHER_OPTIONS,
@@ -12,7 +11,7 @@ import Card from "@/app/components/Card";
 import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
 import MarkingComponent from "./MarkingComponent";
-import type { SectionTitleProps } from "@/app/types/ui";
+import SectionTitle from "./SectionTitle";
 
 export default class FilterPanel extends MarkingComponent {
   render() {
@@ -90,20 +89,6 @@ export default class FilterPanel extends MarkingComponent {
           </div>
         </Card>
       </main>
-    );
-  }
-}
-
-export class SectionTitle extends Component<SectionTitleProps> {
-  render() {
-    const { number, title, subtitle } = this.props;
-    return (
-      <div className="section-title">
-        <div>
-          <span>{number}</span>
-          <div><h2>{title}</h2><p>{subtitle}</p></div>
-        </div>
-      </div>
     );
   }
 }

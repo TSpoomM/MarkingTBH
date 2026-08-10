@@ -1,4 +1,17 @@
 import type { MarkingState } from "../types/marking";
+import type { FontScale } from "../types/customer";
+
+export const FONT_SCALE_MULTIPLIERS: Record<NonNullable<FontScale>, number> = {
+  normal: 1,
+  large: 1.35,
+  xlarge: 1.7,
+};
+
+export const STICKER_PAGE_CLASS: Record<"frame" | "customerName" | "fsc", string> = {
+  frame: "sticker-page-frame",
+  customerName: "sticker-page-customer",
+  fsc: "sticker-page-fsc",
+};
 
 export const STICKER_SIDE_OPTIONS = [1, 2, 3, 4, 5, 6] as const;
 export const STICKER_FORMAT_OPTIONS = ["5533", "555"] as const;

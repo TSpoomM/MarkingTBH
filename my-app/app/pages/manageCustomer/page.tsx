@@ -21,16 +21,10 @@ import {
 } from "@/app/types/manage-customer";
 import CreateCustomerForm from "./CreateCustomerForm";
 import EditCustomerTemplate from "./EditCustomerTemplate";
-import {
-  cleanCondition,
-  inferCounterType,
-  normalizeCounterField,
-  uniqueSegmentKey,
-  uid,
-} from "./CustomerManageShared";
+import TemplateFieldUtils from "./TemplateFieldUtils";
 
 const createDefaultInsideDraft = (): TemplateField[] => [
-  ...initialGroups.map((group, groupIndex) => normalizeCounterField({
+  ...initialGroups.map((group, groupIndex) => TemplateFieldUtils.normalizeCounterField({
     key: group.key,
     label: group.label,
     type: "text" as const,
@@ -52,7 +46,7 @@ const createDefaultInsideDraft = (): TemplateField[] => [
 ];
 
 const normalizeInsideField = (field: TemplateField): TemplateField =>
-  normalizeCounterField({
+  TemplateFieldUtils.normalizeCounterField({
     ...field,
     required: true,
     condition: undefined,
@@ -187,7 +181,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         fieldIndex === index
           ? section === "inside"
             ? normalizeInsideField({ ...field, ...patch })
-            : normalizeCounterField({ ...field, ...patch })
+            : TemplateFieldUtils.normalizeCounterField({ ...field, ...patch })
           : field,
       ),
     } as Pick<CustomerFormState, typeof key>);
@@ -204,7 +198,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         fieldIndex === index
           ? section === "inside"
             ? normalizeInsideField({ ...field, ...patch })
-            : normalizeCounterField({ ...field, ...patch })
+            : TemplateFieldUtils.normalizeCounterField({ ...field, ...patch })
           : field,
       ),
     } as Pick<CustomerFormState, typeof key>);
@@ -216,7 +210,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       ? this.outsideGroup(this.state[key] as TemplateField[], tableOrder)
       : undefined;
     const nextField: TemplateField = {
-      key: `${section}_field_${uid()}`,
+      key: `${section}_field_${TemplateFieldUtils.uid()}`,
       label: "",
       type: "text",
       required: section === "inside",
@@ -244,7 +238,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       ? this.outsideGroup(this.state[key] as TemplateField[], tableOrder)
       : undefined;
     const nextField: TemplateField = {
-      key: `${section}_field_${uid()}`,
+      key: `${section}_field_${TemplateFieldUtils.uid()}`,
       label: "",
       type: "text",
       required: section === "inside",
@@ -289,7 +283,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       templateOutsideDraft: [
         ...this.state.templateOutsideDraft,
         {
-          key: `outside_field_${uid()}`,
+          key: `outside_field_${TemplateFieldUtils.uid()}`,
           label: "",
           type: "text",
           required: false,
@@ -308,7 +302,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       createOutsideDraft: [
         ...this.state.createOutsideDraft,
         {
-          key: `outside_field_${uid()}`,
+          key: `outside_field_${TemplateFieldUtils.uid()}`,
           label: "",
           type: "text",
           required: false,
@@ -405,24 +399,24 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   };
 
   private cleanTemplateFields = (section: "inside" | "outside", fields: TemplateField[]) => fields.map((field, index) => {
-    const fieldKey = field.key.trim() || `${section}_field_${uid()}`;
+    const fieldKey = field.key.trim() || `${section}_field_${TemplateFieldUtils.uid()}`;
     const usedSegmentKeys = new Set<string>();
-    return normalizeCounterField({
+    return TemplateFieldUtils.normalizeCounterField({
       ...field,
       key: fieldKey,
       label: field.label.trim(),
       required: section === "inside" ? true : field.required,
-      condition: section === "inside" ? undefined : cleanCondition(field.condition),
+      condition: section === "inside" ? undefined : TemplateFieldUtils.cleanCondition(field.condition),
       showOnSticker: field.showOnSticker ?? true,
       stickerOrder: field.showOnSticker === false ? undefined : field.stickerOrder ?? index,
       uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
       segments: field.segments?.map((segment, segmentIndex) => ({
         ...segment,
-        key: uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
+        key: TemplateFieldUtils.uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
         label: segment.label.trim(),
         showOnSticker: segment.showOnSticker ?? true,
         stickerOrder: segment.showOnSticker === false ? undefined : segment.stickerOrder ?? index * 10 + segmentIndex,
-        counterType: segment.counterType ?? inferCounterType({ ...field, key: fieldKey }),
+        counterType: segment.counterType ?? TemplateFieldUtils.inferCounterType({ ...field, key: fieldKey }),
       })),
     });
   });
