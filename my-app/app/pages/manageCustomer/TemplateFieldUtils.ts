@@ -91,6 +91,7 @@ export default class TemplateFieldUtils {
         ? field.segments.map((segment) => ({
           key: `${field.key}.${segment.key}`,
           label: `${field.label} - ${segment.label}${segment.isCounter ? ` (+${segment.counterType ?? this.inferCounterType(field)})` : ""}`,
+          parentKey: field.key,
           parentLabel: field.label,
           parentOrder: field.stickerOrder,
           segmentLabel: segment.label,
@@ -100,6 +101,7 @@ export default class TemplateFieldUtils {
         : [{
           key: field.key,
           label: field.label,
+          parentKey: field.key,
           parentLabel: field.label,
           parentOrder: field.stickerOrder,
           showOnSticker: field.showOnSticker !== false,
@@ -118,13 +120,13 @@ export default class TemplateFieldUtils {
   }
 
   static groupSelectedStickerFields(fields: StickerSelectableField[]) {
-    return fields.reduce<Array<{ label: string; fields: StickerSelectableField[] }>>((groups, field) => {
-      const group = groups.find((item) => item.label === field.parentLabel);
+    return fields.reduce<Array<{ key: string; label: string; fields: StickerSelectableField[] }>>((groups, field) => {
+      const group = groups.find((item) => item.key === field.parentKey);
       if (group) {
         group.fields.push(field);
         return groups;
       }
-      return [...groups, { label: field.parentLabel, fields: [field] }];
+      return [...groups, { key: field.parentKey, label: field.parentLabel, fields: [field] }];
     }, []);
   }
 }

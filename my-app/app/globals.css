@@ -1007,19 +1007,23 @@ select {
 }
 
 .sticker-preview-section-selects input {
-	width: 100%;
+	flex: 1 1 0;
+	min-width: 0;
 	height: 34px;
 	border: 1px solid #b8c5bd;
 	border-radius: 5px;
 	background: #fff;
 	padding: 0 8px;
 	font-size: 12px;
-	outline: 0
+	outline: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap
 }
 
 .sticker-preview-section-selects {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+	display: flex;
+	flex-wrap: nowrap;
 	gap: 8px
 }
 
@@ -3302,11 +3306,14 @@ select {
 	}
 
 	.sticker-preview-section-selects {
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		display: flex;
+		flex-wrap: nowrap;
 		gap: 10px;
 	}
 
 	.sticker-preview-section-selects input {
+		flex: 1 1 0;
+		min-width: 0;
 		height: 42px;
 		font-size: 14px;
 	}

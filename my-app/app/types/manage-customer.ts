@@ -16,6 +16,7 @@ export type FieldCondition = TemplateField["condition"];
 export type StickerSelectableField = {
   key: string;
   label: string;
+  parentKey: string;
   parentLabel: string;
   parentOrder: number | undefined;
   segmentLabel?: string;

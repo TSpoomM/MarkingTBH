@@ -16,7 +16,7 @@ export default class PreviewSticker extends Component<PreviewStickerProps> {
         </header>
         <dl>
           {groupedFields.map((group) => (
-            <div className="sticker-preview-select-row" key={group.label}>
+            <div className="sticker-preview-select-row" key={group.key}>
               <dt>{group.label}</dt>
               <dd>
                 <div className="sticker-preview-section-selects">
