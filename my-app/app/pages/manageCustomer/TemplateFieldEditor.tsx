@@ -8,6 +8,23 @@ import type { CounterType, TemplateField } from "@/app/types/customer";
 import type { TemplateFieldEditorProps } from "@/app/types/manage-customer";
 
 export default class TemplateFieldEditor extends Component<TemplateFieldEditorProps> {
+  private segmentPreview(field: TemplateField) {
+    const segments = field.segments?.filter((segment) => segment.showOnSticker !== false) ?? [];
+    const hasAffixes = segments.some((segment) => segment.prefix || segment.suffix);
+    if (hasAffixes) {
+      return segments.map((segment) => `${segment.prefix ?? ""}XXX${segment.suffix ?? ""}`).join("");
+    }
+    if (field.displayFormat?.trim()) {
+      return segments.reduce((text, segment, index) => (
+        text
+          .replaceAll(`{${index + 1}}`, "XXX")
+          .replaceAll(`{${segment.key}}`, "XXX")
+          .replaceAll(`{${segment.label}}`, "XXX")
+      ), field.displayFormat.trim()).replace(/\{[^}]+\}/g, "");
+    }
+    return segments.map(() => "XXX").join(" ");
+  }
+
   render() {
     const {
       title,
@@ -121,6 +138,10 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
               {!!field.segments?.length && (
                 <div className="editor-segments-row">
                   <div className="editor-segments-title">Sections</div>
+                  <div className="editor-format-preview">
+                    <span>ตัวอย่างบนสติ๊กเกอร์</span>
+                    <strong>{this.segmentPreview(field)}</strong>
+                  </div>
                   {field.segments.map((segment, segmentIndex) => (
                     <div className="editor-segment-card" key={`${field.key}-${segment.key}-${segmentIndex}`}>
                       <div className="editor-segment-head">
@@ -139,6 +160,36 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           })}
                         />
                       </label>
+                      <div className="editor-segment-affixes">
+                        <label>
+                          <span>ก่อน Section</span>
+                          <Input
+                            bare
+                            value={segment.prefix ?? ""}
+                            onChange={(event) => onChange(section, index, {
+                              displayFormat: undefined,
+                              segments: field.segments?.map((item, itemIndex) =>
+                                itemIndex === segmentIndex ? { ...item, prefix: event.target.value } : item,
+                              ),
+                            })}
+                            placeholder="เช่น ("
+                          />
+                        </label>
+                        <label>
+                          <span>หลัง Section</span>
+                          <Input
+                            bare
+                            value={segment.suffix ?? ""}
+                            onChange={(event) => onChange(section, index, {
+                              displayFormat: undefined,
+                              segments: field.segments?.map((item, itemIndex) =>
+                                itemIndex === segmentIndex ? { ...item, suffix: event.target.value } : item,
+                              ),
+                            })}
+                            placeholder="เช่น / หรือ )"
+                          />
+                        </label>
+                      </div>
                       <div className="editor-segment-actions" aria-label={`ตั้งค่า Section ${segmentIndex + 1}`}>
                         {countableField && (
                           <button

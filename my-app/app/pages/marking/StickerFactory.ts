@@ -63,6 +63,32 @@ export default class StickerFactory {
     return needsKg && !/\bkg\.?$/i.test(value.trim()) ? `${value} KG` : value;
   }
 
+  private static formatSegmentValues(
+    format: string | undefined,
+    segments: Array<{ key: string; label: string; value: string; prefix?: string; suffix?: string }>,
+  ) {
+    const trimmedFormat = format?.trim();
+    if (!trimmedFormat) {
+      const hasAffixes = segments.some((segment) => segment.prefix || segment.suffix);
+      if (!hasAffixes) return segments.map(({ label, value }) => ({ label, value }));
+      const rendered = segments.map((segment) => `${segment.prefix ?? ""}${segment.value}${segment.suffix ?? ""}`).join("");
+      return rendered.trim()
+        ? [{ value: rendered }]
+        : [];
+    }
+
+    const rendered = segments.reduce((text, segment, index) => (
+      text
+        .replaceAll(`{${index + 1}}`, segment.value)
+        .replaceAll(`{${segment.key}}`, segment.value)
+        .replaceAll(`{${segment.label}}`, segment.value)
+    ), trimmedFormat).replace(/\{[^}]+\}/g, "");
+
+    return rendered.trim()
+      ? [{ value: rendered }]
+      : [];
+  }
+
   private static fieldValues(
     fields: TemplateField[],
     row: MarkingContent | undefined,
@@ -79,11 +105,12 @@ export default class StickerFactory {
             ? this.counterDisplayValue(field, row, lot, pallet, segment)
             : row?.[segment.key];
           return value
-            ? [{ label: segment.label, value }]
+            ? [{ key: segment.key, label: segment.label, value, prefix: segment.prefix, suffix: segment.suffix }]
             : [];
         });
+        const renderedValues = this.formatSegmentValues(field.displayFormat, values);
         return values.length
-          ? [{ label: field.label, values, order: field.stickerOrder ?? Math.min(...selectedSegments.map((segment) => segment.stickerOrder ?? 0)), fontScale: field.fontScale }]
+          ? [{ label: field.label, values: renderedValues, order: field.stickerOrder ?? Math.min(...selectedSegments.map((segment) => segment.stickerOrder ?? 0)), fontScale: field.fontScale }]
           : [];
       }
       if (field.showOnSticker === false) return [];

@@ -53,6 +53,19 @@ const normalizeInsideField = (field: TemplateField): TemplateField =>
     showOnSticker: field.showOnSticker ?? true,
   });
 
+const cloneTemplateField = (field: TemplateField): TemplateField => ({
+  ...field,
+  condition: field.condition ? { ...field.condition } : undefined,
+  segments: field.segments?.map((segment) => ({ ...segment })),
+});
+
+const withRequiredStickerFields = (fields: CustomerTemplate["sticker"]["enabledFields"]): StickerField[] => {
+  const nextFields = new Set<StickerField>(fields);
+  nextFields.add("side");
+  nextFields.add("format");
+  return Array.from(nextFields);
+};
+
 export default class CustomerForm extends Component<Record<string, never>, CustomerFormState> {
   state: CustomerFormState = {
     mode: "edit",
@@ -62,6 +75,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     templateOutsideDraft: [],
     createInsideDraft: createDefaultInsideDraft(),
     createOutsideDraft: [],
+    duplicateSourceCustomerId: "",
     name: "",
     stickerFields: ["side", "format"],
     stickerLayouts: {
@@ -87,6 +101,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     checkingRole: true,
     loadingCustomers: false,
     loadingTemplate: false,
+    duplicatingTemplate: false,
     savingTemplate: false,
     saving: false,
   };
@@ -202,6 +217,41 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           : field,
       ),
     } as Pick<CustomerFormState, typeof key>);
+  };
+
+  private duplicateTemplateToCreateDraft = async (customerId: string) => {
+    this.setState({ duplicateSourceCustomerId: customerId, notice: undefined });
+    if (!customerId) return;
+    this.setState({ duplicatingTemplate: true });
+    try {
+      const response = await fetch(`/api/customers/${customerId}/template`);
+      const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
+      if (!response.ok || !result.data) throw new Error(result.message);
+      this.setState({
+        createInsideDraft: result.data.inside.map((field) => normalizeInsideField(cloneTemplateField(field))),
+        createOutsideDraft: result.data.outside.map((field) =>
+          TemplateFieldUtils.normalizeCounterField({
+            ...cloneTemplateField(field),
+            showOnSticker: field.showOnSticker ?? true,
+          }),
+        ),
+        stickerFields: withRequiredStickerFields(result.data.sticker.enabledFields),
+        stickerLayouts: result.data.sticker.layouts,
+        notice: {
+          kind: "success",
+          text: `Copied template from ${result.data.customerName}. You can edit it before creating the new customer.`,
+        },
+      });
+    } catch (error) {
+      this.setState({
+        notice: {
+          kind: "error",
+          text: error instanceof Error ? error.message : "Copy template failed",
+        },
+      });
+    } finally {
+      this.setState({ duplicatingTemplate: false });
+    }
   };
 
   private addTemplateField = (section: "inside" | "outside", tableOrder?: number) => {
@@ -401,10 +451,12 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   private cleanTemplateFields = (section: "inside" | "outside", fields: TemplateField[]) => fields.map((field, index) => {
     const fieldKey = field.key.trim() || `${section}_field_${TemplateFieldUtils.uid()}`;
     const usedSegmentKeys = new Set<string>();
+    const hasSegmentAffixes = field.segments?.some((segment) => segment.prefix?.trim() || segment.suffix?.trim());
     return TemplateFieldUtils.normalizeCounterField({
       ...field,
       key: fieldKey,
       label: field.label.trim(),
+      displayFormat: hasSegmentAffixes ? undefined : field.displayFormat?.trim() || undefined,
       required: section === "inside" ? true : field.required,
       condition: section === "inside" ? undefined : TemplateFieldUtils.cleanCondition(field.condition),
       showOnSticker: field.showOnSticker ?? true,
@@ -414,6 +466,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         ...segment,
         key: TemplateFieldUtils.uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
         label: segment.label.trim(),
+        prefix: segment.prefix ?? "",
+        suffix: segment.suffix ?? "",
         showOnSticker: segment.showOnSticker ?? true,
         stickerOrder: segment.showOnSticker === false ? undefined : segment.stickerOrder ?? index * 10 + segmentIndex,
         counterType: segment.counterType ?? TemplateFieldUtils.inferCounterType({ ...field, key: fieldKey }),
@@ -614,6 +668,14 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         name: "",
         createInsideDraft: createDefaultInsideDraft(),
         createOutsideDraft: [],
+        duplicateSourceCustomerId: "",
+        stickerFields: ["side", "format"],
+        stickerLayouts: {
+          insideFrame: true,
+          outsideFrame: true,
+          customerName: false,
+          fscLogo: false,
+        },
         notice: {
           kind: "success",
           text: `เพิ่ม ${result.data.name} เรียบร้อยแล้ว (Customer ID: ${result.data.id})`,
@@ -701,7 +763,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
               )}
               {this.state.mode === "create" && (
                 <CreateCustomerForm
+                  customers={this.state.customers}
                   name={this.state.name}
+                  duplicateSourceCustomerId={this.state.duplicateSourceCustomerId}
                   stickerFields={this.state.stickerFields}
                   stickerLayouts={this.state.stickerLayouts}
                   groups={this.state.groups}
@@ -710,10 +774,13 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   insideDraft={this.state.createInsideDraft}
                   outsideDraft={this.state.createOutsideDraft}
                   notice={this.state.notice}
+                  loadingCustomers={this.state.loadingCustomers}
+                  duplicatingTemplate={this.state.duplicatingTemplate}
                   saving={this.state.saving}
                   onDismissNotice={this.dismissNotice}
                   onSubmit={this.submit}
                   onNameChange={(name) => this.setState({ name })}
+                  onDuplicateSourceChange={(customerId) => void this.duplicateTemplateToCreateDraft(customerId)}
                   onStickerFieldsChange={this.changeStickerFields}
                   onToggleLayout={this.toggleStickerLayout}
                   onSegmentCountChange={this.changeSegmentCount}

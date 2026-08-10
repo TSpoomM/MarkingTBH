@@ -11,10 +11,10 @@ export default class StickerLabel extends Component<{ item: StickerItem }> {
     if (item.kind === "customerName") return {};
 
     const countPressure = Math.max(0, item.details.length - 5) * 1.1;
-    const fontSize = Math.max(22, 30 - countPressure);
+    const fontSize = Math.max(22, 35 - countPressure);
     const gap = Math.max(1.4, Math.min(4.5, fontSize / 6));
     const longestLabelLength = Math.max(...item.details.map((detail) => detail.label.length), 0);
-    const labelColumnMm = Math.min(58, Math.max(34, longestLabelLength * 4));
+    const labelColumnMm = Math.min(46, Math.max(28, longestLabelLength * 3.2));
 
     return {
       "--sticker-font": `${fontSize}px`,

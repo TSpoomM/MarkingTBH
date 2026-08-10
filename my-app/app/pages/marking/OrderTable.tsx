@@ -82,7 +82,7 @@ export default class OrderTable extends MarkingComponent {
             {this.state.template && outsideGroups.map((group, groupIndex) => (
               <TableSection
                 key={`${group.name}-${groupIndex}`}
-                number={groupIndex === 0 ? "3" : `3.${groupIndex + 1}`}
+                number={String(groupIndex + 3)}
                 title={`${StickerFactory.outsideGroupTitle(group.name)}`}
                 subtitle={`ช่องข้อมูลเฉพาะสำหรับลูกค้า ${customer?.name ?? "ที่เลือก"}`}
                 fields={group.fields}

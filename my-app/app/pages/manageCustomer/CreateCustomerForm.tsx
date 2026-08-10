@@ -11,16 +11,21 @@ import TemplateFieldEditor from "./TemplateFieldEditor";
 export default class CreateCustomerForm extends Component<CreateCustomerFormProps> {
   render() {
     const {
+      customers,
       name,
+      duplicateSourceCustomerId,
       stickerFields,
       stickerLayouts,
       insideDraft,
       outsideDraft,
       notice,
+      loadingCustomers,
+      duplicatingTemplate,
       saving,
       onDismissNotice,
       onSubmit,
       onNameChange,
+      onDuplicateSourceChange,
       onStickerFieldsChange,
       onToggleLayout,
       onSelectPreviewSlot,
@@ -55,6 +60,22 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 onChange={(event) => onNameChange(event.target.value)}
                 placeholder="ABC Rubber Co., Ltd."
               />
+            </label>
+            <label className="customer-name duplicate-template-picker">
+              <span>Duplicate template from</span>
+              <select
+                value={duplicateSourceCustomerId}
+                onChange={(event) => onDuplicateSourceChange(event.target.value)}
+                disabled={loadingCustomers || duplicatingTemplate}
+              >
+                <option value="">
+                  {loadingCustomers ? "Loading customers..." : "Start blank or choose an existing customer"}
+                </option>
+                {customers.map((customer) => (
+                  <option value={customer.id} key={customer.id}>{customer.name}</option>
+                ))}
+              </select>
+              <small>{duplicatingTemplate ? "Copying template..." : "Copy fields and sticker layouts, then edit before creating the new customer."}</small>
             </label>
             <OptionGroup
               label="ช่องข้อมูลที่ผู้พิมพ์ต้องเลือก *"

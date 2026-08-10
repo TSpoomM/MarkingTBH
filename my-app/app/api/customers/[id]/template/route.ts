@@ -29,10 +29,13 @@ const fieldSchema = z.object({
   required: z.boolean(),
   placeholder: z.string().optional(),
   defaultValue: z.string().optional(),
+  displayFormat: z.string().optional(),
   segments: z.array(z.object({
     key: z.string().trim().min(1),
     label: z.string().trim().min(1),
     type: z.enum(["text", "number", "date", "textarea"]).optional(),
+    prefix: z.string().optional(),
+    suffix: z.string().optional(),
     showOnSticker: z.boolean().optional(),
     stickerOrder: z.number().int().min(0).optional(),
     isCounter: z.boolean().optional(),

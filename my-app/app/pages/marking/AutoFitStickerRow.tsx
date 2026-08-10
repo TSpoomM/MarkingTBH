@@ -11,9 +11,9 @@ export default class AutoFitStickerRow extends Component<
   { detail: StickerItem["details"][number]; cardScale: number },
   { fontSize: number }
 > {
-  private readonly defaultFontSize = 30;
+  private readonly defaultFontSize = 35;
   private readonly minFontSize = 5;
-  private readonly maxVerifyPasses = 30;
+  private readonly maxVerifyPasses = 35;
   private readonly ref = createRef<HTMLDivElement>();
   private resizeObserver: ResizeObserver | undefined;
 

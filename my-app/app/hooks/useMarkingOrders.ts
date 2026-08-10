@@ -298,6 +298,52 @@ export class MarkingOrdersController {
     console.debug(`[Marking] ${label}`, { payload, result });
   }
 
+  private debugStickerFontMetrics(label: string) {
+    if (process.env.NODE_ENV === "production" || typeof document === "undefined") return;
+    const stickers = Array.from(document.querySelectorAll<HTMLElement>(".print-sheet .sticker-label"));
+    if (!stickers.length) {
+      console.debug(`[Marking] ${label}: no print-sheet stickers found`);
+      return;
+    }
+
+    console.groupCollapsed(`[Marking] ${label}: sticker font metrics`);
+    console.table(stickers.slice(0, 8).map((sticker, index) => {
+      const style = getComputedStyle(sticker);
+      const details = sticker.querySelector<HTMLElement>(".sticker-details");
+      const detailsStyle = details ? getComputedStyle(details) : null;
+      return {
+        index,
+        kind: Array.from(sticker.classList).filter((className) => className !== "sticker-label").join(" "),
+        stickerFontVar: style.getPropertyValue("--sticker-font").trim(),
+        stickerLabelFontVar: style.getPropertyValue("--sticker-label-font").trim(),
+        stickerGapVar: style.getPropertyValue("--sticker-gap").trim(),
+        stickerLabelColumnVar: style.getPropertyValue("--sticker-label-column").trim(),
+        fitScale: detailsStyle?.getPropertyValue("--sticker-fit-scale").trim() || "",
+        computedFontSize: style.fontSize,
+        detailsFontSize: detailsStyle?.fontSize || "",
+        padding: style.padding,
+        width: `${Math.round(sticker.getBoundingClientRect().width)}px`,
+        height: `${Math.round(sticker.getBoundingClientRect().height)}px`,
+      };
+    }));
+
+    console.table(stickers.slice(0, 3).flatMap((sticker, stickerIndex) =>
+      Array.from(sticker.querySelectorAll<HTMLElement>(".sticker-detail-row")).map((row, rowIndex) => {
+        const style = getComputedStyle(row);
+        return {
+          stickerIndex,
+          rowIndex,
+          label: row.querySelector("dt")?.textContent?.trim() ?? "",
+          rowFontVar: style.getPropertyValue("--sticker-row-font").trim(),
+          computedFontSize: style.fontSize,
+          width: `${Math.round(row.getBoundingClientRect().width)}px`,
+          scrollWidth: `${row.scrollWidth}px`,
+        };
+      }),
+    ));
+    console.groupEnd();
+  }
+
   async save(actionType: SaveMarkingPayload["actionType"] = "save") {
     const validationError = this.validate();
     if (validationError) {
@@ -308,6 +354,7 @@ export class MarkingOrdersController {
     try {
       const payload = this.buildSavePayload(actionType);
       this.debugSave("save:start", payload);
+      this.debugStickerFontMetrics("save:start");
       const result = await this.service.saveMarking(payload);
       this.debugSave("save:done", payload, result);
       this.setState({

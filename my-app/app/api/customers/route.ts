@@ -21,6 +21,8 @@ export async function GET() {
 const segmentSchema = z.object({
   key: z.string().min(1),
   type: z.enum(["text", "number"]).optional(),
+  prefix: z.string().optional(),
+  suffix: z.string().optional(),
   isCounter: z.boolean().optional(),
   counterType: z.enum(["lot", "pallet"]).optional(),
   label: z.string().trim().min(1, "กรุณาระบุชื่อแต่ละส่วน"),
@@ -48,10 +50,13 @@ const templateFieldSchema = z.object({
   required: z.boolean(),
   placeholder: z.string().optional(),
   defaultValue: z.string().optional(),
+  displayFormat: z.string().optional(),
   segments: z.array(z.object({
     key: z.string().trim().min(1),
     label: z.string().trim().min(1),
     type: z.enum(["text", "number", "date", "textarea"]).optional(),
+    prefix: z.string().optional(),
+    suffix: z.string().optional(),
     showOnSticker: z.boolean().optional(),
     stickerOrder: z.number().int().min(0).optional(),
     isCounter: z.boolean().optional(),
@@ -155,4 +160,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

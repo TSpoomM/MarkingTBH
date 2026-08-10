@@ -119,7 +119,7 @@ export class CustomerService {
       const parsed: unknown = JSON.parse(trimmedValue);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         const config = parsed as {
-          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; isCounter?: boolean; counterType?: CounterType }> }>;
+          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; prefix?: string; suffix?: string; isCounter?: boolean; counterType?: CounterType }> }>;
           fields?: Array<Partial<TemplateField>>;
           tables?: Array<{ name?: string; fields?: Array<Partial<TemplateField>> }>;
         };
@@ -135,6 +135,7 @@ export class CustomerService {
               required: Boolean(field.required),
               placeholder: field.placeholder,
               defaultValue: field.defaultValue,
+              displayFormat: field.displayFormat,
               segments: field.segments?.map((segment, segmentIndex) => ({
                 ...segment,
                 showOnSticker: segment.showOnSticker ?? field.showOnSticker ?? true,
@@ -162,6 +163,8 @@ export class CustomerService {
               segments: (group.segments ?? []).map((field, fieldIndex) => ({
                 key: String(field.key ?? `inside_${groupIndex + 1}_${fieldIndex + 1}`),
                 label: String(field.label ?? `Section ${fieldIndex + 1}`),
+                prefix: field.prefix,
+                suffix: field.suffix,
                 showOnSticker: true,
                 stickerOrder: groupIndex * 10 + fieldIndex,
                 type: field.isCounter ? "number" : "text",
@@ -219,9 +222,10 @@ export class CustomerService {
             ? (field.type as TemplateField["type"])
             : "text",
           required: Boolean(field.required),
-          placeholder: field.placeholder,
-          defaultValue: field.defaultValue,
-          segments: field.segments?.map((segment, segmentIndex) => ({
+              placeholder: field.placeholder,
+              defaultValue: field.defaultValue,
+              displayFormat: field.displayFormat,
+              segments: field.segments?.map((segment, segmentIndex) => ({
             ...segment,
             showOnSticker: segment.showOnSticker ?? field.showOnSticker ?? true,
             stickerOrder: segment.stickerOrder ?? (field.stickerOrder ?? index) * 10 + segmentIndex,

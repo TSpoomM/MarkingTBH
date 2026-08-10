@@ -9,10 +9,13 @@ export interface TemplateField {
   required: boolean;
   placeholder?: string;
   defaultValue?: string;
+  displayFormat?: string;
   segments?: Array<{
     key: string;
     label: string;
     type?: FieldType;
+    prefix?: string;
+    suffix?: string;
     showOnSticker?: boolean;
     stickerOrder?: number;
     isCounter?: boolean;

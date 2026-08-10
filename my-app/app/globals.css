@@ -38,7 +38,8 @@ select {
 	border-bottom: 1px solid var(--border);
 	position: sticky;
 	top: 0;
-	z-index: 5
+	z-index: 100;
+	box-shadow: 0 8px 24px rgba(37, 50, 44, .08)
 }
 
 .header-inner {
@@ -464,14 +465,14 @@ select {
 }
 
 .print-sheet .sticker-label {
-	--sticker-font: 30px;
+	--sticker-font: 35px;
 	--sticker-label-font: 25px;
-	--sticker-gap: 4.5mm;
+	--sticker-gap: 3mm;
 	--sticker-label-column: 34%;
 	font-family: Arial, sans-serif;
 	font-weight: 700;
 	border: 0;
-	padding: 4.5mm;
+	padding: 3mm;
 	overflow: hidden;
 	position: relative;
 	display: flex;
@@ -530,8 +531,8 @@ select {
 
 .print-sheet .sticker-detail-row {
 	display: grid;
-	grid-template-columns: minmax(min-content, var(--sticker-label-column)) 5mm minmax(0, 1fr);
-	gap: 2mm;
+	grid-template-columns: minmax(min-content, var(--sticker-label-column)) 3mm minmax(0, 1fr);
+	gap: 1mm;
 	align-items: baseline;
 	font-size: var(--sticker-row-font, var(--sticker-font));
 	white-space: nowrap;
@@ -1592,6 +1593,8 @@ select {
 .customer-name { display:grid; gap:7px; margin:24px 0 8px; max-width:560px; font-size:13px; font-weight:700 }
 .customer-name input,.customer-name select,.inside-box input,.outside-table input { height:42px; border:1px solid #c3d0c6; border-radius:7px; background:#fff; padding:0 12px; outline:none }
 .customer-name input:focus,.customer-name select:focus,.inside-box input:focus,.outside-table input:focus { border-color:#579474; box-shadow:0 0 0 3px #dcebe0 }
+.duplicate-template-picker { margin-top:14px }
+.duplicate-template-picker small { color:var(--muted); font-size:12px; font-weight:600; line-height:1.45 }
 .option-group { display:grid; grid-template-columns:190px 1fr; align-items:center; gap:18px; padding:18px 0; border-bottom:1px solid #dce4de }
 .option-group>div:first-child { display:grid; gap:4px; font-size:13px }
 .option-group small { color:var(--muted); font-weight:400 }
@@ -3556,6 +3559,61 @@ select {
 		font-weight: 850;
 	}
 
+	.customer-admin .editor-format-preview {
+		grid-column: 1 / -1;
+		display: grid;
+		gap: 7px;
+		padding: 12px 14px;
+		border: 1px solid #c6d7cf;
+		border-radius: 8px;
+		background: #f8fbf9;
+	}
+
+	.customer-admin .editor-format-preview span {
+		color: #203830;
+		font-size: 13px;
+		font-weight: 850;
+	}
+
+	.customer-admin .editor-format-preview strong {
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		padding: 0 12px;
+		border: 1px solid #b9cbc3;
+		border-radius: 7px;
+		background: #fff;
+		color: #10231d;
+		font-family: Consolas, "Courier New", monospace;
+		font-size: 15px;
+		font-weight: 850;
+	}
+
+	.customer-admin .editor-segment-affixes {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px;
+		padding: 0 14px 12px;
+	}
+
+	.customer-admin .editor-segment-affixes label {
+		display: grid;
+		gap: 7px;
+	}
+
+	.customer-admin .editor-segment-affixes span {
+		color: #405049;
+		font-size: 13px;
+		font-weight: 800;
+	}
+
+	.customer-admin .editor-segment-affixes input {
+		width: 100%;
+		height: 40px;
+		font-family: Consolas, "Courier New", monospace;
+		font-size: 14px;
+	}
+
 	.customer-admin .editor-segment-card {
 		min-width: 0;
 		display: grid;
@@ -3646,12 +3704,12 @@ select {
 	.customer-admin .editor-segment-actions .count-segment {
 		border: 1px solid #98b8a6;
 		background: #e7f2ec;
-		color: #1f6643;
+		color: var(--primary-dark);
 	}
 
 	.customer-admin .editor-segment-actions .count-segment.active {
-		border-color: #1f6643;
-		background: #1f6643;
+		border-color: var(--primary-dark);
+		background: var(--primary-dark);
 		color: #fff;
 	}
 
@@ -3708,11 +3766,6 @@ select {
 		max-width: 620px;
 		font-size: 14px;
 		line-height: 1.45;
-	}
-
-	.header-actions {
-		flex-wrap: wrap;
-		justify-content: flex-end;
 	}
 
 	.add-customer-link,
@@ -3980,12 +4033,6 @@ select {
 		background: rgba(255, 255, 255, .94);
 		backdrop-filter: blur(14px);
 		box-shadow: var(--shadow-md);
-	}
-
-	.save-summary {
-		margin-right: auto;
-		display: grid;
-		gap: 3px;
 	}
 
 	.save-summary strong {
@@ -4427,8 +4474,40 @@ select {
 		gap: 16px;
 	}
 
+	.table-column-label strong {
+		width: fit-content;
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		padding: 7px 12px;
+		background: #e7f4ef;
+		color: #0f766e;
+		font-size: 20px;
+		line-height: 1;
+		box-shadow: inset 0 0 0 1px rgba(15, 118, 110, .08);
+	}
+
+	.table-column-inside .table-column-label strong {
+		background: #e7f4ef;
+		color: #0f766e;
+		box-shadow: inset 0 0 0 1px rgba(15, 118, 110, .08);
+	}
+
+	.table-column-outside .table-column-label strong {
+		background: #fff4e5;
+		color: #8a4b0f;
+		box-shadow: inset 0 0 0 1px rgba(180, 83, 9, .08);
+	}
+
 	.table-heading {
 		min-height: 88px;
+	}
+
+	.table-heading .section-title>div>span {
+		width: auto;
+		min-width: 42px;
+		padding-inline: 12px;
+		white-space: nowrap;
 	}
 
 	.vertical-fields label {
@@ -4461,5 +4540,97 @@ select {
 
 	.vertical-fields label>span {
 		white-space: normal;
+	}
+}
+
+@media screen {
+	:root {
+		--navbar-height: 92px;
+	}
+
+	.header {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		width: 100%;
+		z-index: 1000;
+	}
+
+	.navbar-spacer {
+		height: var(--navbar-height);
+		flex: 0 0 var(--navbar-height);
+	}
+}
+
+@media screen and (max-width:900px) {
+	:root {
+		--navbar-height: 150px;
+	}
+}
+
+@media screen and (max-width:560px) {
+	:root {
+		--navbar-height: 138px;
+	}
+}
+
+@media print {
+	.navbar-spacer {
+		display: none !important;
+	}
+}
+
+@media screen {
+	.sticker-preview-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.sticker-preview-card dl {
+		gap: 8px;
+	}
+
+	.sticker-preview-card dl div {
+		grid-template-columns: minmax(120px, 24%) minmax(0, 1fr);
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+	}
+
+	.sticker-preview-card dt,
+	.sticker-preview-card dd,
+	.sticker-preview-section-selects,
+	.sticker-preview-section-selects input {
+		min-width: 0;
+	}
+
+	.sticker-preview-card dt {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.sticker-preview-section-selects {
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 8px;
+	}
+
+	.sticker-preview-section-selects input {
+		flex: 1 1 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+
+@media screen and (max-width:560px) {
+	.sticker-preview-card dl div {
+		grid-template-columns: minmax(92px, 34%) minmax(0, 1fr);
+		gap: 8px;
+	}
+
+	.sticker-preview-section-selects {
+		gap: 6px;
 	}
 }

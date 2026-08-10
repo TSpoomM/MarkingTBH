@@ -23,8 +23,8 @@ export default class TableSection extends Component<TableSectionProps> {
         <div className="table-heading">
           <SectionTitle number={number} title={title} subtitle={subtitle} />
           <div className="table-meta">
-            <span>{fields.length} ช่องข้อมูล</span>
-            <span>{rows.length} ชุดข้อมูล</span>
+            <span>{fields.length} แถว</span>
+            {/* <span>{rows.length} ชุดข้อมูล</span> */}
           </div>
         </div>
         {!fields.length ? (

@@ -27,6 +27,8 @@ export interface SegmentDefinition {
   key: string;
   label: string;
   type?: "text" | "number";
+  prefix?: string;
+  suffix?: string;
   isCounter?: boolean;
   counterType?: CounterType;
 }

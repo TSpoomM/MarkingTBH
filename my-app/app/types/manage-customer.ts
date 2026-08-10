@@ -31,6 +31,7 @@ export interface CustomerFormState {
   templateOutsideDraft: TemplateField[];
   createInsideDraft: TemplateField[];
   createOutsideDraft: TemplateField[];
+  duplicateSourceCustomerId: string;
   name: string;
   stickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
@@ -43,12 +44,15 @@ export interface CustomerFormState {
   checkingRole: boolean;
   loadingCustomers: boolean;
   loadingTemplate: boolean;
+  duplicatingTemplate: boolean;
   savingTemplate: boolean;
   saving: boolean;
 }
 
 export interface CreateCustomerFormProps {
+  customers: Customer[];
   name: string;
+  duplicateSourceCustomerId: string;
   stickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
   groups: InsideGroup[];
@@ -57,10 +61,13 @@ export interface CreateCustomerFormProps {
   insideDraft: TemplateField[];
   outsideDraft: TemplateField[];
   notice: CustomerFormNotice | undefined;
+  loadingCustomers: boolean;
+  duplicatingTemplate: boolean;
   saving: boolean;
   onDismissNotice: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onNameChange: (name: string) => void;
+  onDuplicateSourceChange: (customerId: string) => void;
   onStickerFieldsChange: (fields: StickerField[]) => void;
   onToggleLayout: (layout: StickerLayoutKey) => void;
   onSegmentCountChange: (groupKey: InsideGroup["key"], count: number) => void;
