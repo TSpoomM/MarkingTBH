@@ -1,5 +1,6 @@
 import { Component } from "react";
 import Button from "@/app/components/Button";
+import Select from "@/app/components/Select";
 import Toast from "@/app/components/Toast";
 import type { EditCustomerTemplateProps } from "@/app/types/manage-customer";
 import Choice from "./Choice";
@@ -9,6 +10,8 @@ import StickerTemplatePreview from "./StickerTemplatePreview";
 import TemplateFieldEditor from "./TemplateFieldEditor";
 
 export default class EditCustomerTemplate extends Component<EditCustomerTemplateProps> {
+  state = { editorMode: "inside" as "inside" | "outside" };
+
   render() {
     const {
       customers,
@@ -61,7 +64,8 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       )}
       <label className="customer-name">
         <span>เลือก Customer</span>
-        <select
+        <Select
+          bare
           value={selectedCustomerId}
           onChange={(event) => onSelectCustomer(event.target.value)}
           disabled={loadingCustomers || loadingTemplate}
@@ -70,7 +74,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
           {customers.map((customer) => (
             <option value={customer.id} key={customer.id}>{customer.name}</option>
           ))}
-        </select>
+        </Select>
       </label>
       {!selectedCustomerId && !loadingCustomers && (
         <div className="customer-empty-guide">
@@ -118,9 +122,26 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
             customerName={selectedCustomer?.name ?? "Customer"}
             insideFields={insideDraft}
             outsideFields={outsideDraft}
+            layouts={stickerLayouts}
             onSelect={onSelectPreviewSlot}
           />
-          <div className="template-manager-grid">
+          <div className="template-editor-mode-switch" aria-label="เลือกส่วน Sticker Template">
+            <button
+              type="button"
+              className={this.state.editorMode === "inside" ? "active" : ""}
+              onClick={() => this.setState({ editorMode: "inside" })}
+            >
+              ในกรอบ
+            </button>
+            <button
+              type="button"
+              className={this.state.editorMode === "outside" ? "active" : ""}
+              onClick={() => this.setState({ editorMode: "outside" })}
+            >
+              นอกกรอบ
+            </button>
+          </div>
+          <div className={`template-manager-grid editor-mode-${this.state.editorMode}`}>
             <TemplateFieldEditor
               title="Sticker ในกรอบ"
               section="inside"

@@ -68,9 +68,9 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                     value={field.stickerGroup ?? `Outside ${tableOrder + 1}`}
                     onChange={(event) => onRenameTable?.(tableOrder, event.target.value)}
                   />
-                  <button type="button" onClick={() => onRemoveTable?.(tableOrder)}>
+                  <Button type="button" onClick={() => onRemoveTable?.(tableOrder)}>
                     Delete table
-                  </button>
+                  </Button>
                 </div>
               )}
               <article className="editor-field">
@@ -192,7 +192,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       </div>
                       <div className="editor-segment-actions" aria-label={`ตั้งค่า Section ${segmentIndex + 1}`}>
                         {countableField && (
-                          <button
+                          <Button
                             type="button"
                             className={segment.isCounter ? "count-segment active" : "count-segment"}
                             onClick={() => onChange(section, index, {
@@ -207,7 +207,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                             })}
                           >
                             Count
-                          </button>
+                          </Button>
                         )}
                         {segment.isCounter && (
                           <label className="counter-type-control">
@@ -229,7 +229,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                             </Select>
                           </label>
                         )}
-                        <button
+                        <Button
                           type="button"
                           disabled={(field.segments?.length ?? 0) <= 1}
                           onClick={() => {
@@ -246,11 +246,11 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           }}
                         >
                           ลบ
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}
-                  <button
+                  <Button
                     type="button"
                     className="add-segment-button"
                     onClick={() => onChange(section, index, {
@@ -269,17 +269,17 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                     })}
                   >
                     +1
-                  </button>
+                  </Button>
                 </div>
               )}
               {showTableFooter && (
-                <button
+                <Button
                   type="button"
                   className="outside-add-row-button"
                   onClick={() => onAdd(section, tableOrder)}
                 >
                   Add Row
-                </button>
+                </Button>
               )}
             </div>
           );
@@ -290,9 +290,9 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           </Button>
         )}
         {section !== "outside" && (
-        <Button className="add-field-button" onClick={() => onAdd(section)}>
-          เพิ่ม Field
-        </Button>
+          <Button className="add-field-button" onClick={() => onAdd(section)}>
+            เพิ่ม Field
+          </Button>
         )}
       </div>
     );

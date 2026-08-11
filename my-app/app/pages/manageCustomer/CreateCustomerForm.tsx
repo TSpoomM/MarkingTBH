@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Component } from "react";
+import Input from "@/app/components/Input";
+import Select from "@/app/components/Select";
 import Toast from "@/app/components/Toast";
 import type { CreateCustomerFormProps } from "@/app/types/manage-customer";
 import Choice from "./Choice";
@@ -7,8 +9,11 @@ import OptionGroup from "./OptionGroup";
 import SectionHeading from "./SectionHeading";
 import StickerTemplatePreview from "./StickerTemplatePreview";
 import TemplateFieldEditor from "./TemplateFieldEditor";
+import Button from "@/app/components/Button";
 
 export default class CreateCustomerForm extends Component<CreateCustomerFormProps> {
+  state = { editorMode: "inside" as "inside" | "outside" };
+
   render() {
     const {
       customers,
@@ -55,7 +60,8 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
             />
             <label className="customer-name">
               <span>ชื่อ Customer *</span>
-              <input
+              <Input
+                bare
                 value={name}
                 onChange={(event) => onNameChange(event.target.value)}
                 placeholder="ABC Rubber Co., Ltd."
@@ -63,7 +69,8 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
             </label>
             <label className="customer-name duplicate-template-picker">
               <span>Duplicate template from</span>
-              <select
+              <Select
+                bare
                 value={duplicateSourceCustomerId}
                 onChange={(event) => onDuplicateSourceChange(event.target.value)}
                 disabled={loadingCustomers || duplicatingTemplate}
@@ -74,7 +81,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 {customers.map((customer) => (
                   <option value={customer.id} key={customer.id}>{customer.name}</option>
                 ))}
-              </select>
+              </Select>
               <small>{duplicatingTemplate ? "Copying template..." : "Copy fields and sticker layouts, then edit before creating the new customer."}</small>
             </label>
             <OptionGroup
@@ -131,9 +138,26 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               customerName={name.trim() || "Customer"}
               insideFields={insideDraft}
               outsideFields={outsideDraft}
+              layouts={stickerLayouts}
               onSelect={onSelectPreviewSlot}
             />
-            <div className="template-manager-grid">
+            <div className="template-editor-mode-switch" aria-label="เลือกส่วน Sticker Template">
+              <button
+                type="button"
+                className={this.state.editorMode === "inside" ? "active" : ""}
+                onClick={() => this.setState({ editorMode: "inside" })}
+              >
+                ในกรอบ
+              </button>
+              <button
+                type="button"
+                className={this.state.editorMode === "outside" ? "active" : ""}
+                onClick={() => this.setState({ editorMode: "outside" })}
+              >
+                นอกกรอบ
+              </button>
+            </div>
+            <div className={`template-manager-grid editor-mode-${this.state.editorMode}`}>
               <TemplateFieldEditor
                 title="Sticker ในกรอบ"
                 section="inside"
@@ -158,9 +182,9 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
 
           <div className="form-actions">
             <Link href="/">ยกเลิก</Link>
-            <button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving}>
               {saving ? "กำลังบันทึก..." : "สร้าง Customer"}
-            </button>
+            </Button>
           </div>
         </form>
       </>

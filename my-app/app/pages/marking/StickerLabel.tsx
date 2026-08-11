@@ -10,7 +10,7 @@ export default class StickerLabel extends Component<{ item: StickerItem }> {
     const { item } = this.props;
     if (item.kind === "customerName") return {};
 
-    const countPressure = Math.max(0, item.details.length - 5) * 1.1;
+    const countPressure = item.kind === "outsideFrame" ? 0 : Math.max(0, item.details.length - 5) * 1.1;
     const fontSize = Math.max(22, 35 - countPressure);
     const gap = Math.max(1.4, Math.min(4.5, fontSize / 6));
     const longestLabelLength = Math.max(...item.details.map((detail) => detail.label.length), 0);

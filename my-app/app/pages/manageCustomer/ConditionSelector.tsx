@@ -1,4 +1,5 @@
 import { Component } from "react";
+import Select from "@/app/components/Select";
 import TemplateFieldUtils from "./TemplateFieldUtils";
 import type { ConditionSelectorProps, FieldCondition } from "@/app/types/manage-customer";
 
@@ -23,7 +24,8 @@ export default class ConditionSelector extends Component<ConditionSelectorProps>
     return (
       <div className="condition-selector">
         <span>บังคับเมื่อ</span>
-        <select
+        <Select
+          bare
           value={value?.stickerType ?? ""}
           disabled={disabled}
           onChange={(event) => this.setType(event.target.value)}
@@ -33,8 +35,9 @@ export default class ConditionSelector extends Component<ConditionSelectorProps>
           <option value="TNR">Type = TNR</option>
           <option value="NON-TNR">Type = NON-TNR</option>
           <option value="FCS">Type = FCS</option>
-        </select>
-        <select
+        </Select>
+        <Select
+          bare
           value={value?.stickerOther ?? ""}
           disabled={disabled}
           onChange={(event) => this.setOther(event.target.value)}
@@ -43,7 +46,7 @@ export default class ConditionSelector extends Component<ConditionSelectorProps>
           <option value="">ทุก Other</option>
           <option value="Dome">Other = Dome</option>
           <option value="Inter">Other = Inter</option>
-        </select>
+        </Select>
         <small>{TemplateFieldUtils.conditionText(value)}</small>
       </div>
     );

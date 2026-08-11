@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import { Component, Fragment, type ChangeEvent } from "react";
+import Autocomplete from "@/app/components/Autocomplete";
+import Input from "@/app/components/Input";
 import Navbar from "@/app/components/Navbar";
+import Select from "@/app/components/Select";
 import Toast from "@/app/components/Toast";
 import type { MarkingContent, MarkingHistoryItem } from "@/app/types/marking";
 import type { ApiEnvelope } from "@/app/types/api";
 import type { HistoryPageState } from "@/app/types/history";
+import Button from "@/app/components/Button";
 
 export default class HistoryPage extends Component<Record<string, never>, HistoryPageState> {
   private isActive = false;
@@ -15,7 +19,8 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
     items: [],
     isLoading: true,
     notice: "",
-    query: "",
+    customerQuery: "",
+    employeeQuery: "",
     action: "all",
     date: "",
     openId: null,
@@ -48,8 +53,12 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
     }
   }
 
-  private setQuery = (event: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ query: event.target.value });
+  private setCustomerQuery = (event: ChangeEvent<HTMLInputElement>) => {
+    this.setState({ customerQuery: event.target.value });
+  };
+
+  private setEmployeeQuery = (event: ChangeEvent<HTMLInputElement>) => {
+    this.setState({ employeeQuery: event.target.value });
   };
 
   private setAction = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -69,24 +78,21 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
   };
 
   private filteredItems() {
-    const normalizedQuery = this.state.query.trim().toLowerCase();
+    const normalizedCustomer = this.state.customerQuery.trim().toLowerCase();
+    const normalizedEmployee = this.state.employeeQuery.trim().toLowerCase();
     return this.state.items.filter((item) => {
       const matchesAction = this.state.action === "all" || item.actionType === this.state.action;
       const matchesDate = !this.state.date || item.productionDate === this.state.date || item.createdDate.startsWith(this.state.date);
-      const haystack = [
-        item.employeeName,
-        item.employeeId,
-        item.employeeLocation,
-        item.customerName,
-        item.productionDate,
-        item.lotStart,
-        item.lotEnd,
-        item.stickerFormat,
-        item.stickerType,
-        item.stickerOther,
-      ].join(" ").toLowerCase();
-      return matchesAction && matchesDate && (!normalizedQuery || haystack.includes(normalizedQuery));
+      const matchesCustomer = !normalizedCustomer || (item.customerName || "").toLowerCase().includes(normalizedCustomer);
+      const matchesEmployee = !normalizedEmployee || (item.employeeName || "").toLowerCase().includes(normalizedEmployee);
+      return matchesAction && matchesDate && matchesCustomer && matchesEmployee;
     });
+  }
+
+  private uniqueValues(pick: (item: MarkingHistoryItem) => string) {
+    return Array.from(new Set(this.state.items.map(pick).filter(Boolean))).sort((a, b) =>
+      a.localeCompare(b, "th")
+    );
   }
 
   private formatDateTime(value: string) {
@@ -168,23 +174,27 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
               <strong>ค้นหารายการ</strong>
               <span>{filteredItems.length} จาก {this.state.items.length} รายการ</span>
             </div>
-            <label className="field">
-              <span>ค้นหา</span>
-              <input value={this.state.query} onChange={this.setQuery} placeholder="ชื่อผู้บันทึก, สาขา, ลูกค้า, LOT" />
-            </label>
-            <label className="field">
-              <span>Action</span>
-              <select value={this.state.action} onChange={this.setAction}>
-                <option value="all">ทั้งหมด</option>
-                <option value="print">Print/PDF</option>
-                <option value="save">Save</option>
-                <option value="unknown">ข้อมูลเก่า</option>
-              </select>
-            </label>
-            <label className="field">
-              <span>วันที่</span>
-              <input type="date" value={this.state.date} onChange={this.setDate} />
-            </label>
+            <Autocomplete
+              label="ลูกค้า"
+              options={this.uniqueValues((item) => item.customerName)}
+              value={this.state.customerQuery}
+              onChange={this.setCustomerQuery}
+              placeholder="พิมพ์เพื่อเลือกลูกค้า"
+            />
+            <Autocomplete
+              label="ผู้บันทึก"
+              options={this.uniqueValues((item) => item.employeeName)}
+              value={this.state.employeeQuery}
+              onChange={this.setEmployeeQuery}
+              placeholder="พิมพ์เพื่อเลือกผู้บันทึก"
+            />
+            <Select label="Action" value={this.state.action} onChange={this.setAction}>
+              <option value="all">ทั้งหมด</option>
+              <option value="print">Print/PDF</option>
+              <option value="save">Save</option>
+              <option value="unknown">ข้อมูลเก่า</option>
+            </Select>
+            <Input label="วันที่" type="date" value={this.state.date} onChange={this.setDate} />
           </section>
 
           <section className="panel history-panel">
@@ -231,9 +241,9 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
                             <td><span className={`history-badge ${item.actionType}`}>{this.actionLabel(item.actionType)}</span></td>
                             <td>{this.detailText(item)}</td>
                             <td>
-                              <button className="history-toggle" onClick={() => this.toggleOpen(item.id)}>
+                              <Button className="history-toggle" onClick={() => this.toggleOpen(item.id)}>
                                 {isOpen ? "ซ่อน" : "ดู"}
-                              </button>
+                              </Button>
                             </td>
                           </tr>
                           {isOpen && (

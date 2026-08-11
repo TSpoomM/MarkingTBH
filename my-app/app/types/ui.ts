@@ -29,6 +29,13 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   bare?: boolean;
 }
 
+export interface AutocompleteProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "list"> {
+  label?: string;
+  hint?: string;
+  bare?: boolean;
+  options: string[];
+}
+
 export interface ModalProps {
   open: boolean;
   title: string;

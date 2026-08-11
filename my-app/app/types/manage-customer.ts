@@ -149,6 +149,7 @@ export interface StickerTemplatePreviewProps {
   customerName: string;
   insideFields: TemplateField[];
   outsideFields: TemplateField[];
+  layouts: StickerLayouts;
   onSelect: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
 }
 

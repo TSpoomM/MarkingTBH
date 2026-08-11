@@ -10,7 +10,7 @@ export default class Select extends Component<SelectProps> {
       <label className="field">
         <span>{label}{required && <em>*</em>}</span>
         {control}
-        {hint && <small>{hint}</small>}
+        <small className="field-hint" aria-hidden={!hint}>{hint || "\u00a0"}</small>
       </label>
     );
   }

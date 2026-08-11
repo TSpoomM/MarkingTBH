@@ -1,6 +1,7 @@
 import { Component } from "react";
 import TemplateFieldUtils from "./TemplateFieldUtils";
 import type { PreviewStickerProps } from "@/app/types/manage-customer";
+import Input from "@/app/components/Input";
 
 export default class PreviewSticker extends Component<PreviewStickerProps> {
   render() {
@@ -21,11 +22,12 @@ export default class PreviewSticker extends Component<PreviewStickerProps> {
               <dd>
                 <div className="sticker-preview-section-selects">
                   {group.fields.map((selected) => (
-                    <input
+                    <Input
                       disabled
-                      value={selected.label}
+                      value={selected.segmentLabel ?? selected.label}
                       key={selected.key}
-                      aria-label={selected.segmentLabel ?? selected.label}
+                      aria-label={selected.label}
+                      title={selected.label}
                       readOnly
                     />
                   ))}

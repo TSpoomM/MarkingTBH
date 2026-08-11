@@ -22,6 +22,7 @@ import {
 import CreateCustomerForm from "./CreateCustomerForm";
 import EditCustomerTemplate from "./EditCustomerTemplate";
 import TemplateFieldUtils from "./TemplateFieldUtils";
+import Button from "@/app/components/Button";
 
 const createDefaultInsideDraft = (): TemplateField[] => [
   ...initialGroups.map((group, groupIndex) => TemplateFieldUtils.normalizeCounterField({
@@ -313,7 +314,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   private lastOutsideGroupIndex(fields: TemplateField[], tableOrder: number) {
     return fields.reduce((lastIndex, field, index) =>
       (field.stickerGroupOrder ?? 0) === tableOrder ? index : lastIndex,
-    -1);
+      -1);
   }
 
   private outsideGroup(fields: TemplateField[], requestedOrder?: number) {
@@ -716,20 +717,20 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
             <>
               <div className="customer-admin-top">
                 <div className="customer-mode-switch" aria-label="เลือกโหมดจัดการ Customer">
-                  <button
+                  <Button
                     type="button"
                     className={this.state.mode === "edit" ? "active" : ""}
                     onClick={() => this.changeMode("edit")}
                   >
                     แก้ไข Template
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     className={this.state.mode === "create" ? "active" : ""}
                     onClick={() => this.changeMode("create")}
                   >
                     เพิ่ม Customer
-                  </button>
+                  </Button>
                 </div>
                 <div className="customer-mode-help">
                   <strong>{this.state.mode === "edit" ? "เลือก Customer เดิม แล้วปรับช่องบนสติ๊กเกอร์" : "สร้าง Customer ใหม่ แล้วกำหนดช่องที่ User ต้องกรอก"}</strong>
