@@ -1,12 +1,28 @@
+"use client";
+
 import { Component } from "react";
+import { createPortal } from "react-dom";
 import Button from "./Button";
 import type { ModalProps } from "@/app/types/ui";
 
-export default class Modal extends Component<ModalProps> {
+type ModalState = {
+  mounted: boolean;
+};
+
+export default class Modal extends Component<ModalProps, ModalState> {
+  state: ModalState = {
+    mounted: false,
+  };
+
+  componentDidMount() {
+    this.setState({ mounted: true });
+  }
+
   render() {
     const { open, title, subtitle, children, footer, onClose } = this.props;
-    if (!open) return null;
-    return (
+    if (!open || !this.state.mounted) return null;
+
+    const modal = (
       <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
         <section
           className="template-modal"
@@ -24,5 +40,7 @@ export default class Modal extends Component<ModalProps> {
         </section>
       </div>
     );
+
+    return createPortal(modal, document.body);
   }
 }

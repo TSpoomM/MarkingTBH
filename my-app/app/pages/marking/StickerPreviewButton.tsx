@@ -4,7 +4,8 @@ import { Component } from "react";
 import Button from "@/app/components/Button";
 import Modal from "@/app/components/Modal";
 import type { StickerItem, StickerKind } from "@/app/types/marking-sticker";
-import StickerLabel from "./StickerLabel";
+import StickerFactory from "./StickerFactory";
+import StickerPreviewPages from "./StickerPreviewPages";
 
 const PREVIEW_MODE_LABELS: Record<StickerKind, string> = {
   insideFrame: "ในกรอบ",
@@ -17,17 +18,20 @@ const PREVIEW_MODE_ORDER: StickerKind[] = ["insideFrame", "outsideFrame", "custo
 
 interface StickerPreviewButtonProps {
   items: StickerItem[];
+  className?: string;
 }
 
 interface StickerPreviewButtonState {
   previewOpen: boolean;
   previewMode: StickerKind;
+  previewGroup: string | null;
 }
 
 export default class StickerPreviewButton extends Component<StickerPreviewButtonProps, StickerPreviewButtonState> {
   state: StickerPreviewButtonState = {
     previewOpen: false,
     previewMode: "insideFrame",
+    previewGroup: null,
   };
 
   private previewModes() {
@@ -39,19 +43,34 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
     return this.previewModes()[0] ?? "insideFrame";
   }
 
+  private outsideGroups(items: StickerItem[]) {
+    const groups: string[] = [];
+    items.forEach((item) => {
+      const name = item.group ?? "";
+      if (!name || groups.includes(name)) return;
+      groups.push(name);
+    });
+    return groups;
+  }
+
   render() {
-    const { items } = this.props;
-    const { previewOpen, previewMode } = this.state;
+    const { items, className = "" } = this.props;
+    const { previewOpen, previewMode, previewGroup } = this.state;
     const previewModes = this.previewModes();
     const activeMode = previewModes.includes(previewMode) ? previewMode : this.firstPreviewMode();
-    const activePreviewItems = items.filter((item) => item.kind === activeMode);
+    const modePreviewItems = items.filter((item) => item.kind === activeMode);
+    const outsideGroups = activeMode === "outsideFrame" ? this.outsideGroups(modePreviewItems) : [];
+    const activeGroup = outsideGroups.includes(previewGroup ?? "") ? previewGroup : (outsideGroups[0] ?? null);
+    const activePreviewItems = activeGroup
+      ? modePreviewItems.filter((item) => item.group === activeGroup)
+      : modePreviewItems;
 
     return (
       <div className="sticker-preview-wrap">
         <Button
-          className="sticker-preview-open marking-preview-open"
+          className={`sticker-preview-open marking-preview-open ${className}`.trim()}
           disabled={items.length === 0}
-          onClick={() => this.setState({ previewOpen: true, previewMode: this.firstPreviewMode() })}
+          onClick={() => this.setState({ previewOpen: true, previewMode: this.firstPreviewMode(), previewGroup: null })}
           title={items.length === 0 ? "ยังไม่มีข้อมูลสำหรับ Preview Sticker" : "ดู Preview Sticker"}
         >
           ดู Preview Sticker
@@ -69,7 +88,7 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
                   <button
                     type="button"
                     className={mode === activeMode ? "active" : ""}
-                    onClick={() => this.setState({ previewMode: mode })}
+                    onClick={() => this.setState({ previewMode: mode, previewGroup: null })}
                     key={mode}
                   >
                     {PREVIEW_MODE_LABELS[mode]}
@@ -77,10 +96,22 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
                 ))}
               </div>
             )}
+            {outsideGroups.length > 1 && (
+              <div className="sticker-template-preview-modes sticker-template-preview-groups" aria-label="เลือกนอกกรอบ">
+                {outsideGroups.map((group) => (
+                  <button
+                    type="button"
+                    className={group === activeGroup ? "active" : ""}
+                    onClick={() => this.setState({ previewGroup: group })}
+                    key={group}
+                  >
+                    {StickerFactory.outsideGroupTitle(group)}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="container pdf-preview sticker-template-real-preview">
-              {activePreviewItems.map((item, index) => (
-                <StickerLabel item={item} key={`marking-preview-${item.kind}-${index}`} />
-              ))}
+              <StickerPreviewPages items={activePreviewItems} mode={activeMode} />
             </div>
           </div>
         </Modal>

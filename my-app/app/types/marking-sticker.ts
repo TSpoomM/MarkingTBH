@@ -19,6 +19,7 @@ export interface StickerItem {
   productionDate: string;
   stickerType: string;
   details: StickerDetail[];
+  group?: string;
 }
 
 export interface StickerBuildOptions {

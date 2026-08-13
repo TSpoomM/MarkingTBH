@@ -158,7 +158,11 @@ export default class StickerFactory {
     if (!palletsByLot || sideCount <= 0 || lotCount <= 0 || !layouts) return [];
     const items: StickerItem[] = [];
 
-    const addLayoutItems = (kind: StickerKind, detailsForSticker: (lot: number, pallet: number) => StickerItem["details"]) => {
+    const addLayoutItems = (
+      kind: StickerKind,
+      detailsForSticker: (lot: number, pallet: number) => StickerItem["details"],
+      group?: string,
+    ) => {
       Array.from({ length: lotCount }, (_, lotIndex) => {
         const palletCount = palletsByLot[lotIndex % palletsByLot.length];
         for (let pallet = 1; pallet <= palletCount; pallet += 1) {
@@ -172,6 +176,7 @@ export default class StickerFactory {
               productionDate,
               stickerType,
               details: detailsForSticker(lotStart + lotIndex, pallet),
+              group,
             });
           }
         }
@@ -183,7 +188,7 @@ export default class StickerFactory {
     }
     if (layouts.outsideFrame) {
       this.outsideGroups(outsideFields).forEach((group) => {
-        addLayoutItems("outsideFrame", (lot, pallet) => this.fieldValues(group.fields, outsideRow, lot, pallet));
+        addLayoutItems("outsideFrame", (lot, pallet) => this.fieldValues(group.fields, outsideRow, lot, pallet), group.name);
       });
     }
     if (layouts.customerName) addLayoutItems("customerName", () => []);

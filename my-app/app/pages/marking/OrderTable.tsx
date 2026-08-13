@@ -3,23 +3,9 @@
 import MarkingComponent from "./MarkingComponent";
 import StickerFactory from "./StickerFactory";
 import StickerPage from "./StickerPage";
-import StickerPreviewButton from "./StickerPreviewButton";
 import TableSection from "./TableSection";
 
 export default class OrderTable extends MarkingComponent {
-  private previewItems(items: ReturnType<typeof StickerFactory.build>) {
-    const seen = new Set<string>();
-    return items.filter((item) => {
-      const signature = [
-        item.kind,
-        item.details.map((detail) => `${detail.label}:${detail.values.map((value) => value.label ?? "").join("|")}`).join(";"),
-      ].join("|");
-      if (seen.has(signature)) return false;
-      seen.add(signature);
-      return true;
-    });
-  }
-
   render() {
     const customer = this.state.customers.find(
       (item) => String(item.id) === this.state.customerId,
@@ -54,8 +40,6 @@ export default class OrderTable extends MarkingComponent {
       stickerItems.filter((item) => item.kind === "fscLogo"),
       4,
     );
-    const previewItems = this.previewItems(stickerItems);
-
     return (
       <>
         <div className="container table-layout">
@@ -105,8 +89,6 @@ export default class OrderTable extends MarkingComponent {
             )}
           </div>
         </div>
-
-        <StickerPreviewButton items={previewItems} />
 
         <div className="print-sheet">
           {frameStickerPages.map((page, index) => (
