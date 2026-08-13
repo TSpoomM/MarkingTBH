@@ -33,7 +33,7 @@ export default class TableSection extends Component<TableSectionProps> {
           <div className="vertical-records">
             {rows.map((row, rowIndex) => (
               <article className="record-card" key={rowIndex}>
-                <header><div><span>{String(rowIndex + 1).padStart(2, "0")}</span><b>ชุดข้อมูลสำหรับพิมพ์</b></div></header>
+                {/* <header><div><span>{String(rowIndex + 1).padStart(2, "0")}</span><b>ชุดข้อมูลสำหรับพิมพ์</b></div></header> */}
                 <div className="vertical-fields">
                   {fields.map((field) => (
                     <label key={field.key}>

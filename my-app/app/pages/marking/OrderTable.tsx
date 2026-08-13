@@ -2,8 +2,8 @@
 
 import MarkingComponent from "./MarkingComponent";
 import StickerFactory from "./StickerFactory";
-import StickerLabel from "./StickerLabel";
 import StickerPage from "./StickerPage";
+import StickerPreviewButton from "./StickerPreviewButton";
 import TableSection from "./TableSection";
 
 export default class OrderTable extends MarkingComponent {
@@ -66,8 +66,8 @@ export default class OrderTable extends MarkingComponent {
             </div>
             <TableSection
               number="2"
-              title="ข้อมูลสำหรับสติ๊กเกอร์ในกรอบ"
-              subtitle="รายละเอียดหลักที่พิมพ์บนฉลากภายในกล่อง"
+              title="ในกรอบ"
+              subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์ในกรอบ"
               fields={this.state.template?.inside ?? []}
               rows={this.state.insideRows}
               lotStart={this.state.lotStart}
@@ -84,7 +84,7 @@ export default class OrderTable extends MarkingComponent {
                 key={`${group.name}-${groupIndex}`}
                 number={String(groupIndex + 3)}
                 title={`${StickerFactory.outsideGroupTitle(group.name)}`}
-                subtitle={`ช่องข้อมูลเฉพาะสำหรับลูกค้า ${customer?.name ?? "ที่เลือก"}`}
+                subtitle={`กรอกข้อมูลสำหรับลูกค้า ${customer?.name ?? "ที่เลือก"}`}
                 fields={group.fields}
                 rows={this.state.outsideRows}
                 lotStart={this.state.lotStart}
@@ -95,7 +95,7 @@ export default class OrderTable extends MarkingComponent {
               <TableSection
                 number="3"
                 title="ข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
-                subtitle={`ช่องข้อมูลเฉพาะสำหรับลูกค้า ${customer?.name ?? "ที่เลือก"}`}
+                subtitle={`กรอกข้อมูลสำหรับลูกค้า ${customer?.name ?? "ที่เลือก"}`}
                 fields={[]}
                 rows={[]}
                 lotStart={this.state.lotStart}
@@ -106,13 +106,7 @@ export default class OrderTable extends MarkingComponent {
           </div>
         </div>
 
-        {previewItems.length > 0 && (
-          <div className="container pdf-preview">
-            {previewItems.map((item, index) => (
-              <StickerLabel item={item} key={`preview-${item.kind}-${index}`} />
-            ))}
-          </div>
-        )}
+        <StickerPreviewButton items={previewItems} />
 
         <div className="print-sheet">
           {frameStickerPages.map((page, index) => (

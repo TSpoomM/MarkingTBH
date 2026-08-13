@@ -1,6 +1,7 @@
 "use client";
 
 import Button from "@/app/components/Button";
+import DownloadIcon from "./DownloadIcon";
 import MarkingComponent from "./MarkingComponent";
 
 export default class Pagination extends MarkingComponent {
@@ -8,7 +9,7 @@ export default class Pagination extends MarkingComponent {
     return (
       <div className="container bottom-action">
         <div className="save-summary">
-          <strong>พร้อมบันทึกข้อมูล</strong>
+          <strong>พร้อมส่งออก PDF</strong>
           <span>
             สติ๊กเกอร์ในกรอบ {this.state.insideRows.length} ชุด
             {this.state.template?.outside.length
@@ -18,11 +19,13 @@ export default class Pagination extends MarkingComponent {
         </div>
         <Button
           className="export-button"
-          onClick={() => void this.actions.save()}
+          onClick={() => void this.actions.saveAndExport()}
           disabled={this.state.isSaving || !this.state.template}
           loading={this.state.isSaving}
+          loadingText="กำลังส่งออก..."
         >
-          บันทึก
+          <DownloadIcon />
+          ส่งออก PDF
         </Button>
       </div>
     );

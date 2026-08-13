@@ -12,8 +12,6 @@ import TemplateFieldEditor from "./TemplateFieldEditor";
 import Button from "@/app/components/Button";
 
 export default class CreateCustomerForm extends Component<CreateCustomerFormProps> {
-  state = { editorMode: "inside" as "inside" | "outside" };
-
   render() {
     const {
       customers,
@@ -128,7 +126,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
             </OptionGroup>
           </section>
 
-          <section className="config-card">
+          <section className="config-card template-editor-card">
             <SectionHeading
               number="2"
               title="ตั้งค่า Sticker Template"
@@ -141,23 +139,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               layouts={stickerLayouts}
               onSelect={onSelectPreviewSlot}
             />
-            <div className="template-editor-mode-switch" aria-label="เลือกส่วน Sticker Template">
-              <button
-                type="button"
-                className={this.state.editorMode === "inside" ? "active" : ""}
-                onClick={() => this.setState({ editorMode: "inside" })}
-              >
-                ในกรอบ
-              </button>
-              <button
-                type="button"
-                className={this.state.editorMode === "outside" ? "active" : ""}
-                onClick={() => this.setState({ editorMode: "outside" })}
-              >
-                นอกกรอบ
-              </button>
-            </div>
-            <div className={`template-manager-grid editor-mode-${this.state.editorMode}`}>
+            <div className="template-manager-grid">
               <TemplateFieldEditor
                 title="Sticker ในกรอบ"
                 section="inside"

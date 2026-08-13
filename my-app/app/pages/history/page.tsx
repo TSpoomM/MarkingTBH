@@ -1,16 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { Component, Fragment, type ChangeEvent } from "react";
+import { Component, type ChangeEvent } from "react";
 import Autocomplete from "@/app/components/Autocomplete";
+import Button from "@/app/components/Button";
 import Input from "@/app/components/Input";
+import Modal from "@/app/components/Modal";
 import Navbar from "@/app/components/Navbar";
 import Select from "@/app/components/Select";
 import Toast from "@/app/components/Toast";
-import type { MarkingContent, MarkingHistoryItem } from "@/app/types/marking";
 import type { ApiEnvelope } from "@/app/types/api";
 import type { HistoryPageState } from "@/app/types/history";
-import Button from "@/app/components/Button";
+import type { MarkingContent, MarkingHistoryItem } from "@/app/types/marking";
 
 export default class HistoryPage extends Component<Record<string, never>, HistoryPageState> {
   private isActive = false;
@@ -69,8 +69,22 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
     this.setState({ date: event.target.value });
   };
 
-  private toggleOpen = (id: string | number) => {
-    this.setState((current) => ({ openId: current.openId === id ? null : id }));
+  private clearFilters = () => {
+    this.setState({
+      customerQuery: "",
+      employeeQuery: "",
+      action: "all",
+      date: "",
+      openId: null,
+    });
+  };
+
+  private openDetail = (id: string | number) => {
+    this.setState({ openId: id });
+  };
+
+  private closeDetail = () => {
+    this.setState({ openId: null });
   };
 
   private dismissNotice = () => {
@@ -125,38 +139,163 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
     return parts.join(" / ") || "-";
   }
 
-  private renderContentRows(title: string, rows: MarkingContent[]) {
-    const keys = Array.from(new Set(rows.flatMap((row) => Object.keys(row))))
-      .filter((key) => key !== "action_type")
-      .slice(0, 10);
+  private isStickerDetailKey(key: string) {
+    return new Set([
+      "action_type",
+      "production_date",
+      "lot_start",
+      "lot_end",
+      "lot_count",
+      "sticker_format",
+      "sticker_type",
+      "sticker_other",
+      "total_lot",
+      "sticker_sides",
+    ]).has(key);
+  }
+
+  private combinedSectionEntry(key: string, row: MarkingContent) {
+    const match = key.match(/^(lotNo|palletNo)_(\d+)$/i);
+    if (!match) return undefined;
+    const prefix = match[1];
+    const label = prefix.toLowerCase() === "palletno" ? "PALLET NO." : "LOT NO.";
+    const values = Object.entries(row)
+      .filter(([itemKey, value]) => (
+        new RegExp(`^${prefix}_\\d+$`, "i").test(itemKey) &&
+        String(value ?? "").trim() !== ""
+      ))
+      .sort(([left], [right]) => {
+        const leftIndex = Number(left.split("_").pop() ?? 0);
+        const rightIndex = Number(right.split("_").pop() ?? 0);
+        return leftIndex - rightIndex;
+      })
+      .map(([, value]) => String(value).trim());
+    return values.length ? [label, values.join(" ")] as const : undefined;
+  }
+
+  private filledEntries(row: MarkingContent) {
+    const usedCombinedKeys = new Set<string>();
+    return Object.entries(row)
+      .flatMap(([key, value]) => {
+        if (this.isStickerDetailKey(key) || String(value ?? "").trim() === "") return [];
+        const combinedEntry = this.combinedSectionEntry(key, row);
+        if (!combinedEntry) return [[key, value] as const];
+        if (usedCombinedKeys.has(combinedEntry[0])) return [];
+        usedCombinedKeys.add(combinedEntry[0]);
+        return [combinedEntry];
+      })
+      .slice(0, 24);
+  }
+
+  private renderTemplateSection(title: string, rows: MarkingContent[]) {
+    const filledRows = rows
+      .map((row, index) => ({ index, entries: this.filledEntries(row) }))
+      .filter((row) => row.entries.length > 0);
 
     return (
-      <div className="history-detail-block">
+      <section className="history-template-section">
         <h3>{title}</h3>
-        {rows.length === 0 || keys.length === 0 ? (
-          <p>ไม่มีข้อมูล</p>
+        {filledRows.length === 0 ? (
+          <p>ไม่มีข้อมูลที่กรอก</p>
         ) : (
-          <div className="history-detail-table-wrap">
-            <table className="history-detail-table">
-              <thead>
-                <tr>{keys.map((key) => <th key={key}>{key}</th>)}</tr>
-              </thead>
-              <tbody>
-                {rows.map((row, index) => (
-                  <tr key={index}>
-                    {keys.map((key) => <td key={key}>{row[key] || "-"}</td>)}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="history-template-grid">
+            {filledRows.map((row) => (
+              <article className="history-template-card" key={`${title}-${row.index}`}>
+                <header>
+                  <strong>ชุดที่ {row.index + 1}</strong>
+                  <span>{row.entries.length} fields</span>
+                </header>
+                <dl>
+                  {row.entries.map(([key, value]) => (
+                    <div key={key}>
+                      <dt>{key}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </article>
+            ))}
           </div>
         )}
-      </div>
+      </section>
+    );
+  }
+
+  private renderDetailModal(item: MarkingHistoryItem | undefined) {
+    return (
+      <Modal
+        open={!!item}
+        title={item?.customerName || "History detail"}
+        subtitle={item ? `${this.actionLabel(item.actionType)} · ${this.formatDateTime(item.createdDate)}` : undefined}
+        onClose={this.closeDetail}
+      >
+        {item && (
+          <div className="editor-body history-template-modal">
+            <section className="history-template-summary">
+              <div>
+                <span>ผู้บันทึก</span>
+                <strong>{item.employeeName || "-"}</strong>
+              </div>
+              <div>
+                <span>สาขา</span>
+                <strong>{item.employeeLocation || "-"}</strong>
+              </div>
+            </section>
+            <section className="history-sticker-details">
+              <h3>รายละเอียดสติ๊กเกอร์</h3>
+              <dl>
+                <div>
+                  <dt>Production</dt>
+                  <dd>{item.productionDate || "-"}</dd>
+                </div>
+                <div>
+                  <dt>LOT</dt>
+                  <dd>{item.lotStart && item.lotEnd ? `${item.lotStart}-${item.lotEnd}` : "-"}</dd>
+                </div>
+                <div>
+                  <dt>จำนวน LOT</dt>
+                  <dd>{item.lotCount || "-"}</dd>
+                </div>
+                <div>
+                  <dt>จำนวนด้าน</dt>
+                  <dd>{item.stickerSides || "-"}</dd>
+                </div>
+                <div>
+                  <dt>Format</dt>
+                  <dd>{item.stickerFormat || "-"}</dd>
+                </div>
+                <div>
+                  <dt>Type</dt>
+                  <dd>{item.stickerType || "-"}</dd>
+                </div>
+                <div>
+                  <dt>Other</dt>
+                  <dd>{item.stickerOther || "-"}</dd>
+                </div>
+              </dl>
+            </section>
+            <section className="history-sticker-content">
+              <h3>ข้อมูลในสติ๊กเกอร์</h3>
+              {this.renderTemplateSection("ในกรอบ", item.inside)}
+              {this.renderTemplateSection("นอกกรอบ", item.outside)}
+            </section>
+          </div>
+        )}
+      </Modal>
     );
   }
 
   render() {
     const filteredItems = this.filteredItems();
+    const activeFilters = [
+      this.state.customerQuery,
+      this.state.employeeQuery,
+      this.state.action !== "all" ? this.state.action : "",
+      this.state.date,
+    ].filter(Boolean).length;
+    const selectedItem = this.state.openId
+      ? this.state.items.find((item) => item.id === this.state.openId)
+      : undefined;
 
     return (
       <>
@@ -164,15 +303,23 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
           badge="TBH"
           title="History"
           subtitle="ตรวจสอบรายการที่บันทึกและ Print/PDF"
-          action={<div className="header-actions"><Link className="back-link" href="/">กลับหน้าหลัก</Link></div>}
+          activeNav="history"
         />
         <main className="history-wrap">
           {this.state.notice && <Toast type="error" message={this.state.notice} onClose={this.dismissNotice} />}
 
+          <section className="history-overview history-overview-single" aria-label="History summary">
+            <div>
+              <span>รายการทั้งหมด</span>
+              <strong>{filteredItems.length}</strong>
+              <small>จากทั้งหมด {this.state.items.length} รายการ</small>
+            </div>
+          </section>
+
           <section className="panel history-filter">
             <div className="history-filter-title">
               <strong>ค้นหารายการ</strong>
-              <span>{filteredItems.length} จาก {this.state.items.length} รายการ</span>
+              <span>กรองจากลูกค้า ผู้บันทึก Action หรือวันที่</span>
             </div>
             <Autocomplete
               label="ลูกค้า"
@@ -195,10 +342,15 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
               <option value="unknown">ข้อมูลเก่า</option>
             </Select>
             <Input label="วันที่" type="date" value={this.state.date} onChange={this.setDate} />
+            <div className="history-filter-actions">
+              <Button type="button" className="history-clear" onClick={this.clearFilters} disabled={activeFilters === 0}>
+                ล้าง Filter
+              </Button>
+            </div>
           </section>
 
           <section className="panel history-panel">
-            <div className="table-heading">
+            <div className="table-heading history-heading-with-total">
               <div className="section-title">
                 <div>
                   <span>{filteredItems.length}</span>
@@ -207,6 +359,11 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
                     <p>รายการล่าสุดจาก log_marking</p>
                   </div>
                 </div>
+              </div>
+              <div className="history-total-inline">
+                <span>รายการทั้งหมด</span>
+                <strong>{filteredItems.length}</strong>
+                <small>จากทั้งหมด {this.state.items.length} รายการ</small>
               </div>
             </div>
 
@@ -229,42 +386,28 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredItems.map((item) => {
-                      const isOpen = this.state.openId === item.id;
-                      return (
-                        <Fragment key={item.id}>
-                          <tr>
-                            <td>{this.formatDateTime(item.createdDate)}</td>
-                            <td>{item.employeeName || "-"}</td>
-                            <td>{item.employeeLocation || "-"}</td>
-                            <td>{item.customerName || `Customer #${item.customerId}`}</td>
-                            <td><span className={`history-badge ${item.actionType}`}>{this.actionLabel(item.actionType)}</span></td>
-                            <td>{this.detailText(item)}</td>
-                            <td>
-                              <Button className="history-toggle" onClick={() => this.toggleOpen(item.id)}>
-                                {isOpen ? "ซ่อน" : "ดู"}
-                              </Button>
-                            </td>
-                          </tr>
-                          {isOpen && (
-                            <tr>
-                              <td colSpan={7}>
-                                <div className="history-details">
-                                  {this.renderContentRows("Inside", item.inside)}
-                                  {this.renderContentRows("Outside", item.outside)}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </Fragment>
-                      );
-                    })}
+                    {filteredItems.map((item) => (
+                      <tr className="history-row" key={item.id}>
+                        <td>{this.formatDateTime(item.createdDate)}</td>
+                        <td>{item.employeeName || "-"}</td>
+                        <td>{item.employeeLocation || "-"}</td>
+                        <td>{item.customerName || `Customer #${item.customerId}`}</td>
+                        <td><span className={`history-badge ${item.actionType}`}>{this.actionLabel(item.actionType)}</span></td>
+                        <td>{this.detailText(item)}</td>
+                        <td>
+                          <Button className="history-toggle" onClick={() => this.openDetail(item.id)}>
+                            ดู
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             )}
           </section>
         </main>
+        {this.renderDetailModal(selectedItem)}
       </>
     );
   }

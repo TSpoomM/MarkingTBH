@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Component, type FormEvent } from "react";
 import Navbar from "@/app/components/Navbar";
 import Toast from "@/app/components/Toast";
@@ -706,7 +705,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           badge="ADM"
           title="จัดการ Customer"
           subtitle="เพิ่มลูกค้าใหม่ และแก้ไข Sticker Template ของลูกค้าเดิม"
-          action={<Link className="back-link" href="/">กลับหน้าหลัก</Link>}
+          activeNav="customers"
         />
         <main className="customer-form-wrap">
           {this.state.checkingRole && <Toast type="success" message="กำลังตรวจสอบสิทธิ์..." />}
