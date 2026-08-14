@@ -46,7 +46,7 @@ export default class AutoFitStickerRow extends Component<
     const element = this.ref.current;
     if (!element) return;
     const inheritedFontSize = Number.parseFloat(getComputedStyle(element).getPropertyValue("--sticker-font"));
-    const rowScale = FONT_SCALE_MULTIPLIERS[this.props.detail.fontScale ?? "normal"];
+    const rowScale = FONT_SCALE_MULTIPLIERS[this.props.detail.fontScale ?? "normal"] ?? 1;
     const baseFontSize = (Number.isFinite(inheritedFontSize) ? inheritedFontSize : this.defaultFontSize)
       * this.props.cardScale * rowScale;
 
@@ -75,12 +75,12 @@ export default class AutoFitStickerRow extends Component<
     const { detail } = this.props;
     return (
       <div
-        className="sticker-detail-row"
+        className={`sticker-detail-row${detail.hideLabel ? " sticker-detail-row-no-label" : ""}`}
         ref={this.ref}
         style={{ "--sticker-row-font": `${this.state.fontSize}px` } as CSSProperties}
       >
-        <dt>{detail.label}</dt>
-        <dd className="sticker-detail-colon">:</dd>
+        {!detail.hideLabel && <dt>{detail.label}</dt>}
+        {!detail.hideLabel && <dd className="sticker-detail-colon">:</dd>}
         <dd className="sticker-detail-values">
           {detail.values.map((value, valueIndex) => (
             <span key={`${value.label ?? "value"}-${value.value}-${valueIndex}`}>

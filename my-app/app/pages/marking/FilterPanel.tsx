@@ -12,9 +12,15 @@ import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
 import MarkingComponent from "./MarkingComponent";
 import SectionTitle from "./SectionTitle";
+import StickerFactory from "./StickerFactory";
 
 export default class FilterPanel extends MarkingComponent {
   render() {
+    const enabledFields = this.state.template?.sticker.enabledFields ?? [];
+    const outsideFields = this.state.template?.outside ?? [];
+    const needsType = enabledFields.includes("type") || StickerFactory.needsStickerType(outsideFields);
+    const needsOther = enabledFields.includes("other") || StickerFactory.needsStickerOther(outsideFields);
+
     return (
       <main className="container">
         {this.state.notice && (
@@ -62,25 +68,40 @@ export default class FilterPanel extends MarkingComponent {
               value={this.state.lotCount}
               onChange={(event) => this.actions.setLotCount(event.target.value)}
             />
-            {this.state.template?.sticker.enabledFields.includes("side") && (
+            {this.state.template && (
               <Select label="Side *" value={this.state.stickerSides} onChange={(event) => this.actions.setStickerSides(event.target.value)}>
                 <option value="">เลือก Side</option>
                 {STICKER_SIDE_OPTIONS.map((side) => <option value={side} key={side}>{side} ด้าน</option>)}
               </Select>
             )}
-            {this.state.template?.sticker.enabledFields.includes("format") && (
+            {this.state.template && (
               <Select label="Format *" hint="จำนวน Pallet ในแต่ละ Lot" value={this.state.stickerFormat} onChange={(event) => this.actions.setStickerFormat(event.target.value)}>
                 <option value="">เลือก Format</option>
                 {STICKER_FORMAT_OPTIONS.map((format) => <option value={format} key={format}>{format === "5533" ? "5533 — [5, 5, 3, 3]" : "555 — [5, 5, 5]"}</option>)}
               </Select>
             )}
-            {this.state.template?.sticker.enabledFields.includes("type") && (
+            {needsType && (
               <Select label="Type *" value={this.state.stickerType} onChange={(event) => this.actions.setStickerType(event.target.value)}>
                 <option value="">เลือก Type</option>
                 {STICKER_TYPE_OPTIONS.map((type) => <option value={type} key={type}>{type}</option>)}
               </Select>
             )}
-            {this.state.template?.sticker.enabledFields.includes("other") && (
+            {this.state.stickerType === "TNR" && (
+              <div className="field fsc-toggle-field">
+                <span>FSC</span>
+                <label className="fsc-toggle">
+                  <Input
+                    bare
+                    type="checkbox"
+                    checked={this.state.stickerFsc}
+                    onChange={(event) => this.actions.setStickerFsc(event.target.checked)}
+                  />
+                  <b>มี FSC</b>
+                </label>
+                <small className="field-hint">ติ๊กเมื่อต้องพิมพ์สติ๊กเกอร์ FSC</small>
+              </div>
+            )}
+            {needsOther && (
               <Select label="Other *" value={this.state.stickerOther} onChange={(event) => this.actions.setStickerOther(event.target.value)}>
                 <option value="">เลือก Other</option>
                 {STICKER_OTHER_OPTIONS.map((other) => <option value={other} key={other}>{other}</option>)}

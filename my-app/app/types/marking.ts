@@ -11,6 +11,7 @@ export interface MarkingState {
   stickerSides: string;
   stickerFormat: string;
   stickerType: string;
+  stickerFsc: boolean;
   stickerOther: string;
   lotCount: string;
   lotStart: number;
@@ -67,6 +68,7 @@ export interface MarkingHistoryItem {
   actionType: "save" | "print" | "unknown";
   stickerFormat: string;
   stickerType: string;
+  stickerFsc?: boolean;
   stickerOther: string;
   createdDate: string;
   inside: MarkingContent[];

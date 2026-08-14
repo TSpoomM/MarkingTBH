@@ -103,6 +103,7 @@ export class MarkingOrdersController {
         stickerSides: "",
         stickerFormat: "",
         stickerType: "",
+        stickerFsc: false,
         stickerOther: "",
         lotCount: "1",
         lotStart,
@@ -120,7 +121,8 @@ export class MarkingOrdersController {
   settotalLot(totalLot: string) { this.setState({ totalLot }); }
   setStickerSides(stickerSides: string) { this.setState({ stickerSides }); }
   setStickerFormat(stickerFormat: string) { this.setState({ stickerFormat }); }
-  setStickerType(stickerType: string) { this.setState({ stickerType }); }
+  setStickerType(stickerType: string) { this.setState({ stickerType, stickerFsc: stickerType === "TNR" ? this.state.stickerFsc : false }); }
+  setStickerFsc(stickerFsc: boolean) { this.setState({ stickerFsc }); }
   setStickerOther(stickerOther: string) { this.setState({ stickerOther }); }
   setLotCount(lotCount: string) { this.setState({ lotCount }); }
   setProductionDate(productionDate: string) {
@@ -167,6 +169,7 @@ export class MarkingOrdersController {
         lot_end: String(this.state.lotStart + Number(this.state.lotCount || 1) - 1),
         ...(this.state.stickerFormat && { sticker_format: this.state.stickerFormat }),
         ...(this.state.stickerType && { sticker_type: this.state.stickerType }),
+        ...(this.state.stickerType === "TNR" && { sticker_fsc: this.state.stickerFsc ? "YES" : "NO" }),
         ...(this.state.stickerOther && { sticker_other: this.state.stickerOther }),
       })),
       contentOutside: this.state.outsideRows,
@@ -268,10 +271,10 @@ export class MarkingOrdersController {
     const stickerFields = template?.sticker.enabledFields ?? [];
     if (!this.state.productionDate) return "กรุณาเลือก Production Date";
     if (!Number.isInteger(Number(this.state.lotCount)) || Number(this.state.lotCount) < 1) return "กรุณากรอกจำนวน Lot";
-    if (stickerFields.includes("side") && !this.state.stickerSides) return "กรุณาเลือก Side";
-    if (stickerFields.includes("format") && !this.state.stickerFormat) return "กรุณาเลือก Format";
-    if (stickerFields.includes("type") && !this.state.stickerType) return "กรุณาเลือก Type";
-    if (stickerFields.includes("other") && !this.state.stickerOther) return "กรุณาเลือก Other";
+    if (!this.state.stickerSides) return "กรุณาเลือก Side";
+    if (!this.state.stickerFormat) return "กรุณาเลือก Format";
+    if ((stickerFields.includes("type") || (template?.outside ?? []).some((field) => !!field.condition?.stickerType)) && !this.state.stickerType) return "กรุณาเลือก Type";
+    if ((stickerFields.includes("other") || (template?.outside ?? []).some((field) => !!field.condition?.stickerOther)) && !this.state.stickerOther) return "กรุณาเลือก Other";
     for (const [index, row] of insideRows.entries()) {
       const missing = template?.inside.find((field) =>
         field.required &&

@@ -27,9 +27,8 @@ export default class Pagination extends MarkingComponent {
     );
     const previewFormat = this.state.stickerFormat || "555";
     const previewSideCount = Number(this.state.stickerSides || 1);
-    const previewStickerType = this.state.stickerType || "TNR";
     const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
-      StickerFactory.matchesCondition(field, previewStickerType, this.state.stickerOther),
+      StickerFactory.matchesCondition(field, this.state.stickerType, this.state.stickerOther),
     );
     const previewItems = this.previewItems(StickerFactory.build({
       customerName: this.state.template?.customerName ?? customer?.name ?? "",
@@ -38,7 +37,8 @@ export default class Pagination extends MarkingComponent {
       lotCount: Number(this.state.lotCount || 1),
       lotStart: this.state.lotStart,
       productionDate: this.state.productionDate || "xxx",
-      stickerType: previewStickerType,
+      stickerType: this.state.stickerType,
+      stickerFsc: this.state.stickerFsc,
       layouts: this.state.template?.sticker.layouts,
       insideFields: this.state.template?.inside ?? [],
       outsideFields,

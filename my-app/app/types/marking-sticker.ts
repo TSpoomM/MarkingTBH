@@ -8,6 +8,7 @@ export interface StickerDetail {
   values: Array<{ label?: string; value: string }>;
   order: number;
   fontScale?: FontScale;
+  hideLabel?: boolean;
 }
 
 export interface StickerItem {
@@ -30,6 +31,7 @@ export interface StickerBuildOptions {
   lotStart: number;
   productionDate: string;
   stickerType: string;
+  stickerFsc: boolean;
   layouts: StickerLayouts | undefined;
   insideFields: TemplateField[];
   outsideFields: TemplateField[];

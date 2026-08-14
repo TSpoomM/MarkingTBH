@@ -3,7 +3,6 @@ import type { FontScale } from "../types/customer";
 
 export const FONT_SCALE_MULTIPLIERS: Record<NonNullable<FontScale>, number> = {
   normal: 1,
-  large: 1.35,
   xlarge: 1.7,
 };
 
@@ -19,7 +18,7 @@ export const STICKER_FORMAT_PALLETS = {
   "5533": [5, 5, 3, 3],
   "555": [5, 5, 5],
 } as const;
-export const STICKER_TYPE_OPTIONS = ["TNR", "NON-TNR", "FCS"] as const;
+export const STICKER_TYPE_OPTIONS = ["TNR", "NON TNR"] as const;
 export const STICKER_OTHER_OPTIONS = ["Dome", "Inter"] as const;
 
 export const INITIAL_MARKING_STATE: MarkingState = {
@@ -30,6 +29,7 @@ export const INITIAL_MARKING_STATE: MarkingState = {
   stickerSides: "",
   stickerFormat: "",
   stickerType: "",
+  stickerFsc: false,
   stickerOther: "",
   lotCount: "1",
   lotStart: 1,

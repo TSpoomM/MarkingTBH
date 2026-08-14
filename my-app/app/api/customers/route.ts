@@ -3,6 +3,9 @@ import { z, ZodError } from "zod";
 
 export const runtime = "nodejs";
 
+const stickerTypeConditionSchema = z.enum(["TNR", "NON TNR", "NON-TNR", "FCS"])
+  .transform((value) => value === "NON-TNR" ? "NON TNR" : value === "FCS" ? "TNR" : value);
+
 export async function GET() {
   try {
     const rows = await customerService.getCustomers();
@@ -33,14 +36,15 @@ const outsideFieldSchema = z.object({
   label: z.string().trim().min(1, "กรุณาระบุชื่อแถว"),
   required: z.boolean(),
   condition: z.object({
-    stickerType: z.enum(["TNR", "NON-TNR", "FCS"]).optional(),
+    stickerType: stickerTypeConditionSchema.optional(),
     stickerOther: z.enum(["Dome", "Inter"]).optional(),
   }).optional(),
   showOnSticker: z.boolean().optional(),
   stickerOrder: z.number().int().min(0).optional(),
   system: z.boolean().optional(),
   uppercase: z.boolean().optional(),
-  fontScale: z.enum(["normal", "large", "xlarge"]).optional(),
+  fontScale: z.enum(["normal", "xlarge"]).optional(),
+  hideLabel: z.boolean().optional(),
 });
 
 const templateFieldSchema = z.object({
@@ -63,7 +67,7 @@ const templateFieldSchema = z.object({
     counterType: z.enum(["lot", "pallet"]).optional(),
   })).optional(),
   condition: z.object({
-    stickerType: z.enum(["TNR", "NON-TNR", "FCS"]).optional(),
+    stickerType: stickerTypeConditionSchema.optional(),
     stickerOther: z.enum(["Dome", "Inter"]).optional(),
   }).optional(),
   showOnSticker: z.boolean().optional(),
@@ -71,7 +75,8 @@ const templateFieldSchema = z.object({
   stickerGroup: z.string().optional(),
   stickerGroupOrder: z.number().int().min(0).optional(),
   uppercase: z.boolean().optional(),
-  fontScale: z.enum(["normal", "large", "xlarge"]).optional(),
+  fontScale: z.enum(["normal", "xlarge"]).optional(),
+  hideLabel: z.boolean().optional(),
 });
 
 const createCustomerSchema = z.object({

@@ -1,6 +1,6 @@
 export type FieldType = "text" | "number" | "date" | "textarea";
 export type CounterType = "lot" | "pallet";
-export type FontScale = "normal" | "large" | "xlarge";
+export type FontScale = "normal" | "xlarge";
 
 export interface TemplateField {
   key: string;
@@ -22,7 +22,7 @@ export interface TemplateField {
     counterType?: CounterType;
   }>;
   condition?: {
-    stickerType?: "TNR" | "NON-TNR" | "FCS";
+    stickerType?: "TNR" | "NON TNR";
     stickerOther?: "Dome" | "Inter";
   };
   showOnSticker?: boolean;
@@ -31,6 +31,7 @@ export interface TemplateField {
   stickerGroupOrder?: number;
   uppercase?: boolean;
   fontScale?: FontScale;
+  hideLabel?: boolean;
 }
 
 export interface Customer {

@@ -61,7 +61,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               <Input
                 bare
                 value={name}
-                onChange={(event) => onNameChange(event.target.value)}
+                onChange={(event) => onNameChange(event.target.value.toUpperCase())}
                 placeholder="ABC Rubber Co., Ltd."
               />
             </label>
@@ -87,9 +87,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               hint="Side และ Format จำเป็นสำหรับคำนวณจำนวนสติ๊กเกอร์"
             >
               {([
-                ["side", "Side", "ผู้พิมพ์เลือกจำนวนด้าน 1-6"],
-                ["format", "Format", "ผู้พิมพ์เลือกรูปแบบ 5533 หรือ 555"],
-                ["type", "Type", "ผู้พิมพ์เลือก TNR, NON-TNR หรือ FCS"],
+                ["type", "Type", "ผู้พิมพ์เลือก TNR หรือ NON TNR"],
                 ["other", "Other", "ผู้พิมพ์เลือก Dome หรือ Inter"],
               ] as const).map(([field, label, description]) => (
                 <Choice
@@ -105,12 +103,12 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 />
               ))}
             </OptionGroup>
+            {false && (
             <OptionGroup
               label="รูปแบบสติ๊กเกอร์ที่ต้องพิมพ์ *"
               hint="เลือกอย่างน้อย 1 รูปแบบสำหรับลูกค้ารายนี้"
             >
               {([
-                ["insideFrame", "ในกรอบ", "A4 แนวนอน 2x2"],
                 ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
                 ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x8"],
                 ["fscLogo", "โลโก้ FSC", "A4 แนวตั้ง 2x2"],
@@ -124,6 +122,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 />
               ))}
             </OptionGroup>
+            )}
           </section>
 
           <section className="config-card template-editor-card">

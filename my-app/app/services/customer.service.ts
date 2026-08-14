@@ -27,6 +27,11 @@ export class CustomerService {
     return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
   }
 
+  private normalizeFontScale(value: unknown): TemplateField["fontScale"] {
+    if (value === "large") return "xlarge";
+    return value === "normal" || value === "xlarge" ? value : undefined;
+  }
+
   private uniqueSegmentKey(
     fieldKey: string,
     segmentKey: string | undefined,
@@ -60,6 +65,19 @@ export class CustomerService {
         key: this.uniqueSegmentKey(field.key, segment.key, index, usedKeys),
       })),
     };
+  }
+
+  private normalizeCondition(condition: TemplateField["condition"]): TemplateField["condition"] {
+    if (!condition) return undefined;
+    const stickerType = condition.stickerType as string | undefined;
+    return {
+      ...condition,
+      stickerType: stickerType === "NON-TNR"
+        ? "NON TNR"
+        : stickerType === "FCS"
+          ? "TNR"
+          : condition.stickerType,
+    } as TemplateField["condition"];
   }
 
   private normalizeCounterSegments(field: TemplateField): TemplateField {
@@ -143,10 +161,11 @@ export class CustomerService {
                 type: segment.type,
                 isCounter: segment.isCounter,
               })),
-              condition: field.condition,
+              condition: this.normalizeCondition(field.condition),
               showOnSticker: field.showOnSticker ?? true,
               stickerOrder: field.stickerOrder ?? index,
-              fontScale: field.fontScale,
+              fontScale: this.normalizeFontScale(field.fontScale),
+              hideLabel: field.hideLabel,
             });
           });
         }
@@ -190,13 +209,14 @@ export class CustomerService {
               label: `${table.name ?? `Outside ${tableIndex + 1}`} — ${field.label ?? `Field ${fieldIndex + 1}`}`,
               type: "text" as const,
               required: Boolean(field.required),
-              condition: field.condition,
+              condition: this.normalizeCondition(field.condition),
               showOnSticker: field.showOnSticker ?? true,
               stickerOrder: field.stickerOrder ?? fieldIndex,
               stickerGroup: String(table.name ?? `Outside ${tableIndex + 1}`),
               stickerGroupOrder: tableIndex,
               uppercase: field.uppercase ?? true,
-              fontScale: field.fontScale,
+              fontScale: this.normalizeFontScale(field.fontScale),
+              hideLabel: field.hideLabel,
             })),
           );
         }
@@ -232,12 +252,14 @@ export class CustomerService {
             type: segment.type,
             isCounter: segment.isCounter,
           })),
+          condition: this.normalizeCondition(field.condition),
           showOnSticker: field.showOnSticker ?? true,
           stickerOrder: field.stickerOrder ?? index,
           stickerGroup: field.stickerGroup,
           stickerGroupOrder: field.stickerGroupOrder,
           uppercase: section === "Outside" ? field.uppercase ?? true : field.uppercase,
-          fontScale: field.fontScale,
+          fontScale: this.normalizeFontScale(field.fontScale),
+          hideLabel: field.hideLabel,
         });
       });
     } catch (error) {

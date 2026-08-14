@@ -88,6 +88,7 @@ export default class StickerTemplatePreview extends Component<
       lotStart: 0,
       productionDate: "xxx",
       stickerType: "TNR",
+      stickerFsc: false,
       layouts,
       insideFields,
       outsideFields,

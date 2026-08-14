@@ -22,9 +22,17 @@ export default class StickerFactory {
 
   static matchesCondition(field: TemplateField, stickerType: string, stickerOther: string) {
     return (
-      (!field.condition?.stickerType || field.condition.stickerType === stickerType) &&
-      (!field.condition?.stickerOther || field.condition.stickerOther === stickerOther)
+      (!field.condition?.stickerType || (!!stickerType && field.condition.stickerType === stickerType)) &&
+      (!field.condition?.stickerOther || (!!stickerOther && field.condition.stickerOther === stickerOther))
     );
+  }
+
+  static needsStickerType(fields: TemplateField[]) {
+    return fields.some((field) => !!field.condition?.stickerType);
+  }
+
+  static needsStickerOther(fields: TemplateField[]) {
+    return fields.some((field) => !!field.condition?.stickerOther);
   }
 
   static outsideGroupTitle(name: string) {
@@ -110,15 +118,15 @@ export default class StickerFactory {
         });
         const renderedValues = this.formatSegmentValues(field.displayFormat, values);
         return values.length
-          ? [{ label: field.label, values: renderedValues, order: field.stickerOrder ?? Math.min(...selectedSegments.map((segment) => segment.stickerOrder ?? 0)), fontScale: field.fontScale }]
+          ? [{ label: field.label, values: renderedValues, order: field.stickerOrder ?? Math.min(...selectedSegments.map((segment) => segment.stickerOrder ?? 0)), fontScale: field.fontScale, hideLabel: field.hideLabel }]
           : [];
       }
       if (field.showOnSticker === false) return [];
       const value = this.fieldValue(field, row?.[field.key]);
-      return value ? [{ label: field.label, values: [{ value }], order: field.stickerOrder ?? 0, fontScale: field.fontScale }] : [];
+      return value ? [{ label: field.label, values: [{ value }], order: field.stickerOrder ?? 0, fontScale: field.fontScale, hideLabel: field.hideLabel }] : [];
     })
       .sort((a, b) => a.order - b.order)
-      .map(({ label, values, order, fontScale }) => ({ label, values, order, fontScale }));
+      .map(({ label, values, order, fontScale, hideLabel }) => ({ label, values, order, fontScale, hideLabel }));
   }
 
   private static splitOutsideLabel(label: string) {
@@ -151,11 +159,17 @@ export default class StickerFactory {
 
   static build(options: StickerBuildOptions) {
     const {
-      customerName, format, sideCount, lotCount, lotStart, productionDate, stickerType,
-      layouts, insideFields, outsideFields, insideRow, outsideRow,
+      customerName, format, sideCount, lotCount, lotStart, productionDate, stickerType, stickerFsc,
+      insideFields, outsideFields, insideRow, outsideRow,
     } = options;
     const palletsByLot = STICKER_FORMAT_PALLETS[format as keyof typeof STICKER_FORMAT_PALLETS];
-    if (!palletsByLot || sideCount <= 0 || lotCount <= 0 || !layouts) return [];
+    if (!palletsByLot || sideCount <= 0 || lotCount <= 0) return [];
+    const effectiveLayouts = {
+      insideFrame: true,
+      outsideFrame: outsideFields.length > 0,
+      customerName: !!customerName.trim(),
+      fscLogo: stickerType === "TNR" && stickerFsc,
+    };
     const items: StickerItem[] = [];
 
     const addLayoutItems = (
@@ -183,16 +197,16 @@ export default class StickerFactory {
       });
     };
 
-    if (layouts.insideFrame) {
+    if (effectiveLayouts.insideFrame) {
       addLayoutItems("insideFrame", (lot, pallet) => this.fieldValues(insideFields, insideRow, lot, pallet));
     }
-    if (layouts.outsideFrame) {
+    if (effectiveLayouts.outsideFrame) {
       this.outsideGroups(outsideFields).forEach((group) => {
         addLayoutItems("outsideFrame", (lot, pallet) => this.fieldValues(group.fields, outsideRow, lot, pallet), group.name);
       });
     }
-    if (layouts.customerName) addLayoutItems("customerName", () => []);
-    if (layouts.fscLogo) addLayoutItems("fscLogo", () => []);
+    if (effectiveLayouts.customerName) addLayoutItems("customerName", () => []);
+    if (effectiveLayouts.fscLogo) addLayoutItems("fscLogo", () => []);
 
     return items;
   }

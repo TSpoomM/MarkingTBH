@@ -22,16 +22,22 @@ export default class OrderTable extends MarkingComponent {
       lotStart: this.state.lotStart,
       productionDate: this.state.productionDate,
       stickerType: this.state.stickerType,
+      stickerFsc: this.state.stickerFsc,
       layouts: this.state.template?.sticker.layouts,
       insideFields: this.state.template?.inside ?? [],
       outsideFields,
       insideRow: this.state.insideRows[0],
       outsideRow: this.state.outsideRows[0],
     });
-    const frameStickerPages = StickerFactory.chunk(
-      stickerItems.filter((item) => item.kind === "insideFrame" || item.kind === "outsideFrame"),
+    const insideStickerPages = StickerFactory.chunk(
+      stickerItems.filter((item) => item.kind === "insideFrame"),
       4,
     );
+    const outsideStickerItems = outsideGroups.flatMap((group) =>
+      stickerItems.filter((item) => item.kind === "outsideFrame" && item.group === group.name),
+    );
+    const outsideStickerPages = StickerFactory.chunk(outsideStickerItems, 4);
+    const frameStickerPages = [...insideStickerPages, ...outsideStickerPages];
     const customerNameStickerPages = StickerFactory.chunk(
       stickerItems.filter((item) => item.kind === "customerName"),
       16,

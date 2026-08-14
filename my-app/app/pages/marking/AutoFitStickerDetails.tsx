@@ -38,7 +38,14 @@ export default class AutoFitStickerDetails extends Component<{ details: StickerI
     const element = this.ref.current;
     if (!element) return;
     element.style.setProperty("--sticker-fit-scale", "1");
-    const availableHeight = element.clientHeight;
+    const parent = element.parentElement;
+    const parentStyle = parent ? getComputedStyle(parent) : undefined;
+    const verticalPadding = parentStyle
+      ? Number.parseFloat(parentStyle.paddingTop) + Number.parseFloat(parentStyle.paddingBottom)
+      : 0;
+    const availableHeight = parent
+      ? Math.max(0, parent.clientHeight - verticalPadding)
+      : element.clientHeight;
     const requiredHeight = element.scrollHeight;
     const heightRatio = availableHeight > 0 && requiredHeight > availableHeight
       ? availableHeight / requiredHeight
@@ -58,11 +65,11 @@ export default class AutoFitStickerDetails extends Component<{ details: StickerI
         ref={this.ref}
         style={{ "--sticker-fit-scale": this.state.scale } as CSSProperties}
       >
-        {details.map((detail) => (
+        {details.map((detail, index) => (
           <AutoFitStickerRow
             detail={detail}
             cardScale={this.state.scale}
-            key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}`}
+            key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}-${index}`}
           />
         ))}
       </dl>

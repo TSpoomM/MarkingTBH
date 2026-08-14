@@ -66,6 +66,11 @@ const withRequiredStickerFields = (fields: CustomerTemplate["sticker"]["enabledF
   return Array.from(nextFields);
 };
 
+const withRequiredStickerLayouts = (layouts: CustomerFormState["stickerLayouts"]): CustomerFormState["stickerLayouts"] => ({
+  ...layouts,
+  insideFrame: true,
+});
+
 export default class CustomerForm extends Component<Record<string, never>, CustomerFormState> {
   state: CustomerFormState = {
     mode: "edit",
@@ -171,7 +176,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       this.setState({
         templateInsideDraft: result.data.inside.map((field) => normalizeInsideField(field)),
         templateOutsideDraft: result.data.outside.map((field) => ({ ...field, showOnSticker: field.showOnSticker ?? true })),
-        templateStickerLayouts: result.data.sticker.layouts,
+        templateStickerLayouts: withRequiredStickerLayouts(result.data.sticker.layouts),
       });
     } catch (error) {
       this.setState({
@@ -236,7 +241,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           }),
         ),
         stickerFields: withRequiredStickerFields(result.data.sticker.enabledFields),
-        stickerLayouts: result.data.sticker.layouts,
+        stickerLayouts: withRequiredStickerLayouts(result.data.sticker.layouts),
         notice: {
           kind: "success",
           text: `Copied template from ${result.data.customerName}. You can edit it before creating the new customer.`,
@@ -263,7 +268,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       key: `${section}_field_${TemplateFieldUtils.uid()}`,
       label: "",
       type: "text",
-      required: section === "inside",
+      required: true,
       showOnSticker: true,
       stickerGroup: outsideGroup?.name,
       stickerGroupOrder: outsideGroup?.order,
@@ -291,7 +296,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       key: `${section}_field_${TemplateFieldUtils.uid()}`,
       label: "",
       type: "text",
-      required: section === "inside",
+      required: true,
       showOnSticker: true,
       stickerGroup: outsideGroup?.name,
       stickerGroupOrder: outsideGroup?.order,
@@ -336,7 +341,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           key: `outside_field_${TemplateFieldUtils.uid()}`,
           label: "",
           type: "text",
-          required: false,
+          required: true,
           showOnSticker: true,
           stickerGroup: `Outside ${tableOrder + 1}`,
           stickerGroupOrder: tableOrder,
@@ -355,7 +360,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           key: `outside_field_${TemplateFieldUtils.uid()}`,
           label: "",
           type: "text",
-          required: false,
+          required: true,
           showOnSticker: true,
           stickerGroup: `Outside ${tableOrder + 1}`,
           stickerGroupOrder: tableOrder,
@@ -457,7 +462,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       key: fieldKey,
       label: field.label.trim(),
       displayFormat: hasSegmentAffixes ? undefined : field.displayFormat?.trim() || undefined,
-      required: section === "inside" ? true : field.required,
+      required: true,
       condition: section === "inside" ? undefined : TemplateFieldUtils.cleanCondition(field.condition),
       showOnSticker: field.showOnSticker ?? true,
       stickerOrder: field.showOnSticker === false ? undefined : field.stickerOrder ?? index,
@@ -483,7 +488,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     if ([...inside, ...outside].some((field) => !field.label || field.segments?.some((segment) => !segment.label))) {
       return "Please fill every field name";
     }
-    if (!layouts.insideFrame && !layouts.outsideFrame && !layouts.customerName && !layouts.fscLogo) {
+    const requiredLayouts = withRequiredStickerLayouts(layouts);
+    if (!requiredLayouts.insideFrame && !requiredLayouts.outsideFrame && !requiredLayouts.customerName && !requiredLayouts.fscLogo) {
       return "Please choose at least one sticker layout";
     }
     if (
@@ -504,7 +510,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       return;
     }
     if (
-      !this.state.templateStickerLayouts.insideFrame &&
+      !withRequiredStickerLayouts(this.state.templateStickerLayouts).insideFrame &&
       !this.state.templateStickerLayouts.outsideFrame &&
       !this.state.templateStickerLayouts.customerName &&
       !this.state.templateStickerLayouts.fscLogo
@@ -528,7 +534,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         body: JSON.stringify({
           inside,
           outside,
-          sticker: { layouts: this.state.templateStickerLayouts },
+          sticker: { layouts: withRequiredStickerLayouts(this.state.templateStickerLayouts) },
           updatedBy: "ADMIN",
         }),
       });
@@ -564,6 +570,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   };
 
   private toggleStickerLayout = (layout: StickerLayoutKey) => {
+    if (layout === "insideFrame") return;
     this.setState((current) => ({
       stickerLayouts: {
         ...current.stickerLayouts,
@@ -573,6 +580,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   };
 
   private toggleTemplateStickerLayout = (layout: StickerLayoutKey) => {
+    if (layout === "insideFrame") return;
     this.setState((current) => ({
       templateStickerLayouts: {
         ...current.templateStickerLayouts,
@@ -639,16 +647,16 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       configuration: {
         version: 2,
         sticker: {
-          enabledFields: this.state.stickerFields,
-          layouts: this.state.stickerLayouts,
+          enabledFields: withRequiredStickerFields(this.state.stickerFields),
+          layouts: withRequiredStickerLayouts(this.state.stickerLayouts),
         },
         inside: { groups: this.state.groups, fields: [...fixedInsideFields] },
         outside: { tables: this.state.tables },
       },
       template: {
         sticker: {
-          enabledFields: this.state.stickerFields,
-          layouts: this.state.stickerLayouts,
+          enabledFields: withRequiredStickerFields(this.state.stickerFields),
+          layouts: withRequiredStickerLayouts(this.state.stickerLayouts),
         },
         inside,
         outside,

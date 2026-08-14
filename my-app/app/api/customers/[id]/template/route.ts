@@ -4,6 +4,9 @@ import type { CustomerTemplateRouteContext } from "@/app/types/api";
 
 export const runtime = "nodejs";
 
+const stickerTypeConditionSchema = z.enum(["TNR", "NON TNR", "NON-TNR", "FCS"])
+  .transform((value) => value === "NON-TNR" ? "NON TNR" : value === "FCS" ? "TNR" : value);
+
 export async function GET(
   _request: Request,
   context: CustomerTemplateRouteContext,
@@ -44,13 +47,14 @@ const fieldSchema = z.object({
   showOnSticker: z.boolean().optional(),
   stickerOrder: z.number().int().min(0).optional(),
   condition: z.object({
-    stickerType: z.enum(["TNR", "NON-TNR", "FCS"]).optional(),
+    stickerType: stickerTypeConditionSchema.optional(),
     stickerOther: z.enum(["Dome", "Inter"]).optional(),
   }).optional(),
   stickerGroup: z.string().optional(),
   stickerGroupOrder: z.number().int().min(0).optional(),
   uppercase: z.boolean().optional(),
-  fontScale: z.enum(["normal", "large", "xlarge"]).optional(),
+  fontScale: z.enum(["normal", "xlarge"]).optional(),
+  hideLabel: z.boolean().optional(),
 });
 
 const updateSchema = z.object({

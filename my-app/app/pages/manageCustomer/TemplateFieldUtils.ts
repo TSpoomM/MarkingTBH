@@ -54,7 +54,10 @@ export default class TemplateFieldUtils {
   }
 
   static normalizeCounterField(field: TemplateField): TemplateField {
-    const keyedField = this.normalizeSegmentKeys(field);
+    const segmentKeyedField = this.normalizeSegmentKeys(field);
+    const keyedField = (segmentKeyedField.fontScale as string) === "large"
+      ? { ...segmentKeyedField, fontScale: "xlarge" as const }
+      : segmentKeyedField;
     if (!keyedField.segments?.length || !this.isCounterField(keyedField)) return keyedField;
     const hasCounter = keyedField.segments.some((segment) => segment.isCounter);
     return {

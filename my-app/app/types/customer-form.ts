@@ -50,7 +50,7 @@ export interface OutsideField {
   label: string;
   required: boolean;
   condition?: {
-    stickerType?: "TNR" | "NON-TNR" | "FCS";
+    stickerType?: "TNR" | "NON TNR";
     stickerOther?: "Dome" | "Inter";
   };
   showOnSticker?: boolean;

@@ -33,8 +33,7 @@ export default class ConditionSelector extends Component<ConditionSelectorProps>
         >
           <option value="">ทุก Type</option>
           <option value="TNR">Type = TNR</option>
-          <option value="NON-TNR">Type = NON-TNR</option>
-          <option value="FCS">Type = FCS</option>
+          <option value="NON TNR">Type = NON TNR</option>
         </Select>
         <Select
           bare

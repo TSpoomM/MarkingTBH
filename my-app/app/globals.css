@@ -231,6 +231,26 @@ select {
 	margin-top: 6px
 }
 
+.fsc-toggle {
+	height: 45px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	border: 1px solid #c6d2ca;
+	background: #f8faf7;
+	border-radius: 7px;
+	padding: 0 13px;
+	font-size: 14px;
+	font-weight: 800;
+	color: #27372e
+}
+
+.fsc-toggle input {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--primary)
+}
+
 .table-panel {
 	min-width: 0;
 	display: grid;
@@ -451,16 +471,16 @@ select {
 	page: stickerFrame;
 	width: 281mm;
 	height: 194mm;
-	grid-template-columns: repeat(2, 1fr);
-	grid-template-rows: repeat(2, 1fr)
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(2, minmax(0, 1fr))
 }
 
 .print-sheet .sticker-page-customer {
 	page: stickerCustomer;
 	width: 194mm;
 	height: 281mm;
-	grid-template-columns: repeat(2, 1fr);
-	grid-template-rows: repeat(8, 1fr);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(8, minmax(0, 1fr));
 	gap: 1.5mm 3mm
 }
 
@@ -485,8 +505,8 @@ select {
 	page: stickerFsc;
 	width: 194mm;
 	height: 281mm;
-	grid-template-columns: repeat(2, 1fr);
-	grid-template-rows: repeat(2, 1fr);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(2, minmax(0, 1fr));
 	gap: 1.5mm
 }
 
@@ -537,6 +557,10 @@ select {
 	font-size: var(--sticker-row-font, var(--sticker-font));
 	white-space: nowrap;
 	break-inside: avoid
+}
+
+.print-sheet .sticker-detail-row.sticker-detail-row-no-label {
+	grid-template-columns: minmax(0, 1fr)
 }
 
 .print-sheet .sticker-label dt {
@@ -713,6 +737,10 @@ select {
 	align-items: baseline;
 	font-size: var(--sticker-row-font, var(--sticker-font));
 	white-space: nowrap
+}
+
+.pdf-preview .sticker-detail-row.sticker-detail-row-no-label {
+	grid-template-columns: minmax(0, 1fr)
 }
 
 .pdf-preview .sticker-label dt,
@@ -4519,7 +4547,8 @@ select {
 
 	.customer-admin .editor-field .required-toggle span {
 		margin: 0 !important;
-		white-space: nowrap;
+		white-space: normal;
+		overflow-wrap: anywhere;
 		font-size: 14px;
 		line-height: 1.2;
 	}

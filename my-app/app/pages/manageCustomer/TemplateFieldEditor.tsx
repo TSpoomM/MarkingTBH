@@ -97,22 +97,22 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                     <Input
                       bare
                       type="checkbox"
-                      checked={field.required}
-                      onChange={(event) => onChange(section, index, { required: event.target.checked })}
-                    />
-                    <span>บังคับกรอก</span>
-                  </label>
-                )}
-                {section === "outside" && (
-                  <label className="required-toggle">
-                    <Input
-                      bare
-                      type="checkbox"
                       checked={field.uppercase ?? true}
                       onChange={(event) => onChange(section, index, { uppercase: event.target.checked })}
                     />
                     <span>Uppercase</span>
                   </label>
+                )}
+                {section === "outside" && (
+                <label className="required-toggle">
+                  <Input
+                    bare
+                    type="checkbox"
+                    checked={field.hideLabel !== true}
+                    onChange={(event) => onChange(section, index, { hideLabel: !event.target.checked })}
+                  />
+                  <span>พิมพ์ชื่อ Field บนสติ๊กเกอร์</span>
+                </label>
                 )}
                 <label className="field-font-scale">
                   <span>ขนาดตัวอักษรบนสติ๊กเกอร์</span>
@@ -122,14 +122,12 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                     onChange={(event) => onChange(section, index, { fontScale: event.target.value as TemplateField["fontScale"] })}
                   >
                     <option value="normal">ปกติ</option>
-                    <option value="large">ใหญ่</option>
                     <option value="xlarge">ใหญ่พิเศษ</option>
                   </Select>
                 </label>
                 {section === "outside" && (
                   <ConditionSelector
                     value={field.condition}
-                    disabled={!field.required}
                     onChange={(condition) => onChange(section, index, { condition })}
                   />
                 )}

@@ -90,12 +90,12 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                 <strong>{outsideDraft.length} fields</strong>
               </div>
             </div>
+            {false && (
             <OptionGroup
               label="รูปแบบที่ต้องพิมพ์"
               hint="Admin เลือกได้ว่าจะพิมพ์สติ๊กเกอร์ในกรอบ, นอกกรอบ และชื่อ Customer หรือไม่"
             >
               {([
-                ["insideFrame", "ในกรอบ", "A4 แนวนอน 2x2"],
                 ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
                 ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x8"],
                 ["fscLogo", "โลโก้ FSC", "A4 แนวตั้ง 2x2"],
@@ -109,6 +109,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                 />
               ))}
             </OptionGroup>
+            )}
             <StickerTemplatePreview
               customerName={selectedCustomer?.name ?? "Customer"}
               insideFields={insideDraft}
