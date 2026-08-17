@@ -27,7 +27,7 @@ export class MarkingRepository {
 
   async create(input: CreateMarkingInput) {
     const [result] = await this.pool.execute<ResultSetHeader>(
-      `INSERT INTO log_marking
+      `INSERT INTO tb_marking
         (emp_id, cus_id, total_lot, sticker_sides, content_inside, content_outside, created_date)
        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
       [
@@ -45,7 +45,7 @@ export class MarkingRepository {
   async findLastLotEnd(customerId: number, productionYear: number, employeeLocation: string) {
     const [rows] = await this.pool.execute<Array<RowDataPacket & { content_inside: string | null }>>(
       `SELECT l.content_inside
-       FROM log_marking l
+       FROM tb_marking l
        INNER JOIN tb_employee_list e ON TRIM(e.fs_id) = TRIM(l.emp_id)
        WHERE l.cus_id = ?
          AND TRIM(COALESCE(e.location_emp, '')) = ?
@@ -76,7 +76,7 @@ export class MarkingRepository {
   async findHistory(limit = 100): Promise<MarkingHistoryItem[]> {
     const [rows] = await this.pool.execute<RowDataPacket[]>(
       `SELECT l.*, c.c_name, e.emp_name, e.emp_name_en, e.location_emp
-       FROM log_marking l
+       FROM tb_marking l
        LEFT JOIN tb_customer c ON c.c_id = l.cus_id
        LEFT JOIN tb_employee_list e ON TRIM(e.fs_id) = TRIM(l.emp_id)
        ORDER BY l.created_date DESC

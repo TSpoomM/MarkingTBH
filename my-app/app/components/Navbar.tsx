@@ -42,9 +42,9 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
       { key: "marking", label: "Marking", href: "/" },
       ...(this.state.isAdmin
         ? [
-            { key: "history", label: "History", href: "/pages/history" },
-            { key: "customers", label: "จัดการ Customer", href: "/pages/manageCustomer" },
-          ]
+          { key: "history", label: "History", href: "/pages/history" },
+          { key: "customers", label: "จัดการ Template", href: "/pages/manageCustomer" },
+        ]
         : []),
     ] as const;
 

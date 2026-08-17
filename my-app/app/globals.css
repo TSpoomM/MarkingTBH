@@ -1269,10 +1269,6 @@ select {
 	gap: 0
 }
 
-.editor-field .field-font-scale {
-	grid-column: 1 / -1
-}
-
 .editor-field-wrap .editor-field {
 	border-radius: 9px 9px 0 0
 }
@@ -1284,6 +1280,113 @@ select {
 .outside-field-wrap.same-table-row .editor-field {
 	border-top: 0;
 	border-radius: 0
+}
+
+.editor-field-summary {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 9px 12px;
+	background: #fff;
+	border: 1px solid #bccac1;
+	border-radius: 9px;
+	box-shadow: 0 1px 2px rgba(20, 33, 28, .05);
+	cursor: pointer;
+	user-select: none
+}
+
+.editor-field-summary:hover {
+	background: #f1f8f4;
+	border-color: #86ac97
+}
+
+.editor-field-summary+.editor-field {
+	border-top: 0;
+	border-radius: 0
+}
+
+.editor-field-summary+.editor-field.no-segments {
+	border-radius: 0 0 9px 9px
+}
+
+.editor-field-wrap.expanded .editor-field-summary {
+	border-radius: 9px 9px 0 0;
+	border-bottom: 0
+}
+
+.editor-number-spacer {
+	visibility: hidden
+}
+
+.field-drag-handle,
+.table-drag-handle,
+.segment-drag-handle {
+	cursor: grab;
+	color: var(--muted);
+	font-size: 16px;
+	line-height: 1;
+	padding: 4px 3px;
+	touch-action: none;
+	flex-shrink: 0
+}
+
+.field-drag-handle:active,
+.table-drag-handle:active,
+.segment-drag-handle:active {
+	cursor: grabbing
+}
+
+.segment-drag-handle {
+	color: #4f6058
+}
+
+.editor-segment-card.dragging {
+	opacity: .45
+}
+
+.editor-field-summary-label {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 13px;
+	font-weight: 700;
+	color: #26362c
+}
+
+.editor-field-summary-label.is-empty {
+	color: #8a978d;
+	font-weight: 600;
+	font-style: italic
+}
+
+.editor-field-toggle {
+	height: 28px;
+	display: flex;
+	align-items: center;
+	padding: 0 10px;
+	border: 1px solid var(--primary);
+	border-radius: 6px;
+	background: var(--primary-soft);
+	color: var(--primary-dark);
+	font-size: 11px;
+	font-weight: 800;
+	white-space: nowrap;
+	flex-shrink: 0
+}
+
+.editor-field-summary:hover .editor-field-toggle {
+	background: var(--primary);
+	color: #fff
+}
+
+.editor-field-wrap.dragging {
+	opacity: .45
+}
+
+.outside-editor-table-head.dragging {
+	opacity: .45
 }
 
 .outside-editor-table-head {
@@ -3945,6 +4048,13 @@ select {
 		background: #dbe8e1;
 	}
 
+	.customer-admin .editor-segment-head-left {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+	}
+
 	.customer-admin .editor-segment-head strong {
 		color: #15251f;
 		font-size: 15px;
@@ -4625,7 +4735,7 @@ select {
 	}
 
 	.customer-admin .outside-field-wrap .editor-field {
-		grid-template-columns: 46px minmax(240px, 1.7fr) minmax(180px, .9fr) minmax(132px, .7fr) minmax(132px, .7fr);
+		grid-template-columns: 46px minmax(280px, 1.8fr) minmax(140px, .7fr) minmax(190px, .9fr) minmax(120px, .55fr);
 		row-gap: 14px;
 		column-gap: 14px;
 		align-items: end;

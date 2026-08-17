@@ -45,12 +45,15 @@ const createDefaultInsideDraft = (): TemplateField[] => [
   })),
 ];
 
-const normalizeInsideField = (field: TemplateField): TemplateField =>
+const normalizeDraftField = (section: "inside" | "outside", field: TemplateField): TemplateField =>
   TemplateFieldUtils.normalizeCounterField({
     ...field,
+    type: "text",
     required: true,
-    condition: undefined,
+    condition: section === "inside" ? undefined : field.condition,
+    fontScale: section === "outside" ? field.fontScale : undefined,
     showOnSticker: field.showOnSticker ?? true,
+    uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
   });
 
 const cloneTemplateField = (field: TemplateField): TemplateField => ({
@@ -174,8 +177,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
       if (!response.ok || !result.data) throw new Error(result.message);
       this.setState({
-        templateInsideDraft: result.data.inside.map((field) => normalizeInsideField(field)),
-        templateOutsideDraft: result.data.outside.map((field) => ({ ...field, showOnSticker: field.showOnSticker ?? true })),
+        templateInsideDraft: result.data.inside.map((field) => normalizeDraftField("inside", field)),
+        templateOutsideDraft: result.data.outside.map((field) => normalizeDraftField("outside", field)),
         templateStickerLayouts: withRequiredStickerLayouts(result.data.sticker.layouts),
       });
     } catch (error) {
@@ -199,9 +202,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     this.setState({
       [key]: this.state[key].map((field, fieldIndex) =>
         fieldIndex === index
-          ? section === "inside"
-            ? normalizeInsideField({ ...field, ...patch })
-            : TemplateFieldUtils.normalizeCounterField({ ...field, ...patch })
+          ? normalizeDraftField(section, { ...field, ...patch })
           : field,
       ),
     } as Pick<CustomerFormState, typeof key>);
@@ -216,9 +217,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     this.setState({
       [key]: this.state[key].map((field, fieldIndex) =>
         fieldIndex === index
-          ? section === "inside"
-            ? normalizeInsideField({ ...field, ...patch })
-            : TemplateFieldUtils.normalizeCounterField({ ...field, ...patch })
+          ? normalizeDraftField(section, { ...field, ...patch })
           : field,
       ),
     } as Pick<CustomerFormState, typeof key>);
@@ -233,9 +232,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
       if (!response.ok || !result.data) throw new Error(result.message);
       this.setState({
-        createInsideDraft: result.data.inside.map((field) => normalizeInsideField(cloneTemplateField(field))),
+        createInsideDraft: result.data.inside.map((field) => normalizeDraftField("inside", cloneTemplateField(field))),
         createOutsideDraft: result.data.outside.map((field) =>
-          TemplateFieldUtils.normalizeCounterField({
+          normalizeDraftField("outside", {
             ...cloneTemplateField(field),
             showOnSticker: field.showOnSticker ?? true,
           }),
@@ -412,6 +411,32 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     } as Pick<CustomerFormState, typeof key>);
   };
 
+  private moveTemplateField = (section: "inside" | "outside", fromIndex: number, toIndex: number) => {
+    const key = section === "inside" ? "templateInsideDraft" : "templateOutsideDraft";
+    this.setState({
+      [key]: TemplateFieldUtils.moveField(this.state[key], fromIndex, toIndex),
+    } as Pick<CustomerFormState, typeof key>);
+  };
+
+  private moveCreateTemplateField = (section: "inside" | "outside", fromIndex: number, toIndex: number) => {
+    const key = section === "inside" ? "createInsideDraft" : "createOutsideDraft";
+    this.setState({
+      [key]: TemplateFieldUtils.moveField(this.state[key], fromIndex, toIndex),
+    } as Pick<CustomerFormState, typeof key>);
+  };
+
+  private moveTemplateTable = (fromOrder: number, toOrder: number) => {
+    this.setState({
+      templateOutsideDraft: TemplateFieldUtils.moveOutsideTable(this.state.templateOutsideDraft, fromOrder, toOrder),
+    });
+  };
+
+  private moveCreateTemplateTable = (fromOrder: number, toOrder: number) => {
+    this.setState({
+      createOutsideDraft: TemplateFieldUtils.moveOutsideTable(this.state.createOutsideDraft, fromOrder, toOrder),
+    });
+  };
+
   private setPreviewSlot = (section: "inside" | "outside", slotIndex: number, fieldKey: string) => {
     const key = section === "inside" ? "templateInsideDraft" : "templateOutsideDraft";
     this.setPreviewSlotForDraft(key, slotIndex, fieldKey);
@@ -461,16 +486,19 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       ...field,
       key: fieldKey,
       label: field.label.trim(),
+      type: "text",
       displayFormat: hasSegmentAffixes ? undefined : field.displayFormat?.trim() || undefined,
       required: true,
       condition: section === "inside" ? undefined : TemplateFieldUtils.cleanCondition(field.condition),
       showOnSticker: field.showOnSticker ?? true,
       stickerOrder: field.showOnSticker === false ? undefined : field.stickerOrder ?? index,
       uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
+      fontScale: section === "outside" ? field.fontScale : undefined,
       segments: field.segments?.map((segment, segmentIndex) => ({
         ...segment,
         key: TemplateFieldUtils.uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
         label: segment.label.trim(),
+        type: segment.isCounter ? "number" : "text",
         prefix: segment.prefix ?? "",
         suffix: segment.suffix ?? "",
         showOnSticker: segment.showOnSticker ?? true,
@@ -540,8 +568,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
       if (!response.ok || !result.data) throw new Error(result.message);
       this.setState({
-        templateInsideDraft: result.data.inside.map((field) => normalizeInsideField(field)),
-        templateOutsideDraft: result.data.outside.map((field) => ({ ...field, showOnSticker: field.showOnSticker ?? true })),
+        templateInsideDraft: result.data.inside.map((field) => normalizeDraftField("inside", field)),
+        templateOutsideDraft: result.data.outside.map((field) => normalizeDraftField("outside", field)),
         templateNotice: { kind: "success", text: "บันทึก Sticker Template แล้ว" },
       });
     } catch (error) {
@@ -710,19 +738,19 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       <div className="customer-admin">
         <Navbar
           badge="ADM"
-          title="จัดการ Customer"
+          title="จัดการ Template"
           subtitle="เพิ่มลูกค้าใหม่ และแก้ไข Sticker Template ของลูกค้าเดิม"
           activeNav="customers"
         />
         <main className="customer-form-wrap">
           {this.state.checkingRole && <Toast type="success" message="กำลังตรวจสอบสิทธิ์..." />}
           {!this.state.checkingRole && !this.state.isAdmin && (
-            <Toast type="error" message="เฉพาะ Admin เท่านั้นที่จัดการ Customer และ Sticker Template ได้" />
+            <Toast type="error" message="เฉพาะ Admin เท่านั้นที่จัดการ Template และ Sticker Template ได้" />
           )}
           {!this.state.checkingRole && this.state.isAdmin && (
             <>
               <div className="customer-admin-top">
-                <div className="customer-mode-switch" aria-label="เลือกโหมดจัดการ Customer">
+                <div className="customer-mode-switch" aria-label="เลือกโหมดจัดการ Template">
                   <Button
                     type="button"
                     className={this.state.mode === "edit" ? "active" : ""}
@@ -735,11 +763,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                     className={this.state.mode === "create" ? "active" : ""}
                     onClick={() => this.changeMode("create")}
                   >
-                    เพิ่ม Customer
+                    เพิ่ม Template
                   </Button>
                 </div>
                 <div className="customer-mode-help">
-                  <strong>{this.state.mode === "edit" ? "เลือก Customer เดิม แล้วปรับช่องบนสติ๊กเกอร์" : "สร้าง Customer ใหม่ แล้วกำหนดช่องที่ User ต้องกรอก"}</strong>
+                  <strong>{this.state.mode === "edit" ? "เลือก Tempate เดิม แล้วปรับช่องบนสติ๊กเกอร์" : "สร้าง Customer ใหม่ แล้วกำหนดช่องที่ User ต้องกรอก"}</strong>
                   <span>{this.state.mode === "edit" ? "เหมาะกับการแก้ Field, ลำดับ Preview และ Template ที่ใช้อยู่" : "ทำตามลำดับ 1 ถึง 4 แล้วกดบันทึกด้านล่าง"}</span>
                 </div>
               </div>
@@ -763,9 +791,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   onChangeField={this.changeTemplateDraft}
                   onAddField={this.addTemplateField}
                   onRemoveField={this.removeTemplateField}
+                  onMoveField={this.moveTemplateField}
                   onAddTable={this.addTemplateTable}
                   onRenameTable={this.renameTemplateTable}
                   onRemoveTable={this.removeTemplateTable}
+                  onMoveTable={this.moveTemplateTable}
                 />
               )}
               {this.state.mode === "create" && (
@@ -798,9 +828,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   onChangeField={this.changeCreateTemplateDraft}
                   onAddField={this.addCreateTemplateField}
                   onRemoveField={this.removeCreateTemplateField}
+                  onMoveField={this.moveCreateTemplateField}
                   onAddTable={this.addCreateTemplateTable}
                   onRenameTable={this.renameCreateTemplateTable}
                   onRemoveTable={this.removeCreateTemplateTable}
+                  onMoveTable={this.moveCreateTemplateTable}
                 />
               )}
             </>

@@ -122,6 +122,45 @@ export default class TemplateFieldUtils {
       );
   }
 
+  static moveItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
+    if (
+      fromIndex === toIndex ||
+      fromIndex < 0 || fromIndex >= items.length ||
+      toIndex < 0 || toIndex >= items.length
+    ) {
+      return items;
+    }
+    const next = [...items];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    return next;
+  }
+
+  static moveField(fields: TemplateField[], fromIndex: number, toIndex: number): TemplateField[] {
+    return this.moveItem(fields, fromIndex, toIndex);
+  }
+
+  static moveOutsideTable(fields: TemplateField[], fromOrder: number, toOrder: number): TemplateField[] {
+    if (fromOrder === toOrder) return fields;
+    const groups: Array<{ order: number; items: TemplateField[] }> = [];
+    for (const field of fields) {
+      const order = field.stickerGroupOrder ?? 0;
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.order === order) {
+        lastGroup.items.push(field);
+      } else {
+        groups.push({ order, items: [field] });
+      }
+    }
+    const fromIndex = groups.findIndex((group) => group.order === fromOrder);
+    const toIndex = groups.findIndex((group) => group.order === toOrder);
+    if (fromIndex === -1 || toIndex === -1) return fields;
+    const [moved] = groups.splice(fromIndex, 1);
+    groups.splice(toIndex, 0, moved);
+    return groups.flatMap((group, index) =>
+      group.items.map((field) => ({ ...field, stickerGroupOrder: index })));
+  }
+
   static groupSelectedStickerFields(fields: StickerSelectableField[]) {
     return fields.reduce<Array<{ key: string; label: string; fields: StickerSelectableField[] }>>((groups, field) => {
       const group = groups.find((item) => item.key === field.parentKey);

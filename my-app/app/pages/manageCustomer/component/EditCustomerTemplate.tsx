@@ -30,9 +30,11 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       onChangeField,
       onAddField,
       onRemoveField,
+      onMoveField,
       onAddTable,
       onRenameTable,
       onRemoveTable,
+      onMoveTable,
     } = this.props;
 
     return (
@@ -41,7 +43,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
           <SectionHeading
             number="1"
             title="แก้ไข Sticker Template"
-            subtitle="เลือก Customer เดิมเพื่อแก้ Field ที่จะไปแสดงบนสติ๊กเกอร์ในกรอบและนอกกรอบ"
+            subtitle="เลือก Template เดิมเพื่อแก้ไข Field ที่จะไปแสดงบนสติ๊กเกอร์ในกรอบและนอกกรอบ"
           />
         </div>
         {notice && (
@@ -52,7 +54,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
           />
         )}
         <label className="customer-name">
-          <span>เลือก Customer</span>
+          <span>เลือก Template</span>
           <Select
             bare
             value={selectedCustomerId}
@@ -60,7 +62,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
             disabled={loadingCustomers || loadingTemplate}
           >
             <option value="">
-              {loadingCustomers ? "กำลังโหลดลูกค้า..." : "เลือก Customer ที่ต้องการแก้ Template"}
+              {loadingCustomers ? "กำลังโหลดลูกค้า..." : "เลือก Template ที่ต้องการแก้ไข"}
             </option>
             {customers.map((customer) => (
               <option value={customer.id} key={customer.id}>{customer.name}</option>
@@ -69,7 +71,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
         </label>
         {!selectedCustomerId && !loadingCustomers && (
           <div className="customer-empty-guide">
-            <strong>เริ่มจากเลือก Customer ที่ต้องการแก้ Template</strong>
+            <strong>เริ่มจากเลือก Template ที่ต้องการแก้ไข</strong>
             <span>หลังเลือกแล้ว ระบบจะแสดง Preview ด้านบน และ Field editor สำหรับในกรอบ/นอกกรอบด้านล่าง</span>
           </div>
         )}
@@ -91,24 +93,24 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
               </div>
             </div>
             {false && (
-            <OptionGroup
-              label="รูปแบบที่ต้องพิมพ์"
-              hint="Admin เลือกได้ว่าจะพิมพ์สติ๊กเกอร์ในกรอบ, นอกกรอบ และชื่อ Customer หรือไม่"
-            >
-              {([
-                ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
-                ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x8"],
-                ["fscLogo", "โลโก้ FSC", "A4 แนวนอน 2x2 (สูงสุด 3 ดวง/ช่อง)"],
-              ] as const).map(([layout, label, description]) => (
-                <Choice
-                  key={layout}
-                  label={label}
-                  description={description}
-                  checked={stickerLayouts[layout]}
-                  onChange={() => onToggleLayout(layout)}
-                />
-              ))}
-            </OptionGroup>
+              <OptionGroup
+                label="รูปแบบที่ต้องพิมพ์"
+                hint="Admin เลือกได้ว่าจะพิมพ์สติ๊กเกอร์ในกรอบ, นอกกรอบ และชื่อ Customer หรือไม่"
+              >
+                {([
+                  ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
+                  ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x8"],
+                  ["fscLogo", "โลโก้ FSC", "A4 แนวนอน 2x2 (สูงสุด 3 ดวง/ช่อง)"],
+                ] as const).map(([layout, label, description]) => (
+                  <Choice
+                    key={layout}
+                    label={label}
+                    description={description}
+                    checked={stickerLayouts[layout]}
+                    onChange={() => onToggleLayout(layout)}
+                  />
+                ))}
+              </OptionGroup>
             )}
             <StickerTemplatePreview
               customerName={selectedCustomer?.name ?? "Customer"}
@@ -125,6 +127,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                 onChange={onChangeField}
                 onAdd={onAddField}
                 onRemove={onRemoveField}
+                onMove={onMoveField}
               />
               <TemplateFieldEditor
                 title="Sticker นอกกรอบ"
@@ -133,9 +136,11 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                 onChange={onChangeField}
                 onAdd={onAddField}
                 onRemove={onRemoveField}
+                onMove={onMoveField}
                 onAddTable={onAddTable}
                 onRenameTable={onRenameTable}
                 onRemoveTable={onRemoveTable}
+                onMoveTable={onMoveTable}
               />
             </div>
             <div className="form-actions">

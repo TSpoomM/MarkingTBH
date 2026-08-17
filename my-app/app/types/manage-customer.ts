@@ -79,9 +79,11 @@ export interface CreateCustomerFormProps {
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
+  onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
   onAddTable: () => void;
   onRenameTable: (tableOrder: number, name: string) => void;
   onRemoveTable: (tableOrder: number) => void;
+  onMoveTable: (fromOrder: number, toOrder: number) => void;
 }
 
 export interface EditCustomerTemplateProps {
@@ -103,9 +105,11 @@ export interface EditCustomerTemplateProps {
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
+  onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
   onAddTable: () => void;
   onRenameTable: (tableOrder: number, name: string) => void;
   onRemoveTable: (tableOrder: number) => void;
+  onMoveTable: (fromOrder: number, toOrder: number) => void;
 }
 
 export interface SectionHeadingProps {
@@ -140,9 +144,11 @@ export interface TemplateFieldEditorProps {
   onChange: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
   onAdd: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemove: (section: "inside" | "outside", index: number) => void;
+  onMove: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
   onAddTable?: () => void;
   onRenameTable?: (tableOrder: number, name: string) => void;
   onRemoveTable?: (tableOrder: number) => void;
+  onMoveTable?: (fromOrder: number, toOrder: number) => void;
 }
 
 export interface StickerTemplatePreviewProps {

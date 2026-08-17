@@ -356,7 +356,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
                   <span>{filteredItems.length}</span>
                   <div>
                     <h2>Marking history</h2>
-                    <p>รายการล่าสุดจาก log_marking</p>
+                    <p>รายการล่าสุด</p>
                   </div>
                 </div>
               </div>

@@ -35,9 +35,11 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
       onChangeField,
       onAddField,
       onRemoveField,
+      onMoveField,
       onAddTable,
       onRenameTable,
       onRemoveTable,
+      onMoveTable,
     } = this.props;
 
     return (
@@ -53,7 +55,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
           <section className="config-card">
             <SectionHeading
               number="1"
-              title="เพิ่ม Customer"
+              title="เพิ่ม Template"
               subtitle="กรอกชื่อลูกค้าและตั้งค่าสติ๊กเกอร์ให้ครบ แล้วบันทึกในขั้นตอนเดียว"
             />
             <label className="customer-name">
@@ -104,24 +106,24 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               ))}
             </OptionGroup>
             {false && (
-            <OptionGroup
-              label="รูปแบบสติ๊กเกอร์ที่ต้องพิมพ์ *"
-              hint="เลือกอย่างน้อย 1 รูปแบบสำหรับลูกค้ารายนี้"
-            >
-              {([
-                ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
-                ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x8"],
-                ["fscLogo", "โลโก้ FSC", "A4 แนวนอน 2x2 (สูงสุด 3 ดวง/ช่อง)"],
-              ] as const).map(([layout, label, description]) => (
-                <Choice
-                  key={layout}
-                  label={label}
-                  description={description}
-                  checked={stickerLayouts[layout]}
-                  onChange={() => onToggleLayout(layout)}
-                />
-              ))}
-            </OptionGroup>
+              <OptionGroup
+                label="รูปแบบสติ๊กเกอร์ที่ต้องพิมพ์ *"
+                hint="เลือกอย่างน้อย 1 รูปแบบสำหรับลูกค้ารายนี้"
+              >
+                {([
+                  ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
+                  ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x8"],
+                  ["fscLogo", "โลโก้ FSC", "A4 แนวนอน 2x2 (สูงสุด 3 ดวง/ช่อง)"],
+                ] as const).map(([layout, label, description]) => (
+                  <Choice
+                    key={layout}
+                    label={label}
+                    description={description}
+                    checked={stickerLayouts[layout]}
+                    onChange={() => onToggleLayout(layout)}
+                  />
+                ))}
+              </OptionGroup>
             )}
           </section>
 
@@ -146,6 +148,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 onChange={onChangeField}
                 onAdd={onAddField}
                 onRemove={onRemoveField}
+                onMove={onMoveField}
               />
               <TemplateFieldEditor
                 title="Sticker นอกกรอบ"
@@ -154,9 +157,11 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 onChange={onChangeField}
                 onAdd={onAddField}
                 onRemove={onRemoveField}
+                onMove={onMoveField}
                 onAddTable={onAddTable}
                 onRenameTable={onRenameTable}
                 onRemoveTable={onRemoveTable}
+                onMoveTable={onMoveTable}
               />
             </div>
           </section>
