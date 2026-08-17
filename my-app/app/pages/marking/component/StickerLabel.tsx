@@ -34,7 +34,18 @@ export default class StickerLabel extends Component<{ item: StickerItem }> {
         {item.kind === "customerName" ? (
           <p>{item.customerName}</p>
         ) : item.kind === "fscLogo" ? (
-          <Image className="sticker-fsc-logo" src="/FSC_Logo.png" alt="FSC logo" width={200} height={300} unoptimized priority />
+          Array.from({ length: item.logoCount ?? 1 }, (_, index) => (
+            <Image
+              className="sticker-fsc-logo"
+              src="/FSC_Logo.png"
+              alt="FSC logo"
+              width={200}
+              height={300}
+              unoptimized
+              priority
+              key={index}
+            />
+          ))
         ) : (
           <AutoFitStickerDetails details={item.details} />
         )}

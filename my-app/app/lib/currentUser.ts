@@ -1,7 +1,7 @@
 import { withBasePath } from "./basePath";
 
 export const TEST_CURRENT_USER = {
-  user_id: "10180",
+  user_id: "10200",
   firstName: "Pumin",
   lastName: "Intarasri",
   email: "pumin@teckbeehang.com",

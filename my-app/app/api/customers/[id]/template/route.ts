@@ -1,4 +1,5 @@
 import { customerService } from "../../../../services/customer.service";
+import { adminAuthService } from "@/app/lib/adminAuth";
 import { z, ZodError } from "zod";
 import type { CustomerTemplateRouteContext } from "@/app/types/api";
 
@@ -78,7 +79,8 @@ export async function PUT(
   context: CustomerTemplateRouteContext,
 ) {
   try {
-    if (request.headers.get("x-user-role") !== "admin") {
+    const access = await adminAuthService.requireAdmin(request);
+    if (!access.isAdmin) {
       return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
     }
     const { id } = await context.params;
@@ -92,7 +94,7 @@ export async function PUT(
       input.inside,
       input.outside,
       input.sticker,
-      input.updatedBy,
+      access.userId,
     );
     return Response.json({ data, message: "อัปเดต Template แล้ว" });
   } catch (error) {

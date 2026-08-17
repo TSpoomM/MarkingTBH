@@ -1,14 +1,51 @@
+"use client";
+
 import Link from "next/link";
 import { Component } from "react";
 import type { NavbarProps } from "@/app/types/ui";
 
-export default class Navbar extends Component<NavbarProps> {
+type NavbarState = {
+  isAdmin: boolean;
+};
+
+export default class Navbar extends Component<NavbarProps, NavbarState> {
+  private isMounted = false;
+
+  state: NavbarState = {
+    isAdmin: false,
+  };
+
+  componentDidMount() {
+    this.isMounted = true;
+    void this.loadAccess();
+  }
+
+  componentWillUnmount() {
+    this.isMounted = false;
+  }
+
+  private async loadAccess() {
+    try {
+      const response = await fetch("/api/session");
+      const session = (await response.json()) as { user?: { role?: string } };
+      if (!this.isMounted) return;
+      this.setState({ isAdmin: response.ok && session.user?.role === "admin" });
+    } catch {
+      if (!this.isMounted) return;
+      this.setState({ isAdmin: false });
+    }
+  }
+
   render() {
     const { badge, title, subtitle, action, activeNav } = this.props;
     const navItems = [
       { key: "marking", label: "Marking", href: "/" },
-      { key: "history", label: "History", href: "/pages/history" },
-      { key: "customers", label: "จัดการ Customer", href: "/pages/manageCustomer" },
+      ...(this.state.isAdmin
+        ? [
+            { key: "history", label: "History", href: "/pages/history" },
+            { key: "customers", label: "จัดการ Customer", href: "/pages/manageCustomer" },
+          ]
+        : []),
     ] as const;
 
     return (

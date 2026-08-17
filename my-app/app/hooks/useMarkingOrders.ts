@@ -445,7 +445,9 @@ export class MarkingOrdersController {
     lotStart: number,
     segment?: { counterType?: CounterType },
   ) {
-    return this.counterType(field, segment) === "pallet" ? "1" : String(lotStart || 1);
+    const type = this.counterType(field, segment);
+    const value = type === "pallet" ? 1 : lotStart || 1;
+    return type === "lot" ? String(value).padStart(4, "0") : String(value);
   }
 
   private emptyRow(fields: TemplateField[], lotStart = this.state.lotStart): MarkingContent {
@@ -468,7 +470,8 @@ export class MarkingOrdersController {
         field.segments?.forEach((segment) => {
           if (!segment.isCounter) return;
           const previousDefault = this.counterDefault(field, previousLotStart, segment);
-          if (!nextRow[segment.key] || nextRow[segment.key] === previousDefault) {
+          const previousRawDefault = String(this.counterType(field, segment) === "pallet" ? 1 : previousLotStart || 1);
+          if (!nextRow[segment.key] || nextRow[segment.key] === previousDefault || nextRow[segment.key] === previousRawDefault) {
             nextRow[segment.key] = this.counterDefault(field, lotStart, segment);
           }
         });

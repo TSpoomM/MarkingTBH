@@ -50,12 +50,12 @@ export default class Pagination extends MarkingComponent {
       <div className="container bottom-action">
         <div className="save-summary">
           <strong>พร้อมส่งออก PDF</strong>
-          <span>
+          {/* <span>
             สติ๊กเกอร์ในกรอบ {this.state.insideRows.length} ชุด
             {this.state.template?.outside.length
               ? ` · สติ๊กเกอร์นอกกรอบ ${this.state.outsideRows.length} ชุด`
               : " · ลูกค้ารายนี้ไม่มีสติ๊กเกอร์นอกกรอบ"}
-          </span>
+          </span> */}
         </div>
         <div className="bottom-action-buttons">
           <StickerPreviewButton items={previewItems} className="bottom-preview-open" />

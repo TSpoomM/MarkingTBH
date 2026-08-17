@@ -49,8 +49,8 @@ export class MarkingApiService {
   saveTemplate(customerId: number, inside: TemplateField[], outside: TemplateField[]): Promise<CustomerTemplate> {
     return this.request(`/api/customers/${customerId}/template`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", "x-user-role": "admin" },
-      body: JSON.stringify({ inside, outside, updatedBy: "ADMIN" }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inside, outside }),
     });
   }
 }

@@ -1,4 +1,5 @@
 import { customerService } from "../../services/customer.service";
+import { adminAuthService } from "@/app/lib/adminAuth";
 import { z, ZodError } from "zod";
 
 export const runtime = "nodejs";
@@ -136,7 +137,8 @@ const createCustomerSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    if (request.headers.get("x-user-role") !== "admin") {
+    const access = await adminAuthService.requireAdmin(request);
+    if (!access.isAdmin) {
       return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
     }
     const input = createCustomerSchema.parse(await request.json());
@@ -149,7 +151,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    const data = await customerService.createCustomer(input, "ADMIN");
+    const data = await customerService.createCustomer(input, access.userId);
     return Response.json({ data, message: "เพิ่มลูกค้าเรียบร้อยแล้ว" }, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {

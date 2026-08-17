@@ -96,7 +96,8 @@ export default class FilterPanel extends MarkingComponent {
                     checked={this.state.stickerFsc}
                     onChange={(event) => this.actions.setStickerFsc(event.target.checked)}
                   />
-                  <b>มี FSC</b>
+                  <span className="fsc-toggle-track" aria-hidden="true" />
+                  <b>{this.state.stickerFsc ? "เป็น FSC" : "ไม่เป็น FSC"}</b>
                 </label>
                 <small className="field-hint">ติ๊กเมื่อต้องพิมพ์สติ๊กเกอร์ FSC</small>
               </div>

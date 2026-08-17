@@ -18,9 +18,9 @@ import {
   type CustomerFormState,
   type CustomerManageMode,
 } from "@/app/types/manage-customer";
-import CreateCustomerForm from "./CreateCustomerForm";
-import EditCustomerTemplate from "./EditCustomerTemplate";
-import TemplateFieldUtils from "./TemplateFieldUtils";
+import CreateCustomerForm from "./component/CreateCustomerForm";
+import EditCustomerTemplate from "./component/EditCustomerTemplate";
+import TemplateFieldUtils from "./component/TemplateFieldUtils";
 import Button from "@/app/components/Button";
 
 const createDefaultInsideDraft = (): TemplateField[] => [
@@ -530,12 +530,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     try {
       const response = await fetch(`/api/customers/${this.state.selectedCustomerId}/template`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-user-role": "admin" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inside,
           outside,
           sticker: { layouts: withRequiredStickerLayouts(this.state.templateStickerLayouts) },
-          updatedBy: "ADMIN",
         }),
       });
       const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
@@ -667,7 +666,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     try {
       const response = await fetch("/api/customers", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-user-role": "admin" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const result = await response.json();

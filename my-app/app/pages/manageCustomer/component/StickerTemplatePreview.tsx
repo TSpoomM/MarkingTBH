@@ -1,8 +1,8 @@
 import { Component } from "react";
 import Button from "@/app/components/Button";
 import Modal from "@/app/components/Modal";
-import StickerFactory from "@/app/pages/marking/StickerFactory";
-import StickerPreviewPages from "@/app/pages/marking/StickerPreviewPages";
+import StickerFactory from "@/app/pages/marking/component/StickerFactory";
+import StickerPreviewPages from "@/app/pages/marking/component/StickerPreviewPages";
 import type { TemplateField } from "@/app/types/customer";
 import type { MarkingContent } from "@/app/types/marking";
 import type { StickerKind } from "@/app/types/marking-sticker";

@@ -10,6 +10,8 @@ import type {
 } from "@/app/types/marking-sticker";
 
 export default class StickerFactory {
+  static readonly DEFAULT_COUNTER_DIGITS = 4;
+
   static chunk<T>(items: T[], size: number) {
     return Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
       items.slice(index * size, index * size + size),
@@ -17,7 +19,8 @@ export default class StickerFactory {
   }
 
   static previewCounterValue(field: TemplateField, lotStart: number) {
-    return this.counterValue(field, lotStart || 1, 1);
+    const value = this.counterValue(field, lotStart || 1, 1);
+    return this.counterType(field) === "lot" ? value.padStart(this.DEFAULT_COUNTER_DIGITS, "0") : value;
   }
 
   static matchesCondition(field: TemplateField, stickerType: string, stickerOther: string) {
@@ -59,8 +62,10 @@ export default class StickerFactory {
     segment: { key: string; counterType?: CounterType },
   ) {
     const value = this.counterValue(field, lot, pallet, segment);
+    if (this.counterType(field, segment) !== "lot") return value;
     const seed = row?.[segment.key];
-    return seed && /^\d+$/.test(seed) ? value.padStart(seed.length, "0") : value;
+    const digits = seed && /^\d+$/.test(seed) ? Math.max(seed.length, this.DEFAULT_COUNTER_DIGITS) : this.DEFAULT_COUNTER_DIGITS;
+    return value.padStart(digits, "0");
   }
 
   private static fieldValue(field: TemplateField, value: string | undefined) {
@@ -172,16 +177,17 @@ export default class StickerFactory {
     };
     const items: StickerItem[] = [];
 
-    const addLayoutItems = (
+    const buildLayoutItems = (
       kind: StickerKind,
       detailsForSticker: (lot: number, pallet: number) => StickerItem["details"],
       group?: string,
     ) => {
+      const generated: StickerItem[] = [];
       Array.from({ length: lotCount }, (_, lotIndex) => {
         const palletCount = palletsByLot[lotIndex % palletsByLot.length];
         for (let pallet = 1; pallet <= palletCount; pallet += 1) {
           for (let side = 1; side <= sideCount; side += 1) {
-            items.push({
+            generated.push({
               kind,
               customerName,
               lot: lotStart + lotIndex,
@@ -195,6 +201,15 @@ export default class StickerFactory {
           }
         }
       });
+      return generated;
+    };
+
+    const addLayoutItems = (
+      kind: StickerKind,
+      detailsForSticker: (lot: number, pallet: number) => StickerItem["details"],
+      group?: string,
+    ) => {
+      items.push(...buildLayoutItems(kind, detailsForSticker, group));
     };
 
     if (effectiveLayouts.insideFrame) {
@@ -206,7 +221,11 @@ export default class StickerFactory {
       });
     }
     if (effectiveLayouts.customerName) addLayoutItems("customerName", () => []);
-    if (effectiveLayouts.fscLogo) addLayoutItems("fscLogo", () => []);
+    if (effectiveLayouts.fscLogo) {
+      this.chunk(buildLayoutItems("fscLogo", () => []), 3).forEach((group) => {
+        items.push({ ...group[0], logoCount: group.length });
+      });
+    }
 
     return items;
   }

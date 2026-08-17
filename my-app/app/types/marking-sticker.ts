@@ -21,6 +21,7 @@ export interface StickerItem {
   stickerType: string;
   details: StickerDetail[];
   group?: string;
+  logoCount?: number;
 }
 
 export interface StickerBuildOptions {

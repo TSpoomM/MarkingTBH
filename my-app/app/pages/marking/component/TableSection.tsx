@@ -9,6 +9,13 @@ import type { TemplateField } from "@/app/types/customer";
 import type { TableSectionProps } from "@/app/types/marking-sticker";
 
 export default class TableSection extends Component<TableSectionProps> {
+  private isLotCounter(field: TemplateField, segment?: { counterType?: string }) {
+    if (segment?.counterType) return segment.counterType === "lot";
+    const key = field.key.toLowerCase();
+    const label = field.label.toLowerCase();
+    return !key.includes("pallet") && !label.includes("pallet");
+  }
+
   private conditionText(field: TemplateField) {
     return [
       field.condition?.stickerType && `Type = ${field.condition.stickerType}`,
@@ -52,6 +59,12 @@ export default class TableSection extends Component<TableSectionProps> {
                               inputMode={segment.isCounter ? "numeric" : undefined}
                               value={row[segment.key] ?? (segment.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")}
                               onChange={(event) => onChange(rowIndex, segment.key, event.target.value)}
+                              onBlur={segment.isCounter && this.isLotCounter(field, segment) ? (event) => {
+                                const raw = event.target.value;
+                                if (!/^\d+$/.test(raw)) return;
+                                const padded = raw.padStart(StickerFactory.DEFAULT_COUNTER_DIGITS, "0");
+                                if (padded !== raw) onChange(rowIndex, segment.key, padded);
+                              } : undefined}
                               placeholder={segment.isCounter ? "+1" : segment.label}
                             />
                           ))}
