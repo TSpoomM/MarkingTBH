@@ -1,5 +1,6 @@
 import { Component } from "react";
 import Button from "@/app/components/Button";
+import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
 import Toast from "@/app/components/Toast";
 import type { EditCustomerTemplateProps } from "@/app/types/manage-customer";
@@ -13,10 +14,11 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
   render() {
     const {
       customers,
-      selectedCustomer,
       selectedCustomerId,
+      name,
       insideDraft,
       outsideDraft,
+      stickerFields,
       stickerLayouts,
       notice,
       loadingCustomers,
@@ -24,7 +26,10 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       savingTemplate,
       onDismissNotice,
       onSelectCustomer,
+      onNameChange,
       onSave,
+      onCancel,
+      onStickerFieldsChange,
       onToggleLayout,
       onSelectPreviewSlot,
       onChangeField,
@@ -78,11 +83,16 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
         {loadingTemplate && <div className="outside-empty"><strong>กำลังโหลด Template...</strong></div>}
         {selectedCustomerId && !loadingTemplate && (
           <>
+            <label className="customer-name">
+              <span>ชื่อ Customer *</span>
+              <Input
+                bare
+                value={name}
+                onChange={(event) => onNameChange(event.target.value.toUpperCase())}
+                placeholder="ABC Rubber Co., Ltd."
+              />
+            </label>
             <div className="template-workbench-summary">
-              <div>
-                <span>Customer</span>
-                <strong>{selectedCustomer?.name ?? "Customer"}</strong>
-              </div>
               <div>
                 <span>ในกรอบ</span>
                 <strong>{insideDraft.length} fields</strong>
@@ -92,6 +102,27 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                 <strong>{outsideDraft.length} fields</strong>
               </div>
             </div>
+            <OptionGroup
+              label="ช่องข้อมูลที่ผู้พิมพ์ต้องเลือก *"
+              hint="Side และ Format จำเป็นสำหรับคำนวณจำนวนสติ๊กเกอร์"
+            >
+              {([
+                ["type", "Type", "ผู้พิมพ์เลือก TNR หรือ NON TNR"],
+                ["other", "Other", "ผู้พิมพ์เลือก Dome หรือ Inter"],
+              ] as const).map(([field, label, description]) => (
+                <Choice
+                  key={field}
+                  label={label}
+                  description={description}
+                  checked={stickerFields.includes(field)}
+                  onChange={() => onStickerFieldsChange(
+                    stickerFields.includes(field)
+                      ? stickerFields.filter((item) => item !== field)
+                      : [...stickerFields, field],
+                  )}
+                />
+              ))}
+            </OptionGroup>
             {false && (
               <OptionGroup
                 label="รูปแบบที่ต้องพิมพ์"
@@ -112,13 +143,6 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                 ))}
               </OptionGroup>
             )}
-            <StickerTemplatePreview
-              customerName={selectedCustomer?.name ?? "Customer"}
-              insideFields={insideDraft}
-              outsideFields={outsideDraft}
-              layouts={stickerLayouts}
-              onSelect={onSelectPreviewSlot}
-            />
             <div className="template-manager-grid">
               <TemplateFieldEditor
                 title="Sticker ในกรอบ"
@@ -143,16 +167,34 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                 onMoveTable={onMoveTable}
               />
             </div>
-            <div className="form-actions">
-              <Button
-                type="button"
-                onClick={onSave}
-                disabled={!selectedCustomerId || loadingTemplate}
-                loading={savingTemplate}
-                loadingText="กำลังบันทึก..."
-              >
-                บันทึก Template
-              </Button>
+            <div className="container bottom-action">
+              <div className="bottom-action-buttons">
+                <StickerTemplatePreview
+                  customerName={name.trim() || "Customer"}
+                  insideFields={insideDraft}
+                  outsideFields={outsideDraft}
+                  layouts={stickerLayouts}
+                  onSelect={onSelectPreviewSlot}
+                />
+                <Button
+                  type="button"
+                  className="template-cancel-button"
+                  onClick={onCancel}
+                  disabled={!selectedCustomerId || loadingTemplate || savingTemplate}
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="button"
+                  className="export-button"
+                  onClick={onSave}
+                  disabled={!selectedCustomerId || loadingTemplate}
+                  loading={savingTemplate}
+                  loadingText="กำลังบันทึก..."
+                >
+                  บันทึก Template
+                </Button>
+              </div>
             </div>
           </>
         )}

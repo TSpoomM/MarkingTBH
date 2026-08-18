@@ -59,19 +59,15 @@ export default class TemplateFieldUtils {
       ? { ...segmentKeyedField, fontScale: "xlarge" as const }
       : segmentKeyedField;
     if (!keyedField.segments?.length || !this.isCounterField(keyedField)) return keyedField;
-    const hasCounter = keyedField.segments.some((segment) => segment.isCounter);
     return {
       ...keyedField,
-      segments: keyedField.segments.map((segment, index) => ({
+      segments: keyedField.segments.map((segment) => ({
         ...segment,
-        isCounter: hasCounter ? segment.isCounter : index === 0,
-        type: (hasCounter ? segment.isCounter : index === 0) ? "number" : segment.type ?? "text",
-        counterType: (hasCounter ? segment.isCounter : index === 0)
+        type: segment.isCounter ? "number" : segment.type ?? "text",
+        counterType: segment.isCounter
           ? segment.counterType ?? this.inferCounterType(keyedField)
           : segment.counterType,
-        showOnSticker: (hasCounter ? segment.isCounter : index === 0)
-          ? true
-          : segment.showOnSticker,
+        showOnSticker: segment.isCounter ? true : segment.showOnSticker,
       })),
     };
   }

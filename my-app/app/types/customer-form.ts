@@ -7,7 +7,7 @@ export const STICKER_FORMATS = {
 
 export type StickerField = "side" | "format" | "type" | "other";
 export type StickerLayoutKey = "insideFrame" | "outsideFrame" | "customerName" | "fscLogo";
-export type CounterType = "lot" | "pallet";
+export type CounterType = "lot" | "pallet" | "sequence";
 
 export interface StickerLayouts {
   insideFrame: boolean;

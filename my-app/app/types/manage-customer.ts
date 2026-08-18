@@ -28,6 +28,7 @@ export interface CustomerFormState {
   mode: CustomerManageMode;
   customers: Customer[];
   selectedCustomerId: string;
+  templateName: string;
   templateInsideDraft: TemplateField[];
   templateOutsideDraft: TemplateField[];
   createInsideDraft: TemplateField[];
@@ -35,12 +36,14 @@ export interface CustomerFormState {
   duplicateSourceCustomerId: string;
   name: string;
   stickerFields: StickerField[];
+  templateStickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
   templateStickerLayouts: StickerLayouts;
   groups: InsideGroup[];
   tables: OutsideTable[];
   notice: CustomerFormNotice | undefined;
   templateNotice: CustomerFormNotice | undefined;
+  duplicateNamePrompt: { customerId: string; name: string } | undefined;
   isAdmin: boolean;
   checkingRole: boolean;
   loadingCustomers: boolean;
@@ -88,10 +91,11 @@ export interface CreateCustomerFormProps {
 
 export interface EditCustomerTemplateProps {
   customers: Customer[];
-  selectedCustomer: Customer | undefined;
   selectedCustomerId: string;
+  name: string;
   insideDraft: TemplateField[];
   outsideDraft: TemplateField[];
+  stickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
   notice: CustomerFormNotice | undefined;
   loadingCustomers: boolean;
@@ -99,7 +103,10 @@ export interface EditCustomerTemplateProps {
   savingTemplate: boolean;
   onDismissNotice: () => void;
   onSelectCustomer: (customerId: string) => void;
+  onNameChange: (name: string) => void;
   onSave: () => void;
+  onCancel: () => void;
+  onStickerFieldsChange: (fields: StickerField[]) => void;
   onToggleLayout: (layout: StickerLayoutKey) => void;
   onSelectPreviewSlot: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;

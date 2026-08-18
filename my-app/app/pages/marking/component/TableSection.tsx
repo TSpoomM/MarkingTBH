@@ -10,7 +10,7 @@ import type { TableSectionProps } from "@/app/types/marking-sticker";
 
 export default class TableSection extends Component<TableSectionProps> {
   private isLotCounter(field: TemplateField, segment?: { counterType?: string }) {
-    if (segment?.counterType) return segment.counterType === "lot";
+    if (segment?.counterType) return segment.counterType === "lot" || segment.counterType === "sequence";
     const key = field.key.toLowerCase();
     const label = field.label.toLowerCase();
     return !key.includes("pallet") && !label.includes("pallet");

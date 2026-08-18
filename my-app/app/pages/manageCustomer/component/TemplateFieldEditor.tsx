@@ -391,6 +391,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                                 >
                                   <option value="lot">Lot</option>
                                   <option value="pallet">Pallet</option>
+                                  <option value="sequence">นับต่อเนื่อง (+1 ไม่วนรอบ)</option>
                                 </Select>
                               </label>
                             )}

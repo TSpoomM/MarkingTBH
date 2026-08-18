@@ -43,7 +43,7 @@ const fieldSchema = z.object({
     showOnSticker: z.boolean().optional(),
     stickerOrder: z.number().int().min(0).optional(),
     isCounter: z.boolean().optional(),
-    counterType: z.enum(["lot", "pallet"]).optional(),
+    counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
   })).optional(),
   showOnSticker: z.boolean().optional(),
   stickerOrder: z.number().int().min(0).optional(),
@@ -59,9 +59,11 @@ const fieldSchema = z.object({
 });
 
 const updateSchema = z.object({
+  name: z.string().trim().min(1, "กรุณากรอกชื่อลูกค้า").max(200).optional(),
   inside: z.array(fieldSchema),
   outside: z.array(fieldSchema),
   sticker: z.object({
+    enabledFields: z.array(z.enum(["side", "format", "type", "other"])).optional(),
     layouts: z.object({
       insideFrame: z.boolean(),
       outsideFrame: z.boolean(),
@@ -89,6 +91,7 @@ export async function PUT(
       return Response.json({ message: "รหัสลูกค้าไม่ถูกต้อง" }, { status: 400 });
     }
     const input = updateSchema.parse(await request.json());
+    await customerService.renameCustomerIfChanged(customerId, input.name);
     const data = await customerService.saveTemplate(
       customerId,
       input.inside,

@@ -1,6 +1,7 @@
 "use client";
 
 import { Component, type FormEvent } from "react";
+import Modal from "@/app/components/Modal";
 import Navbar from "@/app/components/Navbar";
 import Toast from "@/app/components/Toast";
 import type { Customer, CustomerTemplate, TemplateField } from "@/app/types/customer";
@@ -79,6 +80,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     mode: "edit",
     customers: [],
     selectedCustomerId: "",
+    templateName: "",
     templateInsideDraft: [],
     templateOutsideDraft: [],
     createInsideDraft: createDefaultInsideDraft(),
@@ -86,6 +88,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     duplicateSourceCustomerId: "",
     name: "",
     stickerFields: ["side", "format"],
+    templateStickerFields: ["side", "format"],
     stickerLayouts: {
       insideFrame: true,
       outsideFrame: true,
@@ -98,6 +101,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       customerName: false,
       fscLogo: false,
     },
+    duplicateNamePrompt: undefined,
     groups: initialGroups.map((group) => ({
       ...group,
       segments: group.segments.map((segment) => ({ ...segment })),
@@ -158,10 +162,13 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   };
 
   private selectTemplateCustomer = async (customerId: string) => {
+    const initialName = this.state.customers.find((customer) => String(customer.id) === customerId)?.name ?? "";
     this.setState({
       selectedCustomerId: customerId,
+      templateName: initialName,
       templateInsideDraft: [],
       templateOutsideDraft: [],
+      templateStickerFields: ["side", "format"],
       templateStickerLayouts: {
         insideFrame: true,
         outsideFrame: true,
@@ -177,8 +184,10 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
       if (!response.ok || !result.data) throw new Error(result.message);
       this.setState({
+        templateName: result.data.customerName,
         templateInsideDraft: result.data.inside.map((field) => normalizeDraftField("inside", field)),
         templateOutsideDraft: result.data.outside.map((field) => normalizeDraftField("outside", field)),
+        templateStickerFields: withRequiredStickerFields(result.data.sticker.enabledFields),
         templateStickerLayouts: withRequiredStickerLayouts(result.data.sticker.layouts),
       });
     } catch (error) {
@@ -531,6 +540,10 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
 
   private saveExistingTemplate = async () => {
     if (!this.state.selectedCustomerId) return;
+    if (!this.state.templateName.trim()) {
+      this.setState({ templateNotice: { kind: "error", text: "กรุณากรอกชื่อ Customer" } });
+      return;
+    }
     const inside = this.cleanTemplateFields("inside", this.state.templateInsideDraft);
     const outside = this.cleanTemplateFields("outside", this.state.templateOutsideDraft);
     if ([...inside, ...outside].some((field) => !field.label)) {
@@ -560,18 +573,24 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name: this.state.templateName.trim(),
           inside,
           outside,
-          sticker: { layouts: withRequiredStickerLayouts(this.state.templateStickerLayouts) },
+          sticker: {
+            enabledFields: withRequiredStickerFields(this.state.templateStickerFields),
+            layouts: withRequiredStickerLayouts(this.state.templateStickerLayouts),
+          },
         }),
       });
       const result = (await response.json()) as { data?: CustomerTemplate; message?: string };
       if (!response.ok || !result.data) throw new Error(result.message);
       this.setState({
+        templateName: result.data.customerName,
         templateInsideDraft: result.data.inside.map((field) => normalizeDraftField("inside", field)),
         templateOutsideDraft: result.data.outside.map((field) => normalizeDraftField("outside", field)),
         templateNotice: { kind: "success", text: "บันทึก Sticker Template แล้ว" },
       });
+      await this.loadCustomers();
     } catch (error) {
       this.setState({
         templateNotice: {
@@ -584,8 +603,21 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     }
   };
 
+  private cancelTemplateEdit = async () => {
+    if (!this.state.selectedCustomerId || this.state.loadingTemplate || this.state.savingTemplate) return;
+    await this.selectTemplateCustomer(this.state.selectedCustomerId);
+  };
+
   private changeStickerFields = (nextFields: StickerField[]) => {
     this.setState({ stickerFields: nextFields });
+  };
+
+  private changeTemplateStickerFields = (nextFields: StickerField[]) => {
+    this.setState({ templateStickerFields: nextFields });
+  };
+
+  private changeTemplateName = (name: string) => {
+    this.setState({ templateName: name });
   };
 
   private dismissNotice = () => {
@@ -658,6 +690,30 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     }));
   };
 
+  private findDuplicateCustomer = (name: string) => {
+    const normalized = name.trim().toLowerCase();
+    if (!normalized) return undefined;
+    return this.state.customers.find((customer) => customer.name.trim().toLowerCase() === normalized);
+  };
+
+  private resetCreateForm = (notice: CustomerFormState["notice"]) => {
+    this.setState({
+      name: "",
+      createInsideDraft: createDefaultInsideDraft(),
+      createOutsideDraft: [],
+      duplicateSourceCustomerId: "",
+      duplicateNamePrompt: undefined,
+      stickerFields: ["side", "format"],
+      stickerLayouts: {
+        insideFrame: true,
+        outsideFrame: true,
+        customerName: false,
+        fscLogo: false,
+      },
+      notice,
+    });
+  };
+
   private submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     this.setState({ notice: undefined });
@@ -669,6 +725,18 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       return;
     }
 
+    const duplicate = this.findDuplicateCustomer(this.state.name);
+    if (duplicate) {
+      this.setState({
+        duplicateNamePrompt: { customerId: String(duplicate.id), name: duplicate.name },
+      });
+      return;
+    }
+
+    await this.createCustomer(inside, outside);
+  };
+
+  private createCustomer = async (inside: TemplateField[], outside: TemplateField[]) => {
     const payload: CreateCustomerPayload = {
       name: this.state.name,
       configuration: {
@@ -699,22 +767,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message);
-      this.setState({
-        name: "",
-        createInsideDraft: createDefaultInsideDraft(),
-        createOutsideDraft: [],
-        duplicateSourceCustomerId: "",
-        stickerFields: ["side", "format"],
-        stickerLayouts: {
-          insideFrame: true,
-          outsideFrame: true,
-          customerName: false,
-          fscLogo: false,
-        },
-        notice: {
-          kind: "success",
-          text: `เพิ่ม ${result.data.name} เรียบร้อยแล้ว (Customer ID: ${result.data.id})`,
-        },
+      this.resetCreateForm({
+        kind: "success",
+        text: `เพิ่ม ${result.data.name} เรียบร้อยแล้ว (Customer ID: ${result.data.id})`,
       });
       await this.loadCustomers();
     } catch (error) {
@@ -729,11 +784,49 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     }
   };
 
-  render() {
-    const selectedCustomer = this.state.customers.find((customer) =>
-      String(customer.id) === this.state.selectedCustomerId,
-    );
+  private dismissDuplicatePrompt = () => {
+    this.setState({ duplicateNamePrompt: undefined });
+  };
 
+  private replaceDuplicateCustomer = async () => {
+    const prompt = this.state.duplicateNamePrompt;
+    if (!prompt) return;
+    const inside = this.cleanTemplateFields("inside", this.state.createInsideDraft);
+    const outside = this.cleanTemplateFields("outside", this.state.createOutsideDraft);
+    this.setState({ saving: true, duplicateNamePrompt: undefined });
+    try {
+      const response = await fetch(`/api/customers/${prompt.customerId}/template`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inside,
+          outside,
+          sticker: {
+            enabledFields: withRequiredStickerFields(this.state.stickerFields),
+            layouts: withRequiredStickerLayouts(this.state.stickerLayouts),
+          },
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+      this.resetCreateForm({
+        kind: "success",
+        text: `แทนที่ Template ของ ${prompt.name} เรียบร้อยแล้ว`,
+      });
+      await this.loadCustomers();
+    } catch (error) {
+      this.setState({
+        notice: {
+          kind: "error",
+          text: error instanceof Error ? error.message : "แทนที่ Template ไม่สำเร็จ",
+        },
+      });
+    } finally {
+      this.setState({ saving: false });
+    }
+  };
+
+  render() {
     return (
       <div className="customer-admin">
         <Navbar
@@ -774,10 +867,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
               {this.state.mode === "edit" && (
                 <EditCustomerTemplate
                   customers={this.state.customers}
-                  selectedCustomer={selectedCustomer}
                   selectedCustomerId={this.state.selectedCustomerId}
+                  name={this.state.templateName}
                   insideDraft={this.state.templateInsideDraft}
                   outsideDraft={this.state.templateOutsideDraft}
+                  stickerFields={this.state.templateStickerFields}
                   stickerLayouts={this.state.templateStickerLayouts}
                   notice={this.state.templateNotice}
                   loadingCustomers={this.state.loadingCustomers}
@@ -785,7 +879,10 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   savingTemplate={this.state.savingTemplate}
                   onDismissNotice={this.dismissTemplateNotice}
                   onSelectCustomer={(customerId) => void this.selectTemplateCustomer(customerId)}
+                  onNameChange={this.changeTemplateName}
                   onSave={() => void this.saveExistingTemplate()}
+                  onCancel={() => void this.cancelTemplateEdit()}
+                  onStickerFieldsChange={this.changeTemplateStickerFields}
                   onToggleLayout={this.toggleTemplateStickerLayout}
                   onSelectPreviewSlot={this.setPreviewSlot}
                   onChangeField={this.changeTemplateDraft}
@@ -838,6 +935,29 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
             </>
           )}
         </main>
+        <Modal
+          open={!!this.state.duplicateNamePrompt}
+          title="ชื่อ Customer นี้มีอยู่แล้ว"
+          subtitle={`มีลูกค้าชื่อ "${this.state.duplicateNamePrompt?.name ?? ""}" อยู่ในระบบแล้ว ต้องการแทนที่ Template เดิม หรือเปลี่ยนชื่อ`}
+          onClose={this.dismissDuplicatePrompt}
+          footer={(
+            <>
+              <Button type="button" onClick={this.dismissDuplicatePrompt}>
+                เปลี่ยนชื่อ
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void this.replaceDuplicateCustomer()}
+                loading={this.state.saving}
+                loadingText="กำลังแทนที่..."
+              >
+                แทนที่ Template เดิม
+              </Button>
+            </>
+          )}
+        >
+          <p>กด &quot;เปลี่ยนชื่อ&quot; เพื่อกลับไปแก้ชื่อ Customer หรือกด &quot;แทนที่ Template เดิม&quot; เพื่อบันทึกทับ Template ของลูกค้ารายนี้</p>
+        </Modal>
       </div>
     );
   }

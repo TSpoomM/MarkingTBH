@@ -28,7 +28,7 @@ const segmentSchema = z.object({
   prefix: z.string().optional(),
   suffix: z.string().optional(),
   isCounter: z.boolean().optional(),
-  counterType: z.enum(["lot", "pallet"]).optional(),
+  counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
   label: z.string().trim().min(1, "กรุณาระบุชื่อแต่ละส่วน"),
 });
 
@@ -65,7 +65,7 @@ const templateFieldSchema = z.object({
     showOnSticker: z.boolean().optional(),
     stickerOrder: z.number().int().min(0).optional(),
     isCounter: z.boolean().optional(),
-    counterType: z.enum(["lot", "pallet"]).optional(),
+    counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
   })).optional(),
   condition: z.object({
     stickerType: stickerTypeConditionSchema.optional(),

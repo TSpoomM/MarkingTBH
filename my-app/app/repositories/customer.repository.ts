@@ -13,6 +13,14 @@ export class CustomerRepository {
     return rows;
   }
 
+  async updateName(customerId: number, name: string) {
+    const [result] = await this.pool.execute<ResultSetHeader>(
+      "UPDATE tb_customer SET c_name = ? WHERE c_id = ?",
+      [name, customerId],
+    );
+    return result.affectedRows;
+  }
+
   async findLatestTemplate(customerId: number) {
     const [rows] = await this.pool.execute<TemplateRow[]>(
       `SELECT id, c_id, inside, outside

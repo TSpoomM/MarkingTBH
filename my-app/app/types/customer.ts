@@ -1,5 +1,5 @@
 export type FieldType = "text" | "number" | "date" | "textarea";
-export type CounterType = "lot" | "pallet";
+export type CounterType = "lot" | "pallet" | "sequence";
 export type FontScale = "normal" | "xlarge";
 
 export interface TemplateField {

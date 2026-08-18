@@ -133,13 +133,6 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               title="ตั้งค่า Sticker Template"
               subtitle="กำหนด Field, เงื่อนไขบังคับ, Segment ตัวนับ และดู Preview ก่อนสร้าง Customer"
             />
-            <StickerTemplatePreview
-              customerName={name.trim() || "Customer"}
-              insideFields={insideDraft}
-              outsideFields={outsideDraft}
-              layouts={stickerLayouts}
-              onSelect={onSelectPreviewSlot}
-            />
             <div className="template-manager-grid">
               <TemplateFieldEditor
                 title="Sticker ในกรอบ"
@@ -166,11 +159,20 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
             </div>
           </section>
 
-          <div className="form-actions">
-            <Link href="/">ยกเลิก</Link>
-            <Button type="submit" disabled={saving}>
-              {saving ? "กำลังบันทึก..." : "สร้าง Customer"}
-            </Button>
+          <div className="container bottom-action">
+            <div className="bottom-action-buttons">
+              <StickerTemplatePreview
+                customerName={name.trim() || "Customer"}
+                insideFields={insideDraft}
+                outsideFields={outsideDraft}
+                layouts={stickerLayouts}
+                onSelect={onSelectPreviewSlot}
+              />
+              <Link className="back-link" href="/">ยกเลิก</Link>
+              <Button type="submit" disabled={saving}>
+                {saving ? "กำลังบันทึก..." : "สร้าง Customer"}
+              </Button>
+            </div>
           </div>
         </form>
       </>

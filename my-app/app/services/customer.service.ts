@@ -83,19 +83,15 @@ export class CustomerService {
   private normalizeCounterSegments(field: TemplateField): TemplateField {
     const keyedField = this.normalizeSegmentKeys(field);
     if (!keyedField.segments?.length || !this.isCounterField(keyedField)) return keyedField;
-    const hasCounter = keyedField.segments.some((segment) => segment.isCounter);
     return {
       ...keyedField,
-      segments: keyedField.segments.map((segment, index) => ({
+      segments: keyedField.segments.map((segment) => ({
         ...segment,
-        isCounter: hasCounter ? segment.isCounter : index === 0,
-        type: (hasCounter ? segment.isCounter : index === 0) ? "number" : segment.type ?? "text",
-        counterType: (hasCounter ? segment.isCounter : index === 0)
+        type: segment.isCounter ? "number" : segment.type ?? "text",
+        counterType: segment.isCounter
           ? segment.counterType ?? this.counterType(keyedField)
           : segment.counterType,
-        showOnSticker: (hasCounter ? segment.isCounter : index === 0)
-          ? true
-          : segment.showOnSticker,
+        showOnSticker: segment.isCounter ? true : segment.showOnSticker,
       })),
     };
   }
@@ -283,6 +279,21 @@ export class CustomerService {
 
   getCustomers() {
     return this.repository.findAll();
+  }
+
+  async renameCustomerIfChanged(customerId: number, name: string | undefined) {
+    if (!name) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const customers = await this.repository.findAll();
+    const current = customers.find((customer) => customer.c_id === customerId);
+    if (!current) throw new Error("ไม่พบข้อมูลลูกค้า");
+    if (trimmed === current.c_name) return;
+    const duplicate = customers.find((customer) =>
+      customer.c_id !== customerId && customer.c_name.trim().toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (duplicate) throw new Error(`มีลูกค้าชื่อ "${duplicate.c_name}" อยู่แล้ว กรุณาตั้งชื่ออื่น`);
+    await this.repository.updateName(customerId, trimmed);
   }
 
   async createCustomer(input: CreateCustomerPayload, createdBy: string) {

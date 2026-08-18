@@ -655,7 +655,7 @@ select {
 	min-width: 0;
 	display: flex;
 	flex-wrap: nowrap;
-	gap: 1mm 2mm;
+	gap: 0;
 	font-size: inherit;
 	font-weight: 700;
 	line-height: 1.05;
@@ -839,7 +839,7 @@ select {
 	min-width: 0;
 	display: flex;
 	flex-wrap: nowrap;
-	gap: 4px 5px;
+	gap: 0;
 	overflow: visible;
 	white-space: nowrap
 }
@@ -1084,6 +1084,24 @@ select {
 	background: #f8faf7;
 	transform: translateY(-1px);
 	box-shadow: none;
+}
+
+.bottom-action .template-cancel-button {
+	min-height: 44px;
+	height: 44px;
+	padding: 0 16px;
+	border: 1px solid #c8d5cb;
+	border-radius: 8px;
+	background: #fff;
+	color: #53635c;
+	box-shadow: none;
+	cursor: pointer;
+}
+
+.bottom-action .template-cancel-button:hover {
+	border-color: #9db7aa;
+	background: #f8faf7;
+	transform: translateY(-1px);
 }
 
 .sticker-template-preview-modal-body .pdf-preview {
@@ -1910,7 +1928,7 @@ select {
 .add-customer-link,.back-link,.template-button { height:42px; padding:0 15px; border:1px solid var(--primary); border-radius:8px; color:var(--primary-dark); background:#f7faf6; text-decoration:none; display:inline-flex; align-items:center; font-size:13px; font-weight:700 }
 .template-button { cursor:pointer }
 .template-button:disabled { opacity:.45; cursor:not-allowed }
-.customer-form-wrap { max-width:1120px; margin:auto; padding:30px 28px 60px }
+.customer-form-wrap { max-width:1120px; margin:auto; padding:30px 28px 130px }
 .customer-form-wrap form { display:grid; gap:20px }
 .customer-mode-switch { display:inline-flex; width:fit-content; padding:4px; border:1px solid #b9cbbf; border-radius:8px; background:#e7eee8; gap:4px }
 .customer-mode-switch button { height:38px; border:0; border-radius:6px; padding:0 16px; background:transparent; color:#52635a; font-size:13px; font-weight:800; cursor:pointer }
@@ -1994,7 +2012,7 @@ select {
 
 @media(max-width:700px) {
 	.header-actions .add-customer-link { display:none }
-	.customer-form-wrap { padding:18px 14px 45px }
+	.customer-form-wrap { padding:18px 14px 210px }
 	.history-wrap { padding:18px 14px 45px }
 	.history-filter { grid-template-columns:1fr }
 	.history-table,.history-detail-table { min-width:760px }
@@ -3886,7 +3904,7 @@ select {
 
 @media screen and (max-width:640px) {
 	.customer-form-wrap {
-		padding: 16px 10px 42px;
+		padding: 16px 10px 220px;
 	}
 
 	.customer-admin .config-card,
