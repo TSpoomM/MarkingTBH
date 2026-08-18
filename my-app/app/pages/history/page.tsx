@@ -10,7 +10,7 @@ import Select from "@/app/components/Select";
 import Toast from "@/app/components/Toast";
 import type { ApiEnvelope } from "@/app/types/api";
 import type { HistoryPageState } from "@/app/types/history";
-import type { MarkingContent, MarkingHistoryItem } from "@/app/types/marking";
+import type { MarkingContent, MarkingHistoryFieldMeta, MarkingHistoryItem } from "@/app/types/marking";
 
 export default class HistoryPage extends Component<Record<string, never>, HistoryPageState> {
   private isActive = false;
@@ -123,8 +123,8 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
   }
 
   private actionLabel(actionType: MarkingHistoryItem["actionType"]) {
-    if (actionType === "print") return "Print/PDF";
-    if (actionType === "save") return "Save";
+    if (actionType === "print") return "พิมพ์/PDF";
+    if (actionType === "save") return "บันทึก";
     return "ข้อมูลเก่า";
   }
 
@@ -148,13 +148,14 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
       "lot_count",
       "sticker_format",
       "sticker_type",
+      "sticker_fsc",
       "sticker_other",
       "total_lot",
       "sticker_sides",
     ]).has(key);
   }
 
-  private combinedSectionEntry(key: string, row: MarkingContent) {
+  private legacyCombinedSectionEntry(key: string, row: MarkingContent) {
     const match = key.match(/^(lotNo|palletNo)_(\d+)$/i);
     if (!match) return undefined;
     const prefix = match[1];
@@ -173,23 +174,82 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
     return values.length ? [label, values.join(" ")] as const : undefined;
   }
 
-  private filledEntries(row: MarkingContent) {
-    const usedCombinedKeys = new Set<string>();
-    return Object.entries(row)
+  private segmentGroupKey(key: string) {
+    const legacyMatch = key.match(/^(lotNo|palletNo)_\d+$/i);
+    if (legacyMatch) return legacyMatch[1];
+    const generatedMatch = key.match(/^(.+)_\d{10,}_[a-z0-9]{6}$/i);
+    if (generatedMatch) return generatedMatch[1];
+    const match = key.match(/^(.+)_(?:section_\d+|\d+)$/i);
+    return match?.[1];
+  }
+
+  private segmentGroupLabel(groupKey: string, keys: string[]) {
+    const legacyLabel = this.legacyCombinedSectionEntry(keys[0], Object.fromEntries(keys.map((key) => [key, key])))?.[0];
+    return legacyLabel ?? groupKey;
+  }
+
+  private entryGroupKey(
+    key: string,
+    filledKeys: string[],
+    fieldMeta: Record<string, MarkingHistoryFieldMeta>,
+  ) {
+    if (fieldMeta[key]) return fieldMeta[key].parentKey;
+    const generatedGroupKey = this.segmentGroupKey(key);
+    if (generatedGroupKey) return generatedGroupKey;
+    return filledKeys.some((itemKey) => this.segmentGroupKey(itemKey) === key) ? key : undefined;
+  }
+
+  private entryLabel(
+    key: string,
+    groupKey: string | undefined,
+    groupKeys: string[],
+    fieldMeta: Record<string, MarkingHistoryFieldMeta>,
+  ) {
+    if (groupKey) {
+      const meta = fieldMeta[groupKey] ?? groupKeys.map((itemKey) => fieldMeta[itemKey]).find(Boolean);
+      return meta?.parentLabel ?? this.segmentGroupLabel(groupKey, groupKeys);
+    }
+    return fieldMeta[key]?.label ?? key;
+  }
+
+  private filledEntries(row: MarkingContent, fieldMeta: Record<string, MarkingHistoryFieldMeta> = {}) {
+    const filled = Object.entries(row).filter(([key, value]) =>
+      !this.isStickerDetailKey(key) && String(value ?? "").trim() !== "",
+    );
+    const filledKeys = filled.map(([key]) => key);
+    const groupCounts = filled.reduce<Record<string, number>>((counts, [key]) => {
+      const groupKey = this.entryGroupKey(key, filledKeys, fieldMeta);
+      if (!groupKey) return counts;
+      return { ...counts, [groupKey]: (counts[groupKey] ?? 0) + 1 };
+    }, {});
+    const usedGroupKeys = new Set<string>();
+
+    return filled
       .flatMap(([key, value]) => {
-        if (this.isStickerDetailKey(key) || String(value ?? "").trim() === "") return [];
-        const combinedEntry = this.combinedSectionEntry(key, row);
-        if (!combinedEntry) return [[key, value] as const];
-        if (usedCombinedKeys.has(combinedEntry[0])) return [];
-        usedCombinedKeys.add(combinedEntry[0]);
-        return [combinedEntry];
+        const groupKey = this.entryGroupKey(key, filledKeys, fieldMeta);
+        const meta = fieldMeta[key];
+        if (!groupKey || (groupCounts[groupKey] < 2 && (!meta || meta.parentKey === key))) {
+          return [{ id: key, label: this.entryLabel(key, undefined, [], fieldMeta), value }];
+        }
+        if (usedGroupKeys.has(groupKey)) return [];
+        usedGroupKeys.add(groupKey);
+        const groupKeys = filled
+          .map(([itemKey]) => itemKey)
+          .filter((itemKey) => this.entryGroupKey(itemKey, filledKeys, fieldMeta) === groupKey)
+          .sort((left, right) => (fieldMeta[left]?.order ?? 0) - (fieldMeta[right]?.order ?? 0));
+        const values = groupKeys.map((itemKey) => String(row[itemKey]).trim()).filter(Boolean);
+        return [{ id: groupKey, label: this.entryLabel(key, groupKey, groupKeys, fieldMeta), value: values.join(" ") }];
       })
       .slice(0, 24);
   }
 
-  private renderTemplateSection(title: string, rows: MarkingContent[]) {
+  private renderTemplateSection(
+    title: string,
+    rows: MarkingContent[],
+    fieldMeta: Record<string, MarkingHistoryFieldMeta> = {},
+  ) {
     const filledRows = rows
-      .map((row, index) => ({ index, entries: this.filledEntries(row) }))
+      .map((row, index) => ({ index, entries: this.filledEntries(row, fieldMeta) }))
       .filter((row) => row.entries.length > 0);
 
     return (
@@ -203,13 +263,13 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
               <article className="history-template-card" key={`${title}-${row.index}`}>
                 <header>
                   <strong>ชุดที่ {row.index + 1}</strong>
-                  <span>{row.entries.length} fields</span>
+                  <span>{row.entries.length} Field</span>
                 </header>
                 <dl>
-                  {row.entries.map(([key, value]) => (
-                    <div key={key}>
-                      <dt>{key}</dt>
-                      <dd>{value}</dd>
+                  {row.entries.map((entry) => (
+                    <div key={entry.id}>
+                      <dt>{entry.label}</dt>
+                      <dd>{entry.value}</dd>
                     </div>
                   ))}
                 </dl>
@@ -225,7 +285,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
     return (
       <Modal
         open={!!item}
-        title={item?.customerName || "History detail"}
+        title={item?.customerName || "รายละเอียดประวัติ"}
         subtitle={item ? `${this.actionLabel(item.actionType)} · ${this.formatDateTime(item.createdDate)}` : undefined}
         onClose={this.closeDetail}
       >
@@ -269,6 +329,10 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
                   <dd>{item.stickerType || "-"}</dd>
                 </div>
                 <div>
+                  <dt>FSC</dt>
+                  <dd>{item.stickerFsc === undefined ? "-" : item.stickerFsc ? "ใช่" : "ไม่ใช่"}</dd>
+                </div>
+                <div>
                   <dt>Other</dt>
                   <dd>{item.stickerOther || "-"}</dd>
                 </div>
@@ -276,8 +340,8 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
             </section>
             <section className="history-sticker-content">
               <h3>ข้อมูลในสติ๊กเกอร์</h3>
-              {this.renderTemplateSection("ในกรอบ", item.inside)}
-              {this.renderTemplateSection("นอกกรอบ", item.outside)}
+              {this.renderTemplateSection("ในกรอบ", item.inside, item.fieldMeta?.inside)}
+              {this.renderTemplateSection("นอกกรอบ", item.outside, item.fieldMeta?.outside)}
             </section>
           </div>
         )}
@@ -301,14 +365,14 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
       <>
         <Navbar
           badge="TBH"
-          title="History"
-          subtitle="ตรวจสอบรายการที่บันทึกและ Print/PDF"
+          title="ประวัติ"
+          subtitle="ตรวจสอบรายการที่บันทึกและพิมพ์/PDF"
           activeNav="history"
         />
         <main className="history-wrap">
           {this.state.notice && <Toast type="error" message={this.state.notice} onClose={this.dismissNotice} />}
 
-          <section className="history-overview history-overview-single" aria-label="History summary">
+          <section className="history-overview history-overview-single" aria-label="สรุปประวัติ">
             <div>
               <span>รายการทั้งหมด</span>
               <strong>{filteredItems.length}</strong>
@@ -319,7 +383,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
           <section className="panel history-filter">
             <div className="history-filter-title">
               <strong>ค้นหารายการ</strong>
-              <span>กรองจากลูกค้า ผู้บันทึก Action หรือวันที่</span>
+              <span>กรองจากลูกค้า ผู้บันทึก การทำรายการ หรือวันที่</span>
             </div>
             <Autocomplete
               label="ลูกค้า"
@@ -335,10 +399,10 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
               onChange={this.setEmployeeQuery}
               placeholder="พิมพ์เพื่อเลือกผู้บันทึก"
             />
-            <Select label="Action" value={this.state.action} onChange={this.setAction}>
+            <Select label="การทำรายการ" value={this.state.action} onChange={this.setAction}>
               <option value="all">ทั้งหมด</option>
-              <option value="print">Print/PDF</option>
-              <option value="save">Save</option>
+              <option value="print">พิมพ์/PDF</option>
+              <option value="save">บันทึก</option>
               <option value="unknown">ข้อมูลเก่า</option>
             </Select>
             <Input label="วันที่" type="date" value={this.state.date} onChange={this.setDate} />
@@ -355,7 +419,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
                 <div>
                   <span>{filteredItems.length}</span>
                   <div>
-                    <h2>Marking history</h2>
+                    <h2>ประวัติ Marking</h2>
                     <p>รายการล่าสุด</p>
                   </div>
                 </div>
@@ -380,7 +444,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
                       <th>ผู้บันทึก</th>
                       <th>สาขา</th>
                       <th>ลูกค้า</th>
-                      <th>Action</th>
+                      <th>การทำรายการ</th>
                       <th>รายละเอียด</th>
                       <th></th>
                     </tr>

@@ -1,15 +1,16 @@
-import { Component, type ChangeEvent } from "react";
+import { Component, type ChangeEvent, useId } from "react";
 import type { AutocompleteProps } from "@/app/types/ui";
-
-let instanceCount = 0;
 
 interface AutocompleteState {
   open: boolean;
   activeIndex: number;
 }
 
-export default class Autocomplete extends Component<AutocompleteProps, AutocompleteState> {
-  private listId = `autocomplete-options-${++instanceCount}`;
+type AutocompleteInnerProps = AutocompleteProps & {
+  generatedId: string;
+};
+
+class AutocompleteInner extends Component<AutocompleteInnerProps, AutocompleteState> {
 
   state: AutocompleteState = {
     open: false,
@@ -51,10 +52,12 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
       onFocus,
       onBlur,
       onKeyDown,
+      generatedId,
       ...props
     } = this.props;
     const filteredOptions = this.filteredOptions(options);
     const hasOptions = filteredOptions.length > 0;
+    const listId = `${props.id ?? generatedId}-options`;
     const control = (
       <div className="autocomplete-shell">
         <input
@@ -63,7 +66,7 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={this.state.open && hasOptions}
-          aria-controls={this.listId}
+          aria-controls={listId}
           onChange={(event) => {
             onChange?.(event);
             this.setState({ open: true, activeIndex: -1 });
@@ -104,7 +107,7 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
           {...props}
         />
         {this.state.open && hasOptions && (
-          <div className="autocomplete-list" id={this.listId} role="listbox">
+          <div className="autocomplete-list" id={listId} role="listbox">
             {filteredOptions.map((option, index) => (
               <button
                 type="button"
@@ -133,4 +136,9 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
       </label>
     );
   }
+}
+
+export default function Autocomplete(props: AutocompleteProps) {
+  const generatedId = useId();
+  return <AutocompleteInner {...props} generatedId={generatedId} />;
 }

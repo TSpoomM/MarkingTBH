@@ -66,7 +66,8 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
       : modePreviewItems;
 
     return (
-      <div className="sticker-preview-wrap">
+      // <div className="sticker-preview-wrap">
+      <div>
         <Button
           className={`sticker-preview-open marking-preview-open ${className}`.trim()}
           disabled={items.length === 0}

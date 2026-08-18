@@ -42,7 +42,7 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
       { key: "marking", label: "Marking", href: "/" },
       ...(this.state.isAdmin
         ? [
-          { key: "history", label: "History", href: "/pages/history" },
+          { key: "history", label: "ประวัติ", href: "/pages/history" },
           { key: "customers", label: "จัดการ Template", href: "/pages/manageCustomer" },
         ]
         : []),
@@ -60,7 +60,7 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
               </div>
             </div>
             <div className="navbar-right">
-              <nav className="navbar-nav" aria-label="Primary navigation">
+              <nav className="navbar-nav" aria-label="เมนูหลัก">
                 {navItems.map((item) => (
                   <Link
                     className={activeNav === item.key ? "active" : ""}

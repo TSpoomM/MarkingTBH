@@ -73,4 +73,15 @@ export interface MarkingHistoryItem {
   createdDate: string;
   inside: MarkingContent[];
   outside: MarkingContent[];
+  fieldMeta?: {
+    inside: Record<string, MarkingHistoryFieldMeta>;
+    outside: Record<string, MarkingHistoryFieldMeta>;
+  };
+}
+
+export interface MarkingHistoryFieldMeta {
+  label: string;
+  parentKey: string;
+  parentLabel: string;
+  order: number;
 }

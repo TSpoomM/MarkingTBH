@@ -243,14 +243,14 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         stickerLayouts: withRequiredStickerLayouts(result.data.sticker.layouts),
         notice: {
           kind: "success",
-          text: `Copied template from ${result.data.customerName}. You can edit it before creating the new customer.`,
+          text: `คัดลอก Template จาก ${result.data.customerName} แล้ว คุณสามารถแก้ไขได้ก่อนสร้าง Customer ใหม่`,
         },
       });
     } catch (error) {
       this.setState({
         notice: {
           kind: "error",
-          text: error instanceof Error ? error.message : "Copy template failed",
+          text: error instanceof Error ? error.message : "คัดลอก Template ไม่สำเร็จ",
         },
       });
     } finally {
@@ -514,17 +514,17 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     layouts: CustomerFormState["stickerLayouts"],
   ): string | undefined => {
     if ([...inside, ...outside].some((field) => !field.label || field.segments?.some((segment) => !segment.label))) {
-      return "Please fill every field name";
+      return "กรุณากรอกชื่อ Field ให้ครบทุกช่อง";
     }
     const requiredLayouts = withRequiredStickerLayouts(layouts);
     if (!requiredLayouts.insideFrame && !requiredLayouts.outsideFrame && !requiredLayouts.customerName && !requiredLayouts.fscLogo) {
-      return "Please choose at least one sticker layout";
+      return "กรุณาเลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ";
     }
     if (
       new Set(inside.map((field) => field.key)).size !== inside.length ||
       new Set(outside.map((field) => field.key)).size !== outside.length
     ) {
-      return "Some field keys are duplicated. Remove and add the field again";
+      return "มี Field ที่ซ้ำกัน กรุณาลบแล้วเพิ่ม Field ใหม่อีกครั้ง";
     }
     return undefined;
   };

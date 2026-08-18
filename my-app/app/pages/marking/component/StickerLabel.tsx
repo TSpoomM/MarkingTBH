@@ -38,7 +38,7 @@ export default class StickerLabel extends Component<{ item: StickerItem }> {
             <Image
               className="sticker-fsc-logo"
               src="/FSC_Logo.png"
-              alt="FSC logo"
+              alt="โลโก้ FSC"
               width={200}
               height={300}
               unoptimized

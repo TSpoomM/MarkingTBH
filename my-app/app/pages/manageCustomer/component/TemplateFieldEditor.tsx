@@ -146,7 +146,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
       <div className="template-editor-panel">
         <div className="template-draft-heading">
           <h3>{title}</h3>
-          <span>{fields.length} field</span>
+          <span>{fields.length} Field</span>
         </div>
         {!fields.length && <div className="editor-empty">ยังไม่มี Field</div>}
         {fields.map((field, index) => {
@@ -197,7 +197,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                     onChange={(event) => onRenameTable?.(tableOrder, event.target.value)}
                   />
                   <Button type="button" onClick={() => onRemoveTable?.(tableOrder)}>
-                    Delete table
+                    ลบ Table
                   </Button>
                 </div>
               )}
@@ -246,7 +246,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           checked={field.uppercase ?? true}
                           onChange={(event) => onChange(section, index, { uppercase: event.target.checked })}
                         />
-                        <span>Uppercase</span>
+                        <span>ตัวพิมพ์ใหญ่</span>
                       </label>
                     )}
                     {section === "outside" && (
@@ -283,7 +283,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                   </article>
                   {!!field.segments?.length && (
                     <div className="editor-segments-row">
-                      <div className="editor-segments-title">Sections</div>
+                      <div className="editor-segments-title">Section</div>
                       <div className="editor-format-preview">
                         <span>ตัวอย่างบนสติ๊กเกอร์</span>
                         <strong>{this.segmentPreview(field)}</strong>
@@ -311,7 +311,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                               </span>
                               <strong>Section {segmentIndex + 1}</strong>
                             </div>
-                            {segment.isCounter && <span>Count</span>}
+                            {segment.isCounter && <span>นับ</span>}
                           </div>
                           <label className="editor-segment-name">
                             <span>ชื่อ Section</span>
@@ -371,7 +371,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                                   })),
                                 })}
                               >
-                                Count
+                                นับ
                               </Button>
                             )}
                             {segment.isCounter && (
@@ -387,7 +387,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                                         : item,
                                     ),
                                   })}
-                                  aria-label="Counter type"
+                                  aria-label="นับแบบ"
                                 >
                                   <option value="lot">Lot</option>
                                   <option value="pallet">Pallet</option>
@@ -445,7 +445,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                   className="outside-add-row-button"
                   onClick={() => onAdd(section, tableOrder)}
                 >
-                  Add Row
+                  เพิ่มแถว
                 </Button>
               )}
             </div>
@@ -453,7 +453,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
         })}
         {section === "outside" && (
           <Button className="add-field-button" onClick={onAddTable}>
-            Add Table
+            เพิ่ม Table
           </Button>
         )}
         {section !== "outside" && (

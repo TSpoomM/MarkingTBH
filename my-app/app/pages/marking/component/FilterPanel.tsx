@@ -61,7 +61,7 @@ export default class FilterPanel extends MarkingComponent {
               onChange={(event) => this.actions.setProductionDate(event.target.value)}
             />
             <Input
-              label="จำนวน Lot *"
+              label="จำนวน Lot ที่ต้องการ print *"
               hint={`เริ่ม LOT ${this.state.lotStart}`}
               type="number"
               min="1"
@@ -69,7 +69,7 @@ export default class FilterPanel extends MarkingComponent {
               onChange={(event) => this.actions.setLotCount(event.target.value)}
             />
             {this.state.template && (
-              <Select label="Side *" value={this.state.stickerSides} onChange={(event) => this.actions.setStickerSides(event.target.value)}>
+              <Select label="จำนวนด้าน sticker / 1 ลัง *" value={this.state.stickerSides} onChange={(event) => this.actions.setStickerSides(event.target.value)}>
                 <option value="">เลือก Side</option>
                 {STICKER_SIDE_OPTIONS.map((side) => <option value={side} key={side}>{side} ด้าน</option>)}
               </Select>
@@ -81,8 +81,8 @@ export default class FilterPanel extends MarkingComponent {
               </Select>
             )}
             {needsType && (
-              <Select label="Type *" value={this.state.stickerType} onChange={(event) => this.actions.setStickerType(event.target.value)}>
-                <option value="">เลือก Type</option>
+              <Select label="เป็น TNR หรือไม่ *" value={this.state.stickerType} onChange={(event) => this.actions.setStickerType(event.target.value)}>
+                <option value="">เลือกเกรด</option>
                 {STICKER_TYPE_OPTIONS.map((type) => <option value={type} key={type}>{type}</option>)}
               </Select>
             )}

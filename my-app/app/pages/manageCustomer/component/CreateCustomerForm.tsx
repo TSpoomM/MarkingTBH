@@ -68,7 +68,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               />
             </label>
             <label className="customer-name duplicate-template-picker">
-              <span>Duplicate template from</span>
+              <span>คัดลอก Template จาก</span>
               <Select
                 bare
                 value={duplicateSourceCustomerId}
@@ -76,13 +76,13 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 disabled={loadingCustomers || duplicatingTemplate}
               >
                 <option value="">
-                  {loadingCustomers ? "Loading customers..." : "Start blank or choose an existing customer"}
+                  {loadingCustomers ? "กำลังโหลดลูกค้า..." : "เริ่มจากว่างเปล่า หรือเลือก Customer เดิม"}
                 </option>
                 {customers.map((customer) => (
                   <option value={customer.id} key={customer.id}>{customer.name}</option>
                 ))}
               </Select>
-              <small>{duplicatingTemplate ? "Copying template..." : "Copy fields and sticker layouts, then edit before creating the new customer."}</small>
+              <small>{duplicatingTemplate ? "กำลังคัดลอก Template..." : "คัดลอก Field และรูปแบบสติ๊กเกอร์ แล้วแก้ไขก่อนสร้าง Customer ใหม่"}</small>
             </label>
             <OptionGroup
               label="ช่องข้อมูลที่ผู้พิมพ์ต้องเลือก *"

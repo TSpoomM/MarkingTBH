@@ -1,7 +1,10 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
-import type { CreateMarkingInput, MarkingContent, MarkingHistoryItem } from "@/app/types/marking";
+import type { TemplateField } from "@/app/types/customer";
+import type { CreateMarkingInput, MarkingContent, MarkingHistoryFieldMeta, MarkingHistoryItem } from "@/app/types/marking";
 import type { Pool } from "mysql2/promise";
 import { pool } from "../lib/db";
+
+type TemplateSegment = NonNullable<TemplateField["segments"]>[number];
 
 export class MarkingRepository {
   constructor(private readonly pool: Pool) {}
@@ -23,6 +26,165 @@ export class MarkingRepository {
   private numberValue(value: unknown) {
     const number = Number(value ?? 0);
     return Number.isFinite(number) ? number : 0;
+  }
+
+  private normalizeKey(label: string, index: number) {
+    const key = label.toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "");
+    return key || `field_${index + 1}`;
+  }
+
+  private parseTemplateFields(value: unknown, section: "Inside" | "Outside"): TemplateField[] {
+    try {
+      const parsed: unknown = JSON.parse(String(value ?? ""));
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const config = parsed as {
+          groups?: Array<{ label?: string; segments?: Array<Partial<TemplateSegment>> }>;
+          fields?: Array<Partial<TemplateField>>;
+          tables?: Array<{ name?: string; fields?: Array<Partial<TemplateField>> }>;
+        };
+        if (section === "Inside" && Array.isArray(config.groups)) {
+          const groups = config.groups.map((group, groupIndex): TemplateField => {
+            const label = String(group.label ?? `Inside ${groupIndex + 1}`);
+            return {
+              key: `inside_group_${groupIndex + 1}`,
+              label,
+              type: "text",
+              required: false,
+              stickerOrder: groupIndex,
+              segments: (group.segments ?? []).map((segment, segmentIndex) => ({
+                key: String(segment.key ?? `inside_${groupIndex + 1}_${segmentIndex + 1}`),
+                label: String(segment.label ?? `Section ${segmentIndex + 1}`),
+                stickerOrder: groupIndex * 10 + segmentIndex,
+              })),
+            };
+          });
+          const fields = (config.fields ?? []).map((field, index): TemplateField => {
+            const label = String(field.label ?? field.key ?? `Inside ${index + 1}`);
+            return {
+              key: String(field.key ?? this.normalizeKey(label, index)),
+              label,
+              type: "text",
+              required: Boolean(field.required),
+              stickerOrder: groups.length + index,
+            };
+          });
+          return [...groups, ...fields];
+        }
+        if (Array.isArray(config.fields)) {
+          return config.fields.map((field, index): TemplateField => {
+            const label = String(field.label ?? field.key ?? `${section} ${index + 1}`);
+            return {
+              ...field,
+              key: String(field.key ?? this.normalizeKey(label, index)),
+              label,
+              type: "text",
+              required: Boolean(field.required),
+              stickerOrder: field.stickerOrder ?? index,
+              segments: field.segments?.map((segment, segmentIndex) => ({
+                ...segment,
+                key: String(segment.key ?? `${field.key ?? this.normalizeKey(label, index)}_${segmentIndex + 1}`),
+                label: String(segment.label ?? `Section ${segmentIndex + 1}`),
+                stickerOrder: segment.stickerOrder ?? (field.stickerOrder ?? index) * 10 + segmentIndex,
+              })),
+            };
+          });
+        }
+        if (section === "Outside" && Array.isArray(config.tables)) {
+          return config.tables.flatMap((table, tableIndex) =>
+            (table.fields ?? []).map((field, fieldIndex): TemplateField => {
+              const label = String(field.label ?? field.key ?? `Field ${fieldIndex + 1}`);
+              return {
+                ...field,
+                key: String(field.key ?? `outside_${tableIndex + 1}_${fieldIndex + 1}`),
+                label,
+                type: "text",
+                required: Boolean(field.required),
+                stickerOrder: field.stickerOrder ?? fieldIndex,
+                stickerGroup: String(table.name ?? `Outside ${tableIndex + 1}`),
+                stickerGroupOrder: tableIndex,
+              };
+            }),
+          );
+        }
+      }
+      if (Array.isArray(parsed)) {
+        return parsed.map((item, index): TemplateField => {
+          if (typeof item === "string") {
+            return {
+              key: this.normalizeKey(item, index),
+              label: item,
+              type: "text",
+              required: false,
+              stickerOrder: index,
+            };
+          }
+          const field = item as Partial<TemplateField>;
+          const label = String(field.label ?? field.key ?? `${section} ${index + 1}`);
+          return {
+            ...field,
+            key: String(field.key ?? this.normalizeKey(label, index)),
+            label,
+            type: "text",
+            required: Boolean(field.required),
+            stickerOrder: field.stickerOrder ?? index,
+          };
+        });
+      }
+    } catch {
+      // History can still render raw keys when a legacy template cannot be parsed.
+    }
+    return [];
+  }
+
+  private buildFieldMeta(fields: TemplateField[]) {
+    const meta: Record<string, MarkingHistoryFieldMeta> = {};
+    fields.forEach((field, index) => {
+      const order = field.stickerOrder ?? index;
+      meta[field.key] = {
+        label: field.label,
+        parentKey: field.key,
+        parentLabel: field.label,
+        order,
+      };
+      field.segments?.forEach((segment, segmentIndex) => {
+        meta[segment.key] = {
+          label: segment.label,
+          parentKey: field.key,
+          parentLabel: field.label,
+          order: segment.stickerOrder ?? order * 10 + segmentIndex,
+        };
+      });
+    });
+    return meta;
+  }
+
+  private async findHistoryFieldMeta(customerIds: number[]) {
+    const uniqueIds = Array.from(new Set(customerIds.filter(Boolean)));
+    if (!uniqueIds.length) return new Map<number, MarkingHistoryItem["fieldMeta"]>();
+    const placeholders = uniqueIds.map(() => "?").join(",");
+    const [rows] = await this.pool.execute<RowDataPacket[]>(
+      `SELECT t.c_id, t.inside, t.outside
+       FROM tb_template t
+       INNER JOIN (
+         SELECT c_id, MAX(id) AS id
+         FROM tb_template
+         WHERE c_id IN (${placeholders})
+         GROUP BY c_id
+       ) latest ON latest.id = t.id`,
+      uniqueIds,
+    );
+    return new Map(rows.map((row) => {
+      const record = row as Record<string, unknown>;
+      return [
+        this.numberValue(record.c_id),
+        {
+          inside: this.buildFieldMeta(this.parseTemplateFields(record.inside, "Inside")),
+          outside: this.buildFieldMeta(this.parseTemplateFields(record.outside, "Outside")),
+        },
+      ];
+    }));
   }
 
   async create(input: CreateMarkingInput) {
@@ -84,6 +246,8 @@ export class MarkingRepository {
       [limit],
     );
 
+    const fieldMetaByCustomer = await this.findHistoryFieldMeta(rows.map((row) => this.numberValue(row.cus_id)));
+
     return rows.map((row, index) => {
       const record = row as Record<string, unknown>;
       const inside = this.parseContent(record.content_inside);
@@ -109,12 +273,14 @@ export class MarkingRepository {
         actionType: actionType === "save" || actionType === "print" ? actionType : "unknown",
         stickerFormat: this.firstContentValue(inside, "sticker_format"),
         stickerType: this.firstContentValue(inside, "sticker_type"),
+        stickerFsc: this.firstContentValue(inside, "sticker_fsc") === "YES",
         stickerOther: this.firstContentValue(inside, "sticker_other"),
         createdDate: record.created_date instanceof Date
           ? record.created_date.toISOString()
           : String(record.created_date ?? ""),
         inside,
         outside,
+        fieldMeta: fieldMetaByCustomer.get(this.numberValue(record.cus_id)),
       };
     });
   }
