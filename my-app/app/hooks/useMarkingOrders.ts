@@ -8,6 +8,7 @@ import {
 } from "../services/marking-api.service";
 import type {
   MarkingContent,
+  PrintSection,
   MarkingState,
   SaveMarkingPayload,
 } from "@/app/types/marking";
@@ -83,8 +84,6 @@ export class MarkingOrdersController {
           ? { type: "error", text: this.errorMessage(customers.reason, MESSAGES.loadFailed) }
           : null,
     });
-    const firstCustomer = customers.status === "fulfilled" ? customers.value[0] : undefined;
-    if (firstCustomer) await this.selectCustomer(String(firstCustomer.id));
   }
 
   async selectCustomer(customerId: string) {
@@ -98,13 +97,14 @@ export class MarkingOrdersController {
       const productionDate = this.state.productionDate || this.today();
       const template = await this.service.getTemplate(Number(customerId));
       const lotStart = await this.loadLotStart(customerId, productionDate);
+      const stickerDefaults = template.sticker.defaults;
       this.setState({
         template,
-        stickerSides: "",
-        stickerFormat: "",
-        stickerType: "",
-        stickerFsc: false,
-        stickerOther: "",
+        stickerSides: String(stickerDefaults.sideCount),
+        stickerFormat: stickerDefaults.format,
+        stickerType: stickerDefaults.stickerType,
+        stickerFsc: stickerDefaults.stickerFsc,
+        stickerOther: stickerDefaults.stickerOther,
         lotCount: "1",
         lotStart,
         productionDate,
@@ -133,6 +133,25 @@ export class MarkingOrdersController {
   }
   dismissNotice() { this.setState({ notice: null }); }
   closeTemplateEditor() { this.setState({ isTemplateEditorOpen: false }); }
+  closeExportModal() { this.setState({ isExportModalOpen: false }); }
+
+  setPrintSection(section: PrintSection, enabled: boolean) {
+    this.setState({
+      printSections: {
+        ...this.state.printSections,
+        [section]: enabled,
+      },
+    });
+  }
+
+  openExportModal() {
+    const validationError = this.validate();
+    if (validationError) {
+      this.setState({ notice: { type: "error", text: validationError } });
+      return;
+    }
+    this.setState({ isExportModalOpen: true, notice: null });
+  }
 
   private async loadLotStart(customerId: string, productionDate: string) {
     try {
@@ -273,7 +292,7 @@ export class MarkingOrdersController {
     if (!Number.isInteger(Number(this.state.lotCount)) || Number(this.state.lotCount) < 1) return "กรุณากรอกจำนวน Lot";
     if (!this.state.stickerSides) return "กรุณาเลือก Side";
     if (!this.state.stickerFormat) return "กรุณาเลือก Format";
-    if ((stickerFields.includes("type") || (template?.outside ?? []).some((field) => !!field.condition?.stickerType)) && !this.state.stickerType) return "กรุณาเลือก Type";
+    if ((stickerFields.includes("type") || (template?.outside ?? []).some((field) => !!field.condition?.stickerType)) && !this.state.stickerType) return "กรุณาเลือกเกรด";
     if ((stickerFields.includes("other") || (template?.outside ?? []).some((field) => !!field.condition?.stickerOther)) && !this.state.stickerOther) return "กรุณาเลือก Other";
     for (const [index, row] of insideRows.entries()) {
       const missing = template?.inside.find((field) =>
@@ -373,8 +392,13 @@ export class MarkingOrdersController {
   }
 
   async saveAndExport() {
+    if (!Object.values(this.state.printSections).some(Boolean)) {
+      this.setState({ notice: { type: "error", text: "กรุณาเลือกสติ๊กเกอร์ที่ต้องการปริ้นอย่างน้อย 1 แบบ" } });
+      return;
+    }
     const result = await this.save("print");
     if (!result) return;
+    this.setState({ isExportModalOpen: false });
     if (process.env.NODE_ENV !== "production") {
       console.debug("[Marking] export:print");
     }

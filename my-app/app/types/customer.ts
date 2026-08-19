@@ -37,6 +37,7 @@ export interface TemplateField {
 export interface Customer {
   id: number;
   name: string;
+  isActive: boolean;
 }
 
 export interface StickerLayouts {
@@ -46,6 +47,14 @@ export interface StickerLayouts {
   fscLogo: boolean;
 }
 
+export interface StickerDefaults {
+  sideCount: number;
+  format: "5533" | "555";
+  stickerType: "TNR" | "NON TNR";
+  stickerOther: "Dome" | "Inter";
+  stickerFsc: boolean;
+}
+
 export interface CustomerTemplate {
   customerId: number;
   customerName: string;
@@ -53,6 +62,7 @@ export interface CustomerTemplate {
   sticker: {
     enabledFields: Array<"side" | "format" | "type" | "other">;
     layouts: StickerLayouts;
+    defaults: StickerDefaults;
   };
   inside: TemplateField[];
   outside: TemplateField[];

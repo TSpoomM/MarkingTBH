@@ -14,8 +14,11 @@ export default class OrderTable extends MarkingComponent {
       StickerFactory.matchesCondition(field, this.state.stickerType, this.state.stickerOther),
     );
     const outsideGroups = StickerFactory.outsideGroups(outsideFields);
+    const customerName = this.state.printSections.customerName
+      ? this.state.template?.customerName ?? customer?.name ?? ""
+      : "";
     const stickerItems = StickerFactory.build({
-      customerName: this.state.template?.customerName ?? customer?.name ?? "",
+      customerName,
       format: this.state.stickerFormat,
       sideCount: Number(this.state.stickerSides || 0),
       lotCount: Number(this.state.lotCount || 1),
@@ -37,15 +40,17 @@ export default class OrderTable extends MarkingComponent {
       stickerItems.filter((item) => item.kind === "outsideFrame" && item.group === group.name),
     );
     const outsideStickerPages = StickerFactory.chunk(outsideStickerItems, 4);
-    const frameStickerPages = [...insideStickerPages, ...outsideStickerPages];
+    const frameStickerPages = [
+      ...(this.state.printSections.insideFrame ? insideStickerPages : []),
+      ...(this.state.printSections.outsideFrame ? outsideStickerPages : []),
+    ];
     const customerNameStickerPages = StickerFactory.chunk(
       stickerItems.filter((item) => item.kind === "customerName"),
       16,
     );
-    const fscLogoStickerPages = StickerFactory.chunk(
-      stickerItems.filter((item) => item.kind === "fscLogo"),
-      4,
-    );
+    const fscLogoStickerPages = this.state.printSections.fscLogo
+      ? StickerFactory.chunk(stickerItems.filter((item) => item.kind === "fscLogo"), 4)
+      : [];
     return (
       <>
         <div className="container table-layout">

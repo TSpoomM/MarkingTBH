@@ -3,14 +3,22 @@ import Button from "@/app/components/Button";
 import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
 import Toast from "@/app/components/Toast";
+import {
+  STICKER_FORMAT_OPTIONS,
+  STICKER_OTHER_OPTIONS,
+  STICKER_SIDE_OPTIONS,
+  STICKER_TYPE_OPTIONS,
+} from "@/app/types/constants";
 import type { EditCustomerTemplateProps } from "@/app/types/manage-customer";
-import Choice from "./Choice";
-import OptionGroup from "./OptionGroup";
 import SectionHeading from "./SectionHeading";
 import StickerTemplatePreview from "./StickerTemplatePreview";
 import TemplateFieldEditor from "./TemplateFieldEditor";
 
 export default class EditCustomerTemplate extends Component<EditCustomerTemplateProps> {
+  private templateOptionLabel(customer: EditCustomerTemplateProps["customers"][number]) {
+    return customer.isActive === false ? `[Inactive] ${customer.name}` : customer.name;
+  }
+
   render() {
     const {
       customers,
@@ -18,8 +26,8 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       name,
       insideDraft,
       outsideDraft,
-      stickerFields,
       stickerLayouts,
+      stickerDefaults,
       notice,
       loadingCustomers,
       loadingTemplate,
@@ -29,8 +37,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       onNameChange,
       onSave,
       onCancel,
-      onStickerFieldsChange,
-      onToggleLayout,
+      onStickerDefaultsChange,
       onSelectPreviewSlot,
       onChangeField,
       onAddField,
@@ -70,7 +77,9 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
               {loadingCustomers ? "กำลังโหลดลูกค้า..." : "เลือก Template ที่ต้องการแก้ไข"}
             </option>
             {customers.map((customer) => (
-              <option value={customer.id} key={customer.id}>{customer.name}</option>
+              <option value={customer.id} key={customer.id} disabled={customer.isActive === false}>
+                {this.templateOptionLabel(customer)}
+              </option>
             ))}
           </Select>
         </label>
@@ -102,47 +111,65 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                 <strong>{outsideDraft.length} fields</strong>
               </div>
             </div>
-            <OptionGroup
-              label="ช่องข้อมูลที่ผู้พิมพ์ต้องเลือก *"
-              hint="Side และ Format จำเป็นสำหรับคำนวณจำนวนสติ๊กเกอร์"
-            >
-              {([
-                ["type", "Type", "ผู้พิมพ์เลือก TNR หรือ NON TNR"],
-                ["other", "Other", "ผู้พิมพ์เลือก Dome หรือ Inter"],
-              ] as const).map(([field, label, description]) => (
-                <Choice
-                  key={field}
-                  label={label}
-                  description={description}
-                  checked={stickerFields.includes(field)}
-                  onChange={() => onStickerFieldsChange(
-                    stickerFields.includes(field)
-                      ? stickerFields.filter((item) => item !== field)
-                      : [...stickerFields, field],
-                  )}
+            <div className="template-default-grid">
+              <label>
+                <span>จำนวนด้าน Sticker / 1 ลัง *</span>
+                <Select
+                  bare
+                  value={String(stickerDefaults.sideCount)}
+                  onChange={(event) => onStickerDefaultsChange({ ...stickerDefaults, sideCount: Number(event.target.value) })}
+                >
+                  {STICKER_SIDE_OPTIONS.map((side) => <option value={side} key={side}>{side} ด้าน</option>)}
+                </Select>
+              </label>
+              <label>
+                <span>Format *</span>
+                <Select
+                  bare
+                  value={stickerDefaults.format}
+                  onChange={(event) => onStickerDefaultsChange({ ...stickerDefaults, format: event.target.value as typeof stickerDefaults.format })}
+                >
+                  {STICKER_FORMAT_OPTIONS.map((format) => <option value={format} key={format}>{format === "5533" ? "5533 - [5, 5, 3, 3]" : "555 - [5, 5, 5]"}</option>)}
+                </Select>
+              </label>
+              <label>
+                <span>เกรด *</span>
+                <Select
+                  bare
+                  value={stickerDefaults.stickerType}
+                  onChange={(event) => {
+                    const stickerType = event.target.value as typeof stickerDefaults.stickerType;
+                    onStickerDefaultsChange({
+                      ...stickerDefaults,
+                      stickerType,
+                      stickerFsc: stickerType === "TNR" ? stickerDefaults.stickerFsc : false,
+                    });
+                  }}
+                >
+                  {STICKER_TYPE_OPTIONS.map((type) => <option value={type} key={type}>{type}</option>)}
+                </Select>
+              </label>
+              <label>
+                <span>Other *</span>
+                <Select
+                  bare
+                  value={stickerDefaults.stickerOther}
+                  onChange={(event) => onStickerDefaultsChange({ ...stickerDefaults, stickerOther: event.target.value as typeof stickerDefaults.stickerOther })}
+                >
+                  {STICKER_OTHER_OPTIONS.map((other) => <option value={other} key={other}>{other}</option>)}
+                </Select>
+              </label>
+              <label className="template-default-check">
+                <Input
+                  bare
+                  type="checkbox"
+                  checked={stickerDefaults.stickerFsc}
+                  disabled={stickerDefaults.stickerType !== "TNR"}
+                  onChange={(event) => onStickerDefaultsChange({ ...stickerDefaults, stickerFsc: event.target.checked })}
                 />
-              ))}
-            </OptionGroup>
-            {false && (
-              <OptionGroup
-                label="รูปแบบที่ต้องพิมพ์"
-                hint="Admin เลือกได้ว่าจะพิมพ์สติ๊กเกอร์ในกรอบ, นอกกรอบ และชื่อ Customer หรือไม่"
-              >
-                {([
-                  ["outsideFrame", "นอกกรอบ", "A4 แนวนอน 2x2"],
-                  ["customerName", "ชื่อ Customer", "A4 แนวตั้ง 2x8"],
-                  ["fscLogo", "โลโก้ FSC", "A4 แนวนอน 2x2 (สูงสุด 3 ดวง/ช่อง)"],
-                ] as const).map(([layout, label, description]) => (
-                  <Choice
-                    key={layout}
-                    label={label}
-                    description={description}
-                    checked={stickerLayouts[layout]}
-                    onChange={() => onToggleLayout(layout)}
-                  />
-                ))}
-              </OptionGroup>
-            )}
+                <span>พิมพ์ FSC</span>
+              </label>
+            </div>
             <div className="template-manager-grid">
               <TemplateFieldEditor
                 title="Sticker ในกรอบ"
@@ -174,6 +201,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                   insideFields={insideDraft}
                   outsideFields={outsideDraft}
                   layouts={stickerLayouts}
+                  defaults={stickerDefaults}
                   onSelect={onSelectPreviewSlot}
                 />
                 <Button

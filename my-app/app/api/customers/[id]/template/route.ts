@@ -72,6 +72,13 @@ const updateSchema = z.object({
     }).refine((layouts) => (
       layouts.insideFrame || layouts.outsideFrame || layouts.customerName || layouts.fscLogo
     ), "เลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ"),
+    defaults: z.object({
+      sideCount: z.number().int().min(1).max(6),
+      format: z.enum(["5533", "555"]),
+      stickerType: z.enum(["TNR", "NON TNR"]),
+      stickerOther: z.enum(["Dome", "Inter"]),
+      stickerFsc: z.boolean(),
+    }).optional(),
   }).optional(),
   updatedBy: z.string().trim().min(1).default("ADMIN"),
 });

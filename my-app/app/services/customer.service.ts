@@ -3,10 +3,14 @@ import {
   CustomerRepository,
 } from "../repositories/customer.repository";
 import type { CounterType, CustomerTemplate, TemplateField } from "@/app/types/customer";
-import { DEFAULT_STICKER_LAYOUTS, type CreateCustomerPayload } from "@/app/types/customer-form";
+import { DEFAULT_STICKER_DEFAULTS, DEFAULT_STICKER_LAYOUTS, type CreateCustomerPayload } from "@/app/types/customer-form";
 
 export class CustomerService {
   constructor(private readonly repository: CustomerRepository) {}
+
+  private requiredStickerFields(): CustomerTemplate["sticker"]["enabledFields"] {
+    return ["side", "format", "type", "other"];
+  }
 
   private normalizeKey(label: string, index: number) {
     const key = label.toLowerCase().trim()
@@ -102,21 +106,30 @@ export class CustomerService {
         sticker?: {
           enabledFields?: Array<"side" | "format" | "type" | "other">;
           layouts?: Partial<CustomerTemplate["sticker"]["layouts"]>;
+          defaults?: Partial<CustomerTemplate["sticker"]["defaults"]>;
         };
       };
       if (Array.isArray(parsed.sticker?.enabledFields)) {
         return {
-          enabledFields: parsed.sticker.enabledFields,
+          enabledFields: this.requiredStickerFields(),
           layouts: {
             ...DEFAULT_STICKER_LAYOUTS,
             ...parsed.sticker.layouts,
+          },
+          defaults: {
+            ...DEFAULT_STICKER_DEFAULTS,
+            ...parsed.sticker.defaults,
           },
         };
       }
     } catch {
       // Template รุ่นเก่าไม่มี sticker configuration
     }
-    return { enabledFields: ["side"], layouts: DEFAULT_STICKER_LAYOUTS };
+    return {
+      enabledFields: this.requiredStickerFields(),
+      layouts: DEFAULT_STICKER_LAYOUTS,
+      defaults: DEFAULT_STICKER_DEFAULTS,
+    };
   }
 
   private parseFields(
@@ -202,13 +215,13 @@ export class CustomerService {
           return config.tables.flatMap((table, tableIndex) =>
             (table.fields ?? []).map((field, fieldIndex) => ({
               key: String(field.key ?? `outside_${tableIndex + 1}_${fieldIndex + 1}`),
-              label: `${table.name ?? `Outside ${tableIndex + 1}`} — ${field.label ?? `Field ${fieldIndex + 1}`}`,
+              label: `${table.name ?? `นอกกรอบ ${tableIndex + 1}`} — ${field.label ?? `Field ${fieldIndex + 1}`}`,
               type: "text" as const,
               required: Boolean(field.required),
               condition: this.normalizeCondition(field.condition),
               showOnSticker: field.showOnSticker ?? true,
               stickerOrder: field.stickerOrder ?? fieldIndex,
-              stickerGroup: String(table.name ?? `Outside ${tableIndex + 1}`),
+              stickerGroup: String(table.name ?? `นอกกรอบ ${tableIndex + 1}`),
               stickerGroupOrder: tableIndex,
               uppercase: field.uppercase ?? true,
               fontScale: this.normalizeFontScale(field.fontScale),
@@ -277,8 +290,8 @@ export class CustomerService {
     }
   }
 
-  getCustomers() {
-    return this.repository.findAll();
+  getCustomers(includeInactive = false) {
+    return this.repository.findAll(includeInactive);
   }
 
   async renameCustomerIfChanged(customerId: number, name: string | undefined) {
@@ -353,6 +366,10 @@ export class CustomerService {
       layouts: {
         ...currentSticker.layouts,
         ...stickerPatch?.layouts,
+      },
+      defaults: {
+        ...currentSticker.defaults,
+        ...stickerPatch?.defaults,
       },
     };
     return JSON.stringify({

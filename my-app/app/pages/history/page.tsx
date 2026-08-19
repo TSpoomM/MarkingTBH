@@ -133,7 +133,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
       row.productionDate && `Production ${row.productionDate}`,
       row.lotStart && row.lotEnd && `LOT ${row.lotStart}-${row.lotEnd}`,
       row.stickerFormat && `Format ${row.stickerFormat}`,
-      row.stickerType && `Type ${row.stickerType}`,
+      row.stickerType && `เกรด ${row.stickerType}`,
       row.stickerOther && row.stickerOther,
     ].filter(Boolean);
     return parts.join(" / ") || "-";
@@ -325,7 +325,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
                   <dd>{item.stickerFormat || "-"}</dd>
                 </div>
                 <div>
-                  <dt>Type</dt>
+                  <dt>เกรด</dt>
                   <dd>{item.stickerType || "-"}</dd>
                 </div>
                 <div>

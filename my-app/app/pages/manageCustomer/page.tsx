@@ -6,11 +6,10 @@ import Navbar from "@/app/components/Navbar";
 import Toast from "@/app/components/Toast";
 import type { Customer, CustomerTemplate, TemplateField } from "@/app/types/customer";
 import {
+  DEFAULT_STICKER_DEFAULTS,
   type CreateCustomerPayload,
   type InsideGroup,
   type OutsideTable,
-  type StickerField,
-  type StickerLayoutKey,
 } from "@/app/types/customer-form";
 import {
   createSegments,
@@ -63,17 +62,14 @@ const cloneTemplateField = (field: TemplateField): TemplateField => ({
   segments: field.segments?.map((segment) => ({ ...segment })),
 });
 
-const withRequiredStickerFields = (fields: CustomerTemplate["sticker"]["enabledFields"]): StickerField[] => {
-  const nextFields = new Set<StickerField>(fields);
-  nextFields.add("side");
-  nextFields.add("format");
-  return Array.from(nextFields);
-};
+const REQUIRED_STICKER_FIELDS: CustomerTemplate["sticker"]["enabledFields"] = ["side", "format", "type", "other"];
+const withRequiredStickerFields = () => [...REQUIRED_STICKER_FIELDS];
 
 const withRequiredStickerLayouts = (layouts: CustomerFormState["stickerLayouts"]): CustomerFormState["stickerLayouts"] => ({
   ...layouts,
   insideFrame: true,
 });
+const defaultStickerDefaults = () => ({ ...DEFAULT_STICKER_DEFAULTS });
 
 export default class CustomerForm extends Component<Record<string, never>, CustomerFormState> {
   state: CustomerFormState = {
@@ -87,20 +83,22 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     createOutsideDraft: [],
     duplicateSourceCustomerId: "",
     name: "",
-    stickerFields: ["side", "format"],
-    templateStickerFields: ["side", "format"],
+    stickerFields: withRequiredStickerFields(),
+    templateStickerFields: withRequiredStickerFields(),
     stickerLayouts: {
       insideFrame: true,
       outsideFrame: true,
       customerName: false,
       fscLogo: false,
     },
+    stickerDefaults: defaultStickerDefaults(),
     templateStickerLayouts: {
       insideFrame: true,
       outsideFrame: true,
       customerName: false,
       fscLogo: false,
     },
+    templateStickerDefaults: defaultStickerDefaults(),
     duplicateNamePrompt: undefined,
     groups: initialGroups.map((group) => ({
       ...group,
@@ -145,7 +143,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   private loadCustomers = async () => {
     this.setState({ loadingCustomers: true });
     try {
-      const response = await fetch("/api/customers");
+      const response = await fetch("/api/customers?includeInactive=1");
       const result = (await response.json()) as { data?: Customer[]; message?: string };
       if (!response.ok) throw new Error(result.message);
       this.setState({ customers: result.data ?? [] });
@@ -162,19 +160,22 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   };
 
   private selectTemplateCustomer = async (customerId: string) => {
-    const initialName = this.state.customers.find((customer) => String(customer.id) === customerId)?.name ?? "";
+    const selectedCustomer = this.state.customers.find((customer) => String(customer.id) === customerId);
+    if (selectedCustomer?.isActive === false) return;
+    const initialName = selectedCustomer?.name ?? "";
     this.setState({
       selectedCustomerId: customerId,
       templateName: initialName,
       templateInsideDraft: [],
       templateOutsideDraft: [],
-      templateStickerFields: ["side", "format"],
+      templateStickerFields: withRequiredStickerFields(),
       templateStickerLayouts: {
         insideFrame: true,
         outsideFrame: true,
         customerName: false,
         fscLogo: false,
       },
+      templateStickerDefaults: defaultStickerDefaults(),
       templateNotice: undefined,
     });
     if (!customerId) return;
@@ -187,8 +188,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         templateName: result.data.customerName,
         templateInsideDraft: result.data.inside.map((field) => normalizeDraftField("inside", field)),
         templateOutsideDraft: result.data.outside.map((field) => normalizeDraftField("outside", field)),
-        templateStickerFields: withRequiredStickerFields(result.data.sticker.enabledFields),
+        templateStickerFields: withRequiredStickerFields(),
         templateStickerLayouts: withRequiredStickerLayouts(result.data.sticker.layouts),
+        templateStickerDefaults: { ...DEFAULT_STICKER_DEFAULTS, ...result.data.sticker.defaults },
       });
     } catch (error) {
       this.setState({
@@ -248,8 +250,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
             showOnSticker: field.showOnSticker ?? true,
           }),
         ),
-        stickerFields: withRequiredStickerFields(result.data.sticker.enabledFields),
+        stickerFields: withRequiredStickerFields(),
         stickerLayouts: withRequiredStickerLayouts(result.data.sticker.layouts),
+        stickerDefaults: { ...DEFAULT_STICKER_DEFAULTS, ...result.data.sticker.defaults },
         notice: {
           kind: "success",
           text: `คัดลอก Template จาก ${result.data.customerName} แล้ว คุณสามารถแก้ไขได้ก่อนสร้าง Customer ใหม่`,
@@ -330,10 +333,10 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   }
 
   private outsideGroup(fields: TemplateField[], requestedOrder?: number) {
-    if (!fields.length) return { order: 0, name: "Outside 1" };
+    if (!fields.length) return { order: 0, name: "นอกกรอบ 1" };
     const order = requestedOrder ?? Math.max(...fields.map((field) => field.stickerGroupOrder ?? 0));
     const field = [...fields].reverse().find((item) => (item.stickerGroupOrder ?? 0) === order);
-    return { order, name: field?.stickerGroup ?? `Outside ${order + 1}` };
+    return { order, name: field?.stickerGroup ?? `นอกกรอบ ${order + 1}` };
   }
 
   private nextOutsideGroupOrder(fields: TemplateField[]) {
@@ -351,7 +354,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           type: "text",
           required: true,
           showOnSticker: true,
-          stickerGroup: `Outside ${tableOrder + 1}`,
+          stickerGroup: `นอกกรอบ ${tableOrder + 1}`,
           stickerGroupOrder: tableOrder,
           uppercase: true,
         },
@@ -370,7 +373,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           type: "text",
           required: true,
           showOnSticker: true,
-          stickerGroup: `Outside ${tableOrder + 1}`,
+          stickerGroup: `นอกกรอบ ${tableOrder + 1}`,
           stickerGroupOrder: tableOrder,
           uppercase: true,
         },
@@ -577,8 +580,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           inside,
           outside,
           sticker: {
-            enabledFields: withRequiredStickerFields(this.state.templateStickerFields),
+            enabledFields: withRequiredStickerFields(),
             layouts: withRequiredStickerLayouts(this.state.templateStickerLayouts),
+            defaults: this.state.templateStickerDefaults,
           },
         }),
       });
@@ -608,16 +612,16 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     await this.selectTemplateCustomer(this.state.selectedCustomerId);
   };
 
-  private changeStickerFields = (nextFields: StickerField[]) => {
-    this.setState({ stickerFields: nextFields });
-  };
-
-  private changeTemplateStickerFields = (nextFields: StickerField[]) => {
-    this.setState({ templateStickerFields: nextFields });
-  };
-
   private changeTemplateName = (name: string) => {
     this.setState({ templateName: name });
+  };
+
+  private changeStickerDefaults = (stickerDefaults: CustomerFormState["stickerDefaults"]) => {
+    this.setState({ stickerDefaults });
+  };
+
+  private changeTemplateStickerDefaults = (templateStickerDefaults: CustomerFormState["templateStickerDefaults"]) => {
+    this.setState({ templateStickerDefaults });
   };
 
   private dismissNotice = () => {
@@ -626,26 +630,6 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
 
   private dismissTemplateNotice = () => {
     this.setState({ templateNotice: undefined });
-  };
-
-  private toggleStickerLayout = (layout: StickerLayoutKey) => {
-    if (layout === "insideFrame") return;
-    this.setState((current) => ({
-      stickerLayouts: {
-        ...current.stickerLayouts,
-        [layout]: !current.stickerLayouts[layout],
-      },
-    }));
-  };
-
-  private toggleTemplateStickerLayout = (layout: StickerLayoutKey) => {
-    if (layout === "insideFrame") return;
-    this.setState((current) => ({
-      templateStickerLayouts: {
-        ...current.templateStickerLayouts,
-        [layout]: !current.templateStickerLayouts[layout],
-      },
-    }));
   };
 
   private changeSegmentCount = (groupKey: InsideGroup["key"], count: number) => {
@@ -703,13 +687,14 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       createOutsideDraft: [],
       duplicateSourceCustomerId: "",
       duplicateNamePrompt: undefined,
-      stickerFields: ["side", "format"],
+      stickerFields: withRequiredStickerFields(),
       stickerLayouts: {
         insideFrame: true,
         outsideFrame: true,
         customerName: false,
         fscLogo: false,
       },
+      stickerDefaults: defaultStickerDefaults(),
       notice,
     });
   };
@@ -742,16 +727,18 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       configuration: {
         version: 2,
         sticker: {
-          enabledFields: withRequiredStickerFields(this.state.stickerFields),
+          enabledFields: withRequiredStickerFields(),
           layouts: withRequiredStickerLayouts(this.state.stickerLayouts),
+          defaults: this.state.stickerDefaults,
         },
         inside: { groups: this.state.groups, fields: [...fixedInsideFields] },
         outside: { tables: this.state.tables },
       },
       template: {
         sticker: {
-          enabledFields: withRequiredStickerFields(this.state.stickerFields),
+          enabledFields: withRequiredStickerFields(),
           layouts: withRequiredStickerLayouts(this.state.stickerLayouts),
+          defaults: this.state.stickerDefaults,
         },
         inside,
         outside,
@@ -802,8 +789,9 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           inside,
           outside,
           sticker: {
-            enabledFields: withRequiredStickerFields(this.state.stickerFields),
+            enabledFields: withRequiredStickerFields(),
             layouts: withRequiredStickerLayouts(this.state.stickerLayouts),
+            defaults: this.state.stickerDefaults,
           },
         }),
       });
@@ -871,8 +859,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   name={this.state.templateName}
                   insideDraft={this.state.templateInsideDraft}
                   outsideDraft={this.state.templateOutsideDraft}
-                  stickerFields={this.state.templateStickerFields}
                   stickerLayouts={this.state.templateStickerLayouts}
+                  stickerDefaults={this.state.templateStickerDefaults}
                   notice={this.state.templateNotice}
                   loadingCustomers={this.state.loadingCustomers}
                   loadingTemplate={this.state.loadingTemplate}
@@ -882,8 +870,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   onNameChange={this.changeTemplateName}
                   onSave={() => void this.saveExistingTemplate()}
                   onCancel={() => void this.cancelTemplateEdit()}
-                  onStickerFieldsChange={this.changeTemplateStickerFields}
-                  onToggleLayout={this.toggleTemplateStickerLayout}
+                  onStickerDefaultsChange={this.changeTemplateStickerDefaults}
                   onSelectPreviewSlot={this.setPreviewSlot}
                   onChangeField={this.changeTemplateDraft}
                   onAddField={this.addTemplateField}
@@ -900,8 +887,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   customers={this.state.customers}
                   name={this.state.name}
                   duplicateSourceCustomerId={this.state.duplicateSourceCustomerId}
-                  stickerFields={this.state.stickerFields}
                   stickerLayouts={this.state.stickerLayouts}
+                  stickerDefaults={this.state.stickerDefaults}
                   groups={this.state.groups}
                   tables={this.state.tables}
                   fixedInsideFields={fixedInsideFields}
@@ -915,8 +902,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   onSubmit={this.submit}
                   onNameChange={(name) => this.setState({ name })}
                   onDuplicateSourceChange={(customerId) => void this.duplicateTemplateToCreateDraft(customerId)}
-                  onStickerFieldsChange={this.changeStickerFields}
-                  onToggleLayout={this.toggleStickerLayout}
+                  onStickerDefaultsChange={this.changeStickerDefaults}
                   onSegmentCountChange={this.changeSegmentCount}
                   onGroupSegmentChange={this.updateGroupSegment}
                   onTablesChange={this.updateTables}
@@ -937,26 +923,37 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         </main>
         <Modal
           open={!!this.state.duplicateNamePrompt}
-          title="ชื่อ Customer นี้มีอยู่แล้ว"
-          subtitle={`มีลูกค้าชื่อ "${this.state.duplicateNamePrompt?.name ?? ""}" อยู่ในระบบแล้ว ต้องการแทนที่ Template เดิม หรือเปลี่ยนชื่อ`}
+          title="มี template นี้อยู่แล้ว"
+          subtitle={``}
           onClose={this.dismissDuplicatePrompt}
           footer={(
-            <>
-              <Button type="button" onClick={this.dismissDuplicatePrompt}>
+            <div className="duplicate-template-actions">
+              <Button type="button" className="duplicate-template-secondary" onClick={this.dismissDuplicatePrompt}>
                 เปลี่ยนชื่อ
               </Button>
               <Button
                 type="button"
+                className="duplicate-template-primary"
                 onClick={() => void this.replaceDuplicateCustomer()}
                 loading={this.state.saving}
                 loadingText="กำลังแทนที่..."
               >
                 แทนที่ Template เดิม
               </Button>
-            </>
+            </div>
           )}
         >
-          <p>กด &quot;เปลี่ยนชื่อ&quot; เพื่อกลับไปแก้ชื่อ Customer หรือกด &quot;แทนที่ Template เดิม&quot; เพื่อบันทึกทับ Template ของลูกค้ารายนี้</p>
+          <div className="duplicate-template-alert">
+            <div className="duplicate-template-icon" aria-hidden="true">!</div>
+            <div className="duplicate-template-copy">
+              <span className="duplicate-template-eyebrow">พบชื่อซ้ำในระบบ</span>
+              <strong>{this.state.duplicateNamePrompt?.name ?? ""}</strong>
+              <div className="duplicate-template-note">
+                <b>แนะนำ:</b>
+                <span>เลือก “เปลี่ยนชื่อ” ถ้านี่เป็น Customer คนละราย หรือ คนละ template</span>
+              </div>
+            </div>
+          </div>
         </Modal>
       </div>
     );

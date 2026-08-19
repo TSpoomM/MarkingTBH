@@ -78,22 +78,25 @@ export default class StickerTemplatePreview extends Component<
   }
 
   render() {
-    const { customerName, insideFields, outsideFields, layouts } = this.props;
+    const { customerName, insideFields, outsideFields, layouts, defaults } = this.props;
+    const activeOutsideFields = outsideFields.filter((field) =>
+      StickerFactory.matchesCondition(field, defaults.stickerType, defaults.stickerOther),
+    );
     const { previewOpen, previewMode, previewGroup } = this.state;
     const previewItems = this.previewItems(StickerFactory.build({
       customerName,
-      format: "555",
-      sideCount: 1,
+      format: defaults.format,
+      sideCount: defaults.sideCount,
       lotCount: 1,
       lotStart: 0,
       productionDate: "xxx",
-      stickerType: "TNR",
-      stickerFsc: false,
+      stickerType: defaults.stickerType,
+      stickerFsc: defaults.stickerFsc,
       layouts,
       insideFields,
-      outsideFields,
+      outsideFields: activeOutsideFields,
       insideRow: this.mockRow(insideFields),
-      outsideRow: this.mockRow(outsideFields),
+      outsideRow: this.mockRow(activeOutsideFields),
     }));
     const previewModes = this.previewModes(previewItems);
     const activeMode = previewModes.includes(previewMode) ? previewMode : this.firstPreviewMode(previewItems);

@@ -1,10 +1,9 @@
-import type { Customer, TemplateField } from "@/app/types/customer";
+import type { Customer, StickerDefaults, TemplateField } from "@/app/types/customer";
 import type {
   FixedInsideField,
   InsideGroup,
   OutsideTable,
   StickerField,
-  StickerLayoutKey,
   StickerLayouts,
 } from "@/app/types/customer-form";
 import type { FormEvent, ReactNode } from "react";
@@ -39,6 +38,8 @@ export interface CustomerFormState {
   templateStickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
   templateStickerLayouts: StickerLayouts;
+  stickerDefaults: StickerDefaults;
+  templateStickerDefaults: StickerDefaults;
   groups: InsideGroup[];
   tables: OutsideTable[];
   notice: CustomerFormNotice | undefined;
@@ -57,8 +58,8 @@ export interface CreateCustomerFormProps {
   customers: Customer[];
   name: string;
   duplicateSourceCustomerId: string;
-  stickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
+  stickerDefaults: StickerDefaults;
   groups: InsideGroup[];
   tables: OutsideTable[];
   fixedInsideFields: readonly FixedInsideField[];
@@ -72,8 +73,7 @@ export interface CreateCustomerFormProps {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onNameChange: (name: string) => void;
   onDuplicateSourceChange: (customerId: string) => void;
-  onStickerFieldsChange: (fields: StickerField[]) => void;
-  onToggleLayout: (layout: StickerLayoutKey) => void;
+  onStickerDefaultsChange: (defaults: StickerDefaults) => void;
   onSegmentCountChange: (groupKey: InsideGroup["key"], count: number) => void;
   onGroupSegmentChange: (groupKey: InsideGroup["key"], segmentIndex: number, label: string) => void;
   onTablesChange: (updater: (tables: OutsideTable[]) => OutsideTable[]) => void;
@@ -95,8 +95,8 @@ export interface EditCustomerTemplateProps {
   name: string;
   insideDraft: TemplateField[];
   outsideDraft: TemplateField[];
-  stickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
+  stickerDefaults: StickerDefaults;
   notice: CustomerFormNotice | undefined;
   loadingCustomers: boolean;
   loadingTemplate: boolean;
@@ -106,8 +106,7 @@ export interface EditCustomerTemplateProps {
   onNameChange: (name: string) => void;
   onSave: () => void;
   onCancel: () => void;
-  onStickerFieldsChange: (fields: StickerField[]) => void;
-  onToggleLayout: (layout: StickerLayoutKey) => void;
+  onStickerDefaultsChange: (defaults: StickerDefaults) => void;
   onSelectPreviewSlot: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
@@ -163,6 +162,7 @@ export interface StickerTemplatePreviewProps {
   insideFields: TemplateField[];
   outsideFields: TemplateField[];
   layouts: StickerLayouts;
+  defaults: StickerDefaults;
   onSelect: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
 }
 

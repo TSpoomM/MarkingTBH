@@ -31,6 +31,12 @@ export const INITIAL_MARKING_STATE: MarkingState = {
   stickerType: "",
   stickerFsc: false,
   stickerOther: "",
+  printSections: {
+    insideFrame: true,
+    outsideFrame: true,
+    customerName: false,
+    fscLogo: true,
+  },
   lotCount: "1",
   lotStart: 1,
   productionDate: "",
@@ -41,6 +47,7 @@ export const INITIAL_MARKING_STATE: MarkingState = {
   isAdmin: false,
   isLoading: true,
   isSaving: false,
+  isExportModalOpen: false,
   isTemplateEditorOpen: false,
   notice: null,
 };

@@ -29,11 +29,11 @@ export default class ConditionSelector extends Component<ConditionSelectorProps>
           value={value?.stickerType ?? ""}
           disabled={disabled}
           onChange={(event) => this.setType(event.target.value)}
-          aria-label="เงื่อนไข Type"
+          aria-label="เงื่อนไขเกรด"
         >
-          <option value="">ทุก Type</option>
-          <option value="TNR">Type = TNR</option>
-          <option value="NON TNR">Type = NON TNR</option>
+          <option value="">ทุกเกรด</option>
+          <option value="TNR">เกรด = TNR</option>
+          <option value="NON TNR">เกรด = NON TNR</option>
         </Select>
         <Select
           bare

@@ -2,6 +2,9 @@ import { Customer, CustomerTemplate, TemplateField } from "./customer";
 
 export type MarkingContent = Record<string, string>;
 export type Notice = { type: "error" | "success"; text: string };
+export type PrintSection = "insideFrame" | "outsideFrame" | "customerName" | "fscLogo";
+
+export type PrintSections = Record<PrintSection, boolean>;
 
 export interface MarkingState {
   customers: Customer[];
@@ -13,6 +16,7 @@ export interface MarkingState {
   stickerType: string;
   stickerFsc: boolean;
   stickerOther: string;
+  printSections: PrintSections;
   lotCount: string;
   lotStart: number;
   productionDate: string;
@@ -23,6 +27,7 @@ export interface MarkingState {
   isAdmin: boolean;
   isLoading: boolean;
   isSaving: boolean;
+  isExportModalOpen: boolean;
   isTemplateEditorOpen: boolean;
   notice: Notice | null;
 }

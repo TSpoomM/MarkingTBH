@@ -18,7 +18,7 @@ export default class TableSection extends Component<TableSectionProps> {
 
   private conditionText(field: TemplateField) {
     return [
-      field.condition?.stickerType && `Type = ${field.condition.stickerType}`,
+      field.condition?.stickerType && `เกรด = ${field.condition.stickerType}`,
       field.condition?.stickerOther && `Other = ${field.condition.stickerOther}`,
     ].filter(Boolean).join(", ");
   }

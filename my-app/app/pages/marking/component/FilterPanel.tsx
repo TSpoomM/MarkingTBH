@@ -1,26 +1,14 @@
 "use client";
 
-import {
-  STICKER_FORMAT_OPTIONS,
-  STICKER_OTHER_OPTIONS,
-  STICKER_SIDE_OPTIONS,
-  STICKER_TYPE_OPTIONS,
-} from "@/app/types/constants";
 import Toast from "@/app/components/Toast";
 import Card from "@/app/components/Card";
 import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
 import MarkingComponent from "./MarkingComponent";
 import SectionTitle from "./SectionTitle";
-import StickerFactory from "./StickerFactory";
 
 export default class FilterPanel extends MarkingComponent {
   render() {
-    const enabledFields = this.state.template?.sticker.enabledFields ?? [];
-    const outsideFields = this.state.template?.outside ?? [];
-    const needsType = enabledFields.includes("type") || StickerFactory.needsStickerType(outsideFields);
-    const needsOther = enabledFields.includes("other") || StickerFactory.needsStickerOther(outsideFields);
-
     return (
       <main className="container">
         {this.state.notice && (
@@ -34,22 +22,17 @@ export default class FilterPanel extends MarkingComponent {
           <SectionTitle
             number="1"
             title="รายละเอียดสติ๊กเกอร์"
-            subtitle="ช่องกรอกจะแสดงตามรูปแบบสติ๊กเกอร์ที่ Admin กำหนดให้ลูกค้า"
+            subtitle="เลือก Template และกรอกข้อมูลการผลิต ส่วนค่า Sticker ถูกกำหนดโดย Admin"
           />
-          {/* <div className="workflow-strip" aria-label="ลำดับการใช้งาน">
-            <span className={this.state.customerId ? "done" : "active"}>1. เลือกลูกค้า</span>
-            <span className={this.state.template ? "done" : ""}>2. กรอกรายละเอียด</span>
-            <span className={this.state.template ? "active" : ""}>3. บันทึกหรือส่งออก PDF</span>
-          </div> */}
           <div className="detail-grid">
             <Select
-              label="ลูกค้า"
+              label="Template"
               hint={this.state.template ? `สติ๊กเกอร์นอกกรอบมี ${this.state.template.outside.length} ช่องข้อมูล` : undefined}
               value={this.state.customerId}
               onChange={(event) => void this.actions.selectCustomer(event.target.value)}
               disabled={this.state.isLoading}
             >
-              <option value="">{this.state.isLoading ? "กำลังโหลดลูกค้า..." : "เลือกลูกค้า"}</option>
+              <option value="">{this.state.isLoading ? "กำลังโหลด Template..." : "เลือก Template"}</option>
               {this.state.customers.map((customer) => (
                 <option value={customer.id} key={customer.id}>{customer.name}</option>
               ))}
@@ -68,46 +51,6 @@ export default class FilterPanel extends MarkingComponent {
               value={this.state.lotCount}
               onChange={(event) => this.actions.setLotCount(event.target.value)}
             />
-            {this.state.template && (
-              <Select label="จำนวนด้าน sticker / 1 ลัง *" value={this.state.stickerSides} onChange={(event) => this.actions.setStickerSides(event.target.value)}>
-                <option value="">เลือก Side</option>
-                {STICKER_SIDE_OPTIONS.map((side) => <option value={side} key={side}>{side} ด้าน</option>)}
-              </Select>
-            )}
-            {this.state.template && (
-              <Select label="Format *" hint="จำนวน Pallet ในแต่ละ Lot" value={this.state.stickerFormat} onChange={(event) => this.actions.setStickerFormat(event.target.value)}>
-                <option value="">เลือก Format</option>
-                {STICKER_FORMAT_OPTIONS.map((format) => <option value={format} key={format}>{format === "5533" ? "5533 — [5, 5, 3, 3]" : "555 — [5, 5, 5]"}</option>)}
-              </Select>
-            )}
-            {needsType && (
-              <Select label="เป็น TNR หรือไม่ *" value={this.state.stickerType} onChange={(event) => this.actions.setStickerType(event.target.value)}>
-                <option value="">เลือกเกรด</option>
-                {STICKER_TYPE_OPTIONS.map((type) => <option value={type} key={type}>{type}</option>)}
-              </Select>
-            )}
-            {this.state.stickerType === "TNR" && (
-              <div className="field fsc-toggle-field">
-                <span>FSC</span>
-                <label className="fsc-toggle">
-                  <Input
-                    bare
-                    type="checkbox"
-                    checked={this.state.stickerFsc}
-                    onChange={(event) => this.actions.setStickerFsc(event.target.checked)}
-                  />
-                  <span className="fsc-toggle-track" aria-hidden="true" />
-                  <b>{this.state.stickerFsc ? "เป็น FSC" : "ไม่เป็น FSC"}</b>
-                </label>
-                <small className="field-hint">ติ๊กเมื่อต้องพิมพ์สติ๊กเกอร์ FSC</small>
-              </div>
-            )}
-            {needsOther && (
-              <Select label="Other *" value={this.state.stickerOther} onChange={(event) => this.actions.setStickerOther(event.target.value)}>
-                <option value="">เลือก Other</option>
-                {STICKER_OTHER_OPTIONS.map((other) => <option value={other} key={other}>{other}</option>)}
-              </Select>
-            )}
           </div>
         </Card>
       </main>

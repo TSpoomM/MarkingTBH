@@ -7,11 +7,25 @@ export const runtime = "nodejs";
 const stickerTypeConditionSchema = z.enum(["TNR", "NON TNR", "NON-TNR", "FCS"])
   .transform((value) => value === "NON-TNR" ? "NON TNR" : value === "FCS" ? "TNR" : value);
 
-export async function GET() {
+const isActiveValue = (value: number | string | boolean | null | undefined) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") return !["0", "false", "inactive", "disabled", "n", "no"].includes(value.trim().toLowerCase());
+  return true;
+};
+
+export async function GET(request: Request) {
   try {
-    const rows = await customerService.getCustomers();
+    const includeInactive = new URL(request.url).searchParams.get("includeInactive") === "1";
+    if (includeInactive) {
+      const access = await adminAuthService.requireAdmin(request);
+      if (!access.isAdmin) {
+        return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
+      }
+    }
+    const rows = await customerService.getCustomers(includeInactive);
     return Response.json({
-      data: rows.map((row) => ({ id: row.c_id, name: row.c_name })),
+      data: rows.map((row) => ({ id: row.c_id, name: row.c_name, isActive: isActiveValue(row.is_active) })),
     });
   } catch (error) {
     console.error("GET /api/customers", error);
@@ -95,6 +109,13 @@ const createCustomerSchema = z.object({
       }).refine((layouts) => (
         layouts.insideFrame || layouts.outsideFrame || layouts.customerName || layouts.fscLogo
       ), "เลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ"),
+      defaults: z.object({
+        sideCount: z.number().int().min(1).max(6),
+        format: z.enum(["5533", "555"]),
+        stickerType: z.enum(["TNR", "NON TNR"]),
+        stickerOther: z.enum(["Dome", "Inter"]),
+        stickerFsc: z.boolean(),
+      }),
     }),
     inside: z.object({
       groups: z.array(z.object({
@@ -112,7 +133,7 @@ const createCustomerSchema = z.object({
     outside: z.object({
       tables: z.array(z.object({
         id: z.string().min(1),
-        name: z.string().trim().min(1, "กรุณาระบุชื่อ Outside table"),
+        name: z.string().trim().min(1, "กรุณาระบุชื่อตารางนอกกรอบ"),
         fields: z.array(outsideFieldSchema),
       })),
     }),
@@ -129,6 +150,13 @@ const createCustomerSchema = z.object({
       }).refine((layouts) => (
         layouts.insideFrame || layouts.outsideFrame || layouts.customerName || layouts.fscLogo
       ), "เลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ"),
+      defaults: z.object({
+        sideCount: z.number().int().min(1).max(6),
+        format: z.enum(["5533", "555"]),
+        stickerType: z.enum(["TNR", "NON TNR"]),
+        stickerOther: z.enum(["Dome", "Inter"]),
+        stickerFsc: z.boolean(),
+      }),
     }),
     inside: z.array(templateFieldSchema),
     outside: z.array(templateFieldSchema),
@@ -144,10 +172,12 @@ export async function POST(request: Request) {
     const input = createCustomerSchema.parse(await request.json());
     if (
       !input.configuration.sticker.enabledFields.includes("side") ||
-      !input.configuration.sticker.enabledFields.includes("format")
+      !input.configuration.sticker.enabledFields.includes("format") ||
+      !input.configuration.sticker.enabledFields.includes("type") ||
+      !input.configuration.sticker.enabledFields.includes("other")
     ) {
       return Response.json(
-        { message: "ต้องเปิด Side และ Format เพื่อคำนวณจำนวนสติ๊กเกอร์" },
+        { message: "ต้องเปิด Side, Format, เกรด และ Other เพื่อคำนวณจำนวนสติ๊กเกอร์" },
         { status: 400 },
       );
     }

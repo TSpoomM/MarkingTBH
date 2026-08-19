@@ -193,7 +193,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                   </span>
                   <Input
                     bare
-                    value={field.stickerGroup ?? `Outside ${tableOrder + 1}`}
+                    value={field.stickerGroup ?? `นอกกรอบ ${tableOrder + 1}`}
                     onChange={(event) => onRenameTable?.(tableOrder, event.target.value)}
                   />
                   <Button type="button" onClick={() => onRemoveTable?.(tableOrder)}>
@@ -250,27 +250,25 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       </label>
                     )}
                     {section === "outside" && (
-                    <label className="required-toggle">
-                      <Input
-                        bare
-                        type="checkbox"
-                        checked={field.hideLabel !== true}
-                        onChange={(event) => onChange(section, index, { hideLabel: !event.target.checked })}
-                      />
-                      <span>พิมพ์ชื่อ Field บนสติ๊กเกอร์</span>
-                    </label>
+                      <label className="required-toggle">
+                        <Input
+                          bare
+                          type="checkbox"
+                          checked={field.hideLabel !== true}
+                          onChange={(event) => onChange(section, index, { hideLabel: !event.target.checked })}
+                        />
+                        <span>พิมพ์แค่ชื่อ Field</span>
+                      </label>
                     )}
                     {section === "outside" && (
-                      <label className="field-font-scale">
-                        <span>ขนาดตัวอักษรบนสติ๊กเกอร์</span>
-                        <Select
+                      <label className="required-toggle field-font-scale">
+                        <Input
                           bare
-                          value={field.fontScale ?? "normal"}
-                          onChange={(event) => onChange(section, index, { fontScale: event.target.value as TemplateField["fontScale"] })}
-                        >
-                          <option value="normal">ปกติ</option>
-                          <option value="xlarge">ใหญ่พิเศษ</option>
-                        </Select>
+                          type="checkbox"
+                          checked={field.fontScale === "xlarge"}
+                          onChange={(event) => onChange(section, index, { fontScale: event.target.checked ? "xlarge" : "normal" })}
+                        />
+                        <span>ขนาดใหญ่พิเศษ</span>
                       </label>
                     )}
                     {section === "outside" && (

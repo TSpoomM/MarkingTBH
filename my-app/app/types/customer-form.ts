@@ -1,4 +1,4 @@
-import type { CustomerTemplate, TemplateField } from "./customer";
+import type { CustomerTemplate, StickerDefaults, TemplateField } from "./customer";
 
 export const STICKER_FORMATS = {
   "5533": [5, 5, 3, 3],
@@ -21,6 +21,14 @@ export const DEFAULT_STICKER_LAYOUTS: StickerLayouts = {
   outsideFrame: true,
   customerName: false,
   fscLogo: false,
+};
+
+export const DEFAULT_STICKER_DEFAULTS: StickerDefaults = {
+  sideCount: 1,
+  format: "555",
+  stickerType: "TNR",
+  stickerOther: "Dome",
+  stickerFsc: false,
 };
 
 export interface SegmentDefinition {
@@ -70,6 +78,7 @@ export interface CustomerConfiguration {
   sticker: {
     enabledFields: StickerField[];
     layouts: StickerLayouts;
+    defaults: StickerDefaults;
   };
   inside: {
     groups: InsideGroup[];

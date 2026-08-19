@@ -79,7 +79,7 @@ export default class TemplateFieldUtils {
   static conditionText(condition: FieldCondition) {
     if (!condition?.stickerType && !condition?.stickerOther) return "ทุกกรณี";
     return [
-      condition.stickerType && `Type = ${condition.stickerType}`,
+      condition.stickerType && `เกรด = ${condition.stickerType}`,
       condition.stickerOther && `Other = ${condition.stickerOther}`,
     ].filter(Boolean).join(", ");
   }
