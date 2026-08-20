@@ -24,6 +24,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       customers,
       selectedCustomerId,
       name,
+      isActive,
       insideDraft,
       outsideDraft,
       stickerLayouts,
@@ -35,6 +36,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       onDismissNotice,
       onSelectCustomer,
       onNameChange,
+      onActiveChange,
       onSave,
       onCancel,
       onStickerDefaultsChange,
@@ -77,7 +79,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
               {loadingCustomers ? "กำลังโหลดลูกค้า..." : "เลือก Template ที่ต้องการแก้ไข"}
             </option>
             {customers.map((customer) => (
-              <option value={customer.id} key={customer.id} disabled={customer.isActive === false}>
+              <option value={customer.id} key={customer.id}>
                 {this.templateOptionLabel(customer)}
               </option>
             ))}
@@ -92,15 +94,30 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
         {loadingTemplate && <div className="outside-empty"><strong>กำลังโหลด Template...</strong></div>}
         {selectedCustomerId && !loadingTemplate && (
           <>
-            <label className="customer-name">
-              <span>ชื่อ Customer *</span>
-              <Input
-                bare
-                value={name}
-                onChange={(event) => onNameChange(event.target.value.toUpperCase())}
-                placeholder="ABC Rubber Co., Ltd."
-              />
-            </label>
+            <div className="template-name-status-row">
+              <label className="customer-name">
+                <span>ชื่อ Customer *</span>
+                <Input
+                  bare
+                  value={name}
+                  onChange={(event) => onNameChange(event.target.value.toUpperCase())}
+                  placeholder="ABC Rubber Co., Ltd."
+                />
+              </label>
+              <div className="template-status-field">
+                <span className="template-status-caption">Status</span>
+                <button
+                  type="button"
+                  className={`template-status-toggle ${isActive ? "active" : "inactive"}`}
+                  onClick={() => onActiveChange(!isActive)}
+                  aria-pressed={isActive}
+                >
+                  <span className="template-status-option">Inactive</span>
+                  <i aria-hidden="true" />
+                  <span className="template-status-option">Active</span>
+                </button>
+              </div>
+            </div>
             <div className="template-workbench-summary">
               <div>
                 <span>ในกรอบ</span>

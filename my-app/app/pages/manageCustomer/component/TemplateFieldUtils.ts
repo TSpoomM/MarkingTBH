@@ -1,5 +1,5 @@
 import type { CounterType, TemplateField } from "@/app/types/customer";
-import type { FieldCondition, StickerSelectableField } from "@/app/types/manage-customer";
+import type { StickerSelectableField } from "@/app/types/manage-customer";
 
 export default class TemplateFieldUtils {
   static uid() {
@@ -70,18 +70,6 @@ export default class TemplateFieldUtils {
         showOnSticker: segment.isCounter ? true : segment.showOnSticker,
       })),
     };
-  }
-
-  static cleanCondition(condition: FieldCondition) {
-    return condition?.stickerType || condition?.stickerOther ? condition : undefined;
-  }
-
-  static conditionText(condition: FieldCondition) {
-    if (!condition?.stickerType && !condition?.stickerOther) return "ทุกกรณี";
-    return [
-      condition.stickerType && `เกรด = ${condition.stickerType}`,
-      condition.stickerOther && `Other = ${condition.stickerOther}`,
-    ].filter(Boolean).join(", ");
   }
 
   static stickerSelectableFields(fields: TemplateField[]): StickerSelectableField[] {

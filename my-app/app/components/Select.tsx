@@ -4,7 +4,11 @@ import type { SelectProps } from "@/app/types/ui";
 export default class Select extends Component<SelectProps> {
   render() {
     const { label, hint, children, bare = false, required, className = "", ...props } = this.props;
-    const control = <select required={required} className={`app-control app-select ${className}`.trim()} {...props}>{children}</select>;
+    const control = (
+      <div className="app-select-wrap">
+        <select required={required} className={`app-control app-select ${className}`.trim()} {...props}>{children}</select>
+      </div>
+    );
     if (bare || !label) return control;
     return (
       <label className="field">

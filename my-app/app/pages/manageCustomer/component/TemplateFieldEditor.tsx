@@ -2,7 +2,6 @@ import { Component, type DragEvent } from "react";
 import Button from "@/app/components/Button";
 import Input from "@/app/components/Input";
 import Select from "@/app/components/Select";
-import ConditionSelector from "./ConditionSelector";
 import TemplateFieldUtils from "./TemplateFieldUtils";
 import type { CounterType, TemplateField } from "@/app/types/customer";
 import type { TemplateFieldEditorProps } from "@/app/types/manage-customer";
@@ -228,6 +227,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                 <span className={`editor-field-summary-label ${field.label.trim() ? "" : "is-empty"}`}>
                   {field.label.trim() || "(ยังไม่ตั้งชื่อ Field)"}
                 </span>
+                {field.locked && <span className="field-lock-icon" title="Locked" aria-label="Locked" />}
                 <span className="editor-field-toggle" aria-hidden="true">{isExpanded ? "ซ่อน" : "แก้ไข"}</span>
               </div>
               {isExpanded && (
@@ -238,6 +238,17 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       <span>ชื่อ Field</span>
                       <Input bare value={field.label} onChange={(event) => onChange(section, index, { label: event.target.value })} />
                     </label>
+                    {!field.segments?.length && (
+                      <label className="required-toggle field-lock-toggle">
+                        <Input
+                          bare
+                          type="checkbox"
+                          checked={field.locked === true}
+                          onChange={(event) => onChange(section, index, { locked: event.target.checked })}
+                        />
+                        <span>Lock</span>
+                      </label>
+                    )}
                     {section === "outside" && (
                       <label className="required-toggle">
                         <Input
@@ -270,12 +281,6 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         />
                         <span>ขนาดใหญ่พิเศษ</span>
                       </label>
-                    )}
-                    {section === "outside" && (
-                      <ConditionSelector
-                        value={field.condition}
-                        onChange={(condition) => onChange(section, index, { condition })}
-                      />
                     )}
                     <Button className="delete-field" onClick={() => onRemove(section, index)}>ลบ</Button>
                   </article>

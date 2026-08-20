@@ -33,6 +33,7 @@ const fieldSchema = z.object({
   required: z.boolean(),
   placeholder: z.string().optional(),
   defaultValue: z.string().optional(),
+  locked: z.boolean().optional(),
   displayFormat: z.string().optional(),
   segments: z.array(z.object({
     key: z.string().trim().min(1),
@@ -60,6 +61,7 @@ const fieldSchema = z.object({
 
 const updateSchema = z.object({
   name: z.string().trim().min(1, "กรุณากรอกชื่อลูกค้า").max(200).optional(),
+  isActive: z.boolean().optional(),
   inside: z.array(fieldSchema),
   outside: z.array(fieldSchema),
   sticker: z.object({
@@ -99,6 +101,7 @@ export async function PUT(
     }
     const input = updateSchema.parse(await request.json());
     await customerService.renameCustomerIfChanged(customerId, input.name);
+    await customerService.updateCustomerActiveIfChanged(customerId, input.isActive);
     const data = await customerService.saveTemplate(
       customerId,
       input.inside,

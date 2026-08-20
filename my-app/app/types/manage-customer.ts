@@ -10,7 +10,6 @@ import type { FormEvent, ReactNode } from "react";
 
 export type CustomerFormNotice = { kind: "error" | "success"; text: string };
 export type CustomerManageMode = "edit" | "create";
-export type FieldCondition = TemplateField["condition"];
 
 export type StickerSelectableField = {
   key: string;
@@ -34,6 +33,8 @@ export interface CustomerFormState {
   createOutsideDraft: TemplateField[];
   duplicateSourceCustomerId: string;
   name: string;
+  isActive: boolean;
+  templateIsActive: boolean;
   stickerFields: StickerField[];
   templateStickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
@@ -57,6 +58,7 @@ export interface CustomerFormState {
 export interface CreateCustomerFormProps {
   customers: Customer[];
   name: string;
+  isActive: boolean;
   duplicateSourceCustomerId: string;
   stickerLayouts: StickerLayouts;
   stickerDefaults: StickerDefaults;
@@ -72,6 +74,7 @@ export interface CreateCustomerFormProps {
   onDismissNotice: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onNameChange: (name: string) => void;
+  onActiveChange: (isActive: boolean) => void;
   onDuplicateSourceChange: (customerId: string) => void;
   onStickerDefaultsChange: (defaults: StickerDefaults) => void;
   onSegmentCountChange: (groupKey: InsideGroup["key"], count: number) => void;
@@ -93,6 +96,7 @@ export interface EditCustomerTemplateProps {
   customers: Customer[];
   selectedCustomerId: string;
   name: string;
+  isActive: boolean;
   insideDraft: TemplateField[];
   outsideDraft: TemplateField[];
   stickerLayouts: StickerLayouts;
@@ -104,6 +108,7 @@ export interface EditCustomerTemplateProps {
   onDismissNotice: () => void;
   onSelectCustomer: (customerId: string) => void;
   onNameChange: (name: string) => void;
+  onActiveChange: (isActive: boolean) => void;
   onSave: () => void;
   onCancel: () => void;
   onStickerDefaultsChange: (defaults: StickerDefaults) => void;
@@ -135,12 +140,6 @@ export interface ChoiceProps {
   description?: string;
   checked: boolean;
   onChange: () => void;
-}
-
-export interface ConditionSelectorProps {
-  value: FieldCondition;
-  disabled?: boolean;
-  onChange: (condition: FieldCondition) => void;
 }
 
 export interface TemplateFieldEditorProps {

@@ -107,6 +107,7 @@ export class CustomerService {
           enabledFields?: Array<"side" | "format" | "type" | "other">;
           layouts?: Partial<CustomerTemplate["sticker"]["layouts"]>;
           defaults?: Partial<CustomerTemplate["sticker"]["defaults"]>;
+          isActive?: boolean;
         };
       };
       if (Array.isArray(parsed.sticker?.enabledFields)) {
@@ -120,6 +121,7 @@ export class CustomerService {
             ...DEFAULT_STICKER_DEFAULTS,
             ...parsed.sticker.defaults,
           },
+          isActive: parsed.sticker.isActive,
         };
       }
     } catch {
@@ -129,6 +131,7 @@ export class CustomerService {
       enabledFields: this.requiredStickerFields(),
       layouts: DEFAULT_STICKER_LAYOUTS,
       defaults: DEFAULT_STICKER_DEFAULTS,
+      isActive: true,
     };
   }
 
@@ -162,6 +165,7 @@ export class CustomerService {
               required: Boolean(field.required),
               placeholder: field.placeholder,
               defaultValue: field.defaultValue,
+              locked: field.locked,
               displayFormat: field.displayFormat,
               segments: field.segments?.map((segment, segmentIndex) => ({
                 ...segment,
@@ -218,6 +222,8 @@ export class CustomerService {
               label: `${table.name ?? `นอกกรอบ ${tableIndex + 1}`} — ${field.label ?? `Field ${fieldIndex + 1}`}`,
               type: "text" as const,
               required: Boolean(field.required),
+              defaultValue: field.defaultValue,
+              locked: field.locked,
               condition: this.normalizeCondition(field.condition),
               showOnSticker: field.showOnSticker ?? true,
               stickerOrder: field.stickerOrder ?? fieldIndex,
@@ -251,10 +257,11 @@ export class CustomerService {
             ? (field.type as TemplateField["type"])
             : "text",
           required: Boolean(field.required),
-              placeholder: field.placeholder,
-              defaultValue: field.defaultValue,
-              displayFormat: field.displayFormat,
-              segments: field.segments?.map((segment, segmentIndex) => ({
+          placeholder: field.placeholder,
+          defaultValue: field.defaultValue,
+          locked: field.locked,
+          displayFormat: field.displayFormat,
+          segments: field.segments?.map((segment, segmentIndex) => ({
             ...segment,
             showOnSticker: segment.showOnSticker ?? field.showOnSticker ?? true,
             stickerOrder: segment.stickerOrder ?? (field.stickerOrder ?? index) * 10 + segmentIndex,
@@ -298,7 +305,7 @@ export class CustomerService {
     if (!name) return;
     const trimmed = name.trim();
     if (!trimmed) return;
-    const customers = await this.repository.findAll();
+    const customers = await this.repository.findAll(true);
     const current = customers.find((customer) => customer.c_id === customerId);
     if (!current) throw new Error("ไม่พบข้อมูลลูกค้า");
     if (trimmed === current.c_name) return;
@@ -307,6 +314,11 @@ export class CustomerService {
     );
     if (duplicate) throw new Error(`มีลูกค้าชื่อ "${duplicate.c_name}" อยู่แล้ว กรุณาตั้งชื่ออื่น`);
     await this.repository.updateName(customerId, trimmed);
+  }
+
+  async updateCustomerActiveIfChanged(customerId: number, isActive: boolean | undefined) {
+    if (isActive === undefined) return;
+    await this.repository.updateActive(customerId, isActive);
   }
 
   async createCustomer(input: CreateCustomerPayload, createdBy: string) {
@@ -333,12 +345,13 @@ export class CustomerService {
       inside,
       outside,
       createdBy,
+      input.isActive ?? true,
     );
     return { id: customerId, name: input.name.trim() };
   }
 
   async getCustomerTemplate(customerId: number): Promise<CustomerTemplate> {
-    const customers = await this.repository.findAll();
+    const customers = await this.repository.findAll(true);
     const customer = customers.find((item) => item.c_id === customerId);
     if (!customer) throw new Error("ไม่พบข้อมูลลูกค้า");
 

@@ -34,7 +34,9 @@ export default class FilterPanel extends MarkingComponent {
             >
               <option value="">{this.state.isLoading ? "กำลังโหลด Template..." : "เลือก Template"}</option>
               {this.state.customers.map((customer) => (
-                <option value={customer.id} key={customer.id}>{customer.name}</option>
+                <option value={customer.id} key={customer.id} disabled={customer.isActive === false}>
+                  {customer.isActive === false ? `[Inactive] ${customer.name}` : customer.name}
+                </option>
               ))}
             </Select>
             <Input

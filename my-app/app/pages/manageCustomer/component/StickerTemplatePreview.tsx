@@ -24,7 +24,8 @@ export default class StickerTemplatePreview extends Component<
   state = { previewOpen: false, previewMode: "insideFrame" as StickerKind, previewGroup: null };
 
 
-  private mockFieldValue(field: Pick<TemplateField, "type">) {
+  private mockFieldValue(field: Pick<TemplateField, "type"> & Partial<Pick<TemplateField, "label" | "defaultValue" | "locked">>) {
+    if (field.locked) return String(field.defaultValue ?? field.label ?? "");
     return field.type === "number" ? "0" : "xxx";
   }
 

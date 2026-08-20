@@ -68,6 +68,14 @@ export class MarkingOrdersController {
     this.listeners.forEach((listener) => listener());
   }
 
+  private sortedCustomers(customers: MarkingState["customers"]) {
+    return customers
+      .sort((first, second) =>
+        Number(second.isActive) - Number(first.isActive) ||
+        first.name.localeCompare(second.name),
+      );
+  }
+
   async initialize() {
     if (this.initialized) return;
     this.initialized = true;
@@ -77,7 +85,7 @@ export class MarkingOrdersController {
     ]);
     this.setState({
       isAdmin: session.status === "fulfilled" && session.value.user?.role === "admin",
-      customers: customers.status === "fulfilled" ? customers.value : [],
+      customers: customers.status === "fulfilled" ? this.sortedCustomers(customers.value) : [],
       isLoading: false,
       notice:
         customers.status === "rejected"
@@ -87,6 +95,11 @@ export class MarkingOrdersController {
   }
 
   async selectCustomer(customerId: string) {
+    const selectedCustomer = this.state.customers.find((customer) => String(customer.id) === customerId);
+    if (selectedCustomer?.isActive === false) {
+      this.setState({ notice: { type: "error", text: "Template นี้ Inactive อยู่" } });
+      return;
+    }
     this.setState({ customerId, notice: null });
     if (!customerId) {
       this.setState({ template: null, insideRows: [], outsideRows: [] });
@@ -172,6 +185,8 @@ export class MarkingOrdersController {
   }
 
   private buildSavePayload(actionType: SaveMarkingPayload["actionType"] = "save"): SaveMarkingPayload {
+    const insideRows = this.withLockedDefaults("inside", this.state.insideRows);
+    const outsideRows = this.withLockedDefaults("outside", this.state.outsideRows);
     return {
       customerId: Number(this.state.customerId),
       totalLot: Number(this.state.totalLot || 0),
@@ -180,7 +195,7 @@ export class MarkingOrdersController {
       lotStart: this.state.lotStart,
       productionDate: this.state.productionDate,
       actionType,
-      contentInside: this.state.insideRows.map((row) => ({
+      contentInside: insideRows.map((row) => ({
         ...row,
         production_date: this.state.productionDate,
         lot_count: this.state.lotCount,
@@ -191,7 +206,7 @@ export class MarkingOrdersController {
         ...(this.state.stickerType === "TNR" && { sticker_fsc: this.state.stickerFsc ? "YES" : "NO" }),
         ...(this.state.stickerOther && { sticker_other: this.state.stickerOther }),
       })),
-      contentOutside: this.state.outsideRows,
+      contentOutside: outsideRows,
     };
   }
 
@@ -211,6 +226,24 @@ export class MarkingOrdersController {
     return field?.uppercase ?? true;
   }
 
+  private lockedValue(section: "inside" | "outside", key: string) {
+    const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
+    const field = fields?.find((item) => item.key === key);
+    if (!field?.locked) return undefined;
+    const value = String(field.defaultValue ?? field.label);
+    return field.uppercase === false ? value : value.toUpperCase();
+  }
+
+  private withLockedDefaults(section: "inside" | "outside", rows: MarkingContent[]) {
+    const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
+    const lockedFields = fields?.filter((field) => field.locked && !field.segments?.length) ?? [];
+    if (!lockedFields.length) return rows;
+    return rows.map((row) => ({
+      ...row,
+      ...Object.fromEntries(lockedFields.map((field) => [field.key, this.lockedValue(section, field.key) ?? ""])),
+    }));
+  }
+
   private isLotCounterKey(section: "inside" | "outside", key: string) {
     const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
     return fields?.some((field) =>
@@ -224,7 +257,8 @@ export class MarkingOrdersController {
 
   updateRow(section: "inside" | "outside", rowIndex: number, key: string, value: string) {
     const stateKey = section === "inside" ? "insideRows" : "outsideRows";
-    const normalizedValue = this.shouldUppercase(section, key) ? value.toUpperCase() : value;
+    const lockedValue = this.lockedValue(section, key);
+    const normalizedValue = lockedValue ?? (this.shouldUppercase(section, key) ? value.toUpperCase() : value);
     const rows = this.state[stateKey].map((row, index) =>
       index === rowIndex ? { ...row, [key]: normalizedValue } : row,
     );
@@ -478,11 +512,16 @@ export class MarkingOrdersController {
     return type !== "pallet" ? String(value).padStart(4, "0") : String(value);
   }
 
+  private fieldDefault(field: TemplateField) {
+    const value = String(field.locked ? field.defaultValue ?? field.label : field.defaultValue ?? "");
+    return field.uppercase === false ? value : value.toUpperCase();
+  }
+
   private emptyRow(fields: TemplateField[], lotStart = this.state.lotStart): MarkingContent {
     return Object.fromEntries(fields.flatMap((field) =>
       field.segments?.length
         ? field.segments.map((segment) => [segment.key, segment.isCounter ? this.counterDefault(field, lotStart, segment) : ""])
-        : [[field.key, field.uppercase === false ? String(field.defaultValue ?? "") : String(field.defaultValue ?? "").toUpperCase()]],
+        : [[field.key, this.fieldDefault(field)]],
     ));
   }
 

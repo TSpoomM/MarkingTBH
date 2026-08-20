@@ -50,10 +50,12 @@ const normalizeDraftField = (section: "inside" | "outside", field: TemplateField
     ...field,
     type: "text",
     required: true,
-    condition: section === "inside" ? undefined : field.condition,
+    condition: undefined,
     fontScale: section === "outside" ? field.fontScale : undefined,
     showOnSticker: field.showOnSticker ?? true,
     uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
+    defaultValue: field.locked ? field.defaultValue ?? field.label : undefined,
+    locked: field.segments?.length ? false : field.locked,
   });
 
 const cloneTemplateField = (field: TemplateField): TemplateField => ({
@@ -67,7 +69,6 @@ const withRequiredStickerFields = () => [...REQUIRED_STICKER_FIELDS];
 
 const withRequiredStickerLayouts = (layouts: CustomerFormState["stickerLayouts"]): CustomerFormState["stickerLayouts"] => ({
   ...layouts,
-  insideFrame: true,
 });
 const defaultStickerDefaults = () => ({ ...DEFAULT_STICKER_DEFAULTS });
 
@@ -83,6 +84,8 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     createOutsideDraft: [],
     duplicateSourceCustomerId: "",
     name: "",
+    isActive: true,
+    templateIsActive: true,
     stickerFields: withRequiredStickerFields(),
     templateStickerFields: withRequiredStickerFields(),
     stickerLayouts: {
@@ -146,7 +149,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       const response = await fetch("/api/customers?includeInactive=1");
       const result = (await response.json()) as { data?: Customer[]; message?: string };
       if (!response.ok) throw new Error(result.message);
-      this.setState({ customers: result.data ?? [] });
+      this.setState({ customers: this.sortedCustomers(result.data ?? []) });
     } catch (error) {
       this.setState({
         templateNotice: {
@@ -161,11 +164,11 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
 
   private selectTemplateCustomer = async (customerId: string) => {
     const selectedCustomer = this.state.customers.find((customer) => String(customer.id) === customerId);
-    if (selectedCustomer?.isActive === false) return;
     const initialName = selectedCustomer?.name ?? "";
     this.setState({
       selectedCustomerId: customerId,
       templateName: initialName,
+      templateIsActive: selectedCustomer?.isActive ?? true,
       templateInsideDraft: [],
       templateOutsideDraft: [],
       templateStickerFields: withRequiredStickerFields(),
@@ -500,8 +503,10 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       label: field.label.trim(),
       type: "text",
       displayFormat: hasSegmentAffixes ? undefined : field.displayFormat?.trim() || undefined,
+      defaultValue: field.locked ? field.label.trim() : undefined,
+      locked: field.segments?.length ? false : field.locked === true,
       required: true,
-      condition: section === "inside" ? undefined : TemplateFieldUtils.cleanCondition(field.condition),
+      condition: undefined,
       showOnSticker: field.showOnSticker ?? true,
       stickerOrder: field.showOnSticker === false ? undefined : field.stickerOrder ?? index,
       uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
@@ -577,6 +582,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: this.state.templateName.trim(),
+          isActive: this.state.templateIsActive,
           inside,
           outside,
           sticker: {
@@ -615,6 +621,13 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   private changeTemplateName = (name: string) => {
     this.setState({ templateName: name });
   };
+
+  private sortedCustomers(customers: Customer[]) {
+    return [...customers].sort((first, second) =>
+      Number(second.isActive) - Number(first.isActive) ||
+      first.name.localeCompare(second.name),
+    );
+  }
 
   private changeStickerDefaults = (stickerDefaults: CustomerFormState["stickerDefaults"]) => {
     this.setState({ stickerDefaults });
@@ -683,6 +696,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   private resetCreateForm = (notice: CustomerFormState["notice"]) => {
     this.setState({
       name: "",
+      isActive: true,
       createInsideDraft: createDefaultInsideDraft(),
       createOutsideDraft: [],
       duplicateSourceCustomerId: "",
@@ -724,6 +738,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   private createCustomer = async (inside: TemplateField[], outside: TemplateField[]) => {
     const payload: CreateCustomerPayload = {
       name: this.state.name,
+      isActive: this.state.isActive,
       configuration: {
         version: 2,
         sticker: {
@@ -788,6 +803,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
         body: JSON.stringify({
           inside,
           outside,
+          isActive: this.state.isActive,
           sticker: {
             enabledFields: withRequiredStickerFields(),
             layouts: withRequiredStickerLayouts(this.state.stickerLayouts),
@@ -857,6 +873,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   customers={this.state.customers}
                   selectedCustomerId={this.state.selectedCustomerId}
                   name={this.state.templateName}
+                  isActive={this.state.templateIsActive}
                   insideDraft={this.state.templateInsideDraft}
                   outsideDraft={this.state.templateOutsideDraft}
                   stickerLayouts={this.state.templateStickerLayouts}
@@ -868,6 +885,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   onDismissNotice={this.dismissTemplateNotice}
                   onSelectCustomer={(customerId) => void this.selectTemplateCustomer(customerId)}
                   onNameChange={this.changeTemplateName}
+                  onActiveChange={(isActive) => this.setState({ templateIsActive: isActive })}
                   onSave={() => void this.saveExistingTemplate()}
                   onCancel={() => void this.cancelTemplateEdit()}
                   onStickerDefaultsChange={this.changeTemplateStickerDefaults}
@@ -886,6 +904,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                 <CreateCustomerForm
                   customers={this.state.customers}
                   name={this.state.name}
+                  isActive={this.state.isActive}
                   duplicateSourceCustomerId={this.state.duplicateSourceCustomerId}
                   stickerLayouts={this.state.stickerLayouts}
                   stickerDefaults={this.state.stickerDefaults}
@@ -901,6 +920,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
                   onDismissNotice={this.dismissNotice}
                   onSubmit={this.submit}
                   onNameChange={(name) => this.setState({ name })}
+                  onActiveChange={(isActive) => this.setState({ isActive })}
                   onDuplicateSourceChange={(customerId) => void this.duplicateTemplateToCreateDraft(customerId)}
                   onStickerDefaultsChange={this.changeStickerDefaults}
                   onSegmentCountChange={this.changeSegmentCount}

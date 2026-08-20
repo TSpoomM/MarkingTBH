@@ -4,14 +4,14 @@ import { pool } from "../lib/db";
 import type { ActiveColumnRow, CustomerRow, TemplateRow } from "@/app/types/database";
 
 export class CustomerRepository {
-  private activeColumn: { tableName: "tb_customer" | "tb_template"; columnName: string } | null | undefined;
+  private activeColumn: { tableName: "tb_customer" | "tb_template"; columnName: string; columnType: string } | null | undefined;
 
   constructor(private readonly pool: Pool) {}
 
   private async findActiveColumn() {
     if (this.activeColumn !== undefined) return this.activeColumn;
     const [rows] = await this.pool.query<Array<ActiveColumnRow & { table_name: "tb_customer" | "tb_template" }>>(
-      `SELECT TABLE_NAME AS table_name, COLUMN_NAME AS column_name
+      `SELECT TABLE_NAME AS table_name, COLUMN_NAME AS column_name, COLUMN_TYPE AS column_type
        FROM INFORMATION_SCHEMA.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE()
          AND TABLE_NAME IN ('tb_template', 'tb_customer')
@@ -21,22 +21,43 @@ export class CustomerRepository {
        LIMIT 1`,
     );
     this.activeColumn = rows[0]
-      ? { tableName: rows[0].table_name, columnName: rows[0].column_name }
+      ? { tableName: rows[0].table_name, columnName: rows[0].column_name, columnType: rows[0].column_type }
       : null;
     return this.activeColumn;
+  }
+
+  private columnRef(alias: "c" | "t", columnName: string) {
+    return `${alias}.\`${columnName}\``;
+  }
+
+  private activeValue(isActive: boolean, activeColumn: NonNullable<CustomerRepository["activeColumn"]>) {
+    const columnType = activeColumn.columnType.toLowerCase();
+    const columnName = activeColumn.columnName.toLowerCase();
+    if (columnType.includes("'inactive'") || columnType.includes("'active'") || columnName === "status") {
+      return isActive ? "active" : "inactive";
+    }
+    if (columnType.includes("'n'") && columnType.includes("'y'")) {
+      return isActive ? "Y" : "N";
+    }
+    return isActive ? 1 : 0;
   }
 
   async findAll(includeInactive = false) {
     const activeColumn = await this.findActiveColumn();
     const activeSource = activeColumn
-      ? `${activeColumn.tableName === "tb_template" ? "t" : "c"}.${activeColumn.columnName}`
+      ? this.columnRef(activeColumn.tableName === "tb_template" ? "t" : "c", activeColumn.columnName)
       : null;
     const activeExpression = activeColumn
       ? `CASE
-          WHEN LOWER(TRIM(CAST(${activeSource} AS CHAR))) IN ('0', 'false', 'inactive', 'disabled', 'n', 'no') THEN 0
+          WHEN LOWER(TRIM(CAST(${activeSource} AS CHAR))) IN ('', '0', 'false', 'inactive', 'disabled', 'n', 'no') THEN 0
           ELSE 1
         END`
-      : "1";
+      : `CASE
+          WHEN t.inside IS NULL OR JSON_VALID(t.inside) = 0 THEN 1
+          WHEN JSON_EXTRACT(t.inside, '$.sticker.isActive') IS NULL THEN 1
+          WHEN LOWER(TRIM(JSON_UNQUOTE(JSON_EXTRACT(t.inside, '$.sticker.isActive')))) IN ('', '0', 'false', 'inactive', 'disabled', 'n', 'no') THEN 0
+          ELSE 1
+        END`;
     const whereClause = includeInactive ? "" : `WHERE ${activeExpression} = 1`;
     const [rows] = await this.pool.query<CustomerRow[]>(
       `SELECT c.c_id, c.c_name, ${activeExpression} AS is_active
@@ -58,6 +79,42 @@ export class CustomerRepository {
     const [result] = await this.pool.execute<ResultSetHeader>(
       "UPDATE tb_customer SET c_name = ? WHERE c_id = ?",
       [name, customerId],
+    );
+    return result.affectedRows;
+  }
+
+  async updateActive(customerId: number, isActive: boolean) {
+    const activeColumn = await this.findActiveColumn();
+    if (!activeColumn) {
+      const template = await this.findLatestTemplate(customerId);
+      if (!template) return 0;
+      const parsed = JSON.parse(template.inside || "{}") as { sticker?: Record<string, unknown> };
+      const nextInside = JSON.stringify({
+        ...parsed,
+        sticker: {
+          ...(parsed.sticker ?? {}),
+          isActive,
+        },
+      });
+      const [result] = await this.pool.execute<ResultSetHeader>(
+        "UPDATE tb_template SET inside = ? WHERE id = ?",
+        [nextInside, template.id],
+      );
+      return result.affectedRows;
+    }
+    const value = this.activeValue(isActive, activeColumn);
+    if (activeColumn.tableName === "tb_customer") {
+      const [result] = await this.pool.execute<ResultSetHeader>(
+        `UPDATE tb_customer SET \`${activeColumn.columnName}\` = ? WHERE c_id = ?`,
+        [value, customerId],
+      );
+      return result.affectedRows;
+    }
+    const template = await this.findLatestTemplate(customerId);
+    if (!template) return 0;
+    const [result] = await this.pool.execute<ResultSetHeader>(
+      `UPDATE tb_template SET \`${activeColumn.columnName}\` = ? WHERE id = ?`,
+      [value, template.id],
     );
     return result.affectedRows;
   }
@@ -99,18 +156,35 @@ export class CustomerRepository {
     inside: string,
     outside: string,
     createdBy: string,
+    isActive = true,
   ) {
     const connection = await this.pool.getConnection();
     try {
       await connection.beginTransaction();
+      const activeColumn = await this.findActiveColumn();
+      const activeDbValue = activeColumn ? this.activeValue(isActive, activeColumn) : 1;
+      const insideWithActive = activeColumn ? inside : JSON.stringify({
+        ...JSON.parse(inside || "{}"),
+        sticker: {
+          ...((JSON.parse(inside || "{}") as { sticker?: Record<string, unknown> }).sticker ?? {}),
+          isActive,
+        },
+      });
       const [customerResult] = await connection.execute<ResultSetHeader>(
-        "INSERT INTO tb_customer (c_name) VALUES (?)",
-        [name],
+        activeColumn?.tableName === "tb_customer"
+          ? `INSERT INTO tb_customer (c_name, \`${activeColumn.columnName}\`) VALUES (?, ?)`
+          : "INSERT INTO tb_customer (c_name) VALUES (?)",
+        activeColumn?.tableName === "tb_customer" ? [name, activeDbValue] : [name],
       );
       await connection.execute<ResultSetHeader>(
-        `INSERT INTO tb_template (c_id, inside, outside, created_by, created_date)
-         VALUES (?, ?, ?, ?, NOW())`,
-        [customerResult.insertId, inside, outside, createdBy],
+        activeColumn?.tableName === "tb_template"
+          ? `INSERT INTO tb_template (c_id, inside, outside, created_by, created_date, \`${activeColumn.columnName}\`)
+             VALUES (?, ?, ?, ?, NOW(), ?)`
+          : `INSERT INTO tb_template (c_id, inside, outside, created_by, created_date)
+             VALUES (?, ?, ?, ?, NOW())`,
+        activeColumn?.tableName === "tb_template"
+          ? [customerResult.insertId, inside, outside, createdBy, activeDbValue]
+          : [customerResult.insertId, insideWithActive, outside, createdBy],
       );
       await connection.commit();
       return customerResult.insertId;

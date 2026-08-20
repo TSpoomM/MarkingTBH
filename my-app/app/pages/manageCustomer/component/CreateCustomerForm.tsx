@@ -24,6 +24,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
     const {
       customers,
       name,
+      isActive,
       duplicateSourceCustomerId,
       stickerLayouts,
       stickerDefaults,
@@ -36,6 +37,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
       onDismissNotice,
       onSubmit,
       onNameChange,
+      onActiveChange,
       onDuplicateSourceChange,
       onStickerDefaultsChange,
       onSelectPreviewSlot,
@@ -65,15 +67,30 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               title="เพิ่ม Template"
               subtitle="กรอกชื่อลูกค้าและตั้งค่าสติ๊กเกอร์ให้ครบ แล้วบันทึกในขั้นตอนเดียว"
             />
-            <label className="customer-name">
-              <span>ชื่อ Customer *</span>
-              <Input
-                bare
-                value={name}
-                onChange={(event) => onNameChange(event.target.value.toUpperCase())}
-                placeholder="ABC Rubber Co., Ltd."
-              />
-            </label>
+            <div className="template-name-status-row">
+              <label className="customer-name">
+                <span>ชื่อ Customer *</span>
+                <Input
+                  bare
+                  value={name}
+                  onChange={(event) => onNameChange(event.target.value.toUpperCase())}
+                  placeholder="ABC Rubber Co., Ltd."
+                />
+              </label>
+              <div className="template-status-field">
+                <span className="template-status-caption">Status</span>
+                <button
+                  type="button"
+                  className={`template-status-toggle ${isActive ? "active" : "inactive"}`}
+                  onClick={() => onActiveChange(!isActive)}
+                  aria-pressed={isActive}
+                >
+                  <span className="template-status-option">Inactive</span>
+                  <i aria-hidden="true" />
+                  <span className="template-status-option">Active</span>
+                </button>
+              </div>
+            </div>
             <label className="customer-name duplicate-template-picker">
               <span>คัดลอก Template จาก</span>
               <Select

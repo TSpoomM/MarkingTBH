@@ -24,7 +24,7 @@ export class MarkingApiService {
   }
 
   getCustomers(): Promise<Customer[]> {
-    return this.request("/api/customers");
+    return this.request("/api/customers?includeInactive=visible");
   }
 
   getTemplate(customerId: number): Promise<CustomerTemplate> {

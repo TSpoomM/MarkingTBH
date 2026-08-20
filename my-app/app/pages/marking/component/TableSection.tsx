@@ -16,13 +16,6 @@ export default class TableSection extends Component<TableSectionProps> {
     return !key.includes("pallet") && !label.includes("pallet");
   }
 
-  private conditionText(field: TemplateField) {
-    return [
-      field.condition?.stickerType && `เกรด = ${field.condition.stickerType}`,
-      field.condition?.stickerOther && `Other = ${field.condition.stickerOther}`,
-    ].filter(Boolean).join(", ");
-  }
-
   render() {
     const { number, title, subtitle, fields, rows, lotStart, onChange, emptyText } = this.props;
     return (
@@ -47,7 +40,7 @@ export default class TableSection extends Component<TableSectionProps> {
                       <span>
                         {field.label}
                         {field.required && <em>*</em>}
-                        {field.required && this.conditionText(field) && <small>บังคับเมื่อ {this.conditionText(field)}</small>}
+                        {field.locked && <span className="field-lock-icon" title="Locked" aria-label="Locked" />}
                       </span>
                       {field.segments?.length ? (
                         <div className="horizontal-segment-inputs">
@@ -75,6 +68,7 @@ export default class TableSection extends Component<TableSectionProps> {
                           type={field.type === "textarea" ? "text" : field.type}
                           value={row[field.key] ?? ""}
                           onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
+                          disabled={field.locked === true}
                           placeholder={field.placeholder ?? `กรอก ${field.label}`}
                         />
                       )}

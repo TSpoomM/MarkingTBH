@@ -9,6 +9,7 @@ export interface TemplateField {
   required: boolean;
   placeholder?: string;
   defaultValue?: string;
+  locked?: boolean;
   displayFormat?: string;
   segments?: Array<{
     key: string;
@@ -63,6 +64,7 @@ export interface CustomerTemplate {
     enabledFields: Array<"side" | "format" | "type" | "other">;
     layouts: StickerLayouts;
     defaults: StickerDefaults;
+    isActive?: boolean;
   };
   inside: TemplateField[];
   outside: TemplateField[];

@@ -65,6 +65,8 @@ export interface OutsideField {
   stickerOrder?: number;
   system?: boolean;
   uppercase?: boolean;
+  defaultValue?: string;
+  locked?: boolean;
 }
 
 export interface OutsideTable {
@@ -89,6 +91,7 @@ export interface CustomerConfiguration {
 
 export interface CreateCustomerPayload {
   name: string;
+  isActive?: boolean;
   configuration: CustomerConfiguration;
   template?: Pick<CustomerTemplate, "sticker"> & {
     inside: TemplateField[];

@@ -10,22 +10,31 @@ const stickerTypeConditionSchema = z.enum(["TNR", "NON TNR", "NON-TNR", "FCS"])
 const isActiveValue = (value: number | string | boolean | null | undefined) => {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value !== 0;
-  if (typeof value === "string") return !["0", "false", "inactive", "disabled", "n", "no"].includes(value.trim().toLowerCase());
+  if (typeof value === "string") return !["", "0", "false", "inactive", "disabled", "n", "no"].includes(value.trim().toLowerCase());
   return true;
 };
 
 export async function GET(request: Request) {
   try {
-    const includeInactive = new URL(request.url).searchParams.get("includeInactive") === "1";
+    const includeInactiveParam = new URL(request.url).searchParams.get("includeInactive");
+    const includeInactive = includeInactiveParam === "1" || includeInactiveParam === "visible";
+    const visibleInactive = includeInactiveParam === "visible";
     if (includeInactive) {
-      const access = await adminAuthService.requireAdmin(request);
-      if (!access.isAdmin) {
+      const access = visibleInactive ? { isAdmin: false } : await adminAuthService.requireAdmin(request);
+      if (!visibleInactive && !access.isAdmin) {
         return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
       }
     }
     const rows = await customerService.getCustomers(includeInactive);
+    const customers = rows
+      .map((row) => ({ id: row.c_id, name: row.c_name, isActive: isActiveValue(row.is_active) }))
+      .filter((customer) => includeInactive || customer.isActive)
+      .sort((first, second) =>
+        Number(second.isActive) - Number(first.isActive) ||
+        first.name.localeCompare(second.name),
+      );
     return Response.json({
-      data: rows.map((row) => ({ id: row.c_id, name: row.c_name, isActive: isActiveValue(row.is_active) })),
+      data: customers,
     });
   } catch (error) {
     console.error("GET /api/customers", error);
@@ -58,6 +67,8 @@ const outsideFieldSchema = z.object({
   stickerOrder: z.number().int().min(0).optional(),
   system: z.boolean().optional(),
   uppercase: z.boolean().optional(),
+  defaultValue: z.string().optional(),
+  locked: z.boolean().optional(),
   fontScale: z.enum(["normal", "xlarge"]).optional(),
   hideLabel: z.boolean().optional(),
 });
@@ -69,6 +80,7 @@ const templateFieldSchema = z.object({
   required: z.boolean(),
   placeholder: z.string().optional(),
   defaultValue: z.string().optional(),
+  locked: z.boolean().optional(),
   displayFormat: z.string().optional(),
   segments: z.array(z.object({
     key: z.string().trim().min(1),
@@ -96,6 +108,7 @@ const templateFieldSchema = z.object({
 
 const createCustomerSchema = z.object({
   name: z.string().trim().min(1, "กรุณากรอกชื่อลูกค้า").max(200),
+  isActive: z.boolean().default(true),
   configuration: z.object({
     version: z.literal(2),
     sticker: z.object({
