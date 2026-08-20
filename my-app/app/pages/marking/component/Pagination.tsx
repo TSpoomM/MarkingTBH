@@ -24,19 +24,13 @@ export default class Pagination extends MarkingComponent {
   }
 
   render() {
-    const customer = this.state.customers.find(
-      (item) => String(item.id) === this.state.customerId,
-    );
     const previewFormat = this.state.stickerFormat || "555";
     const previewSideCount = Number(this.state.stickerSides || 1);
     const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
       StickerFactory.matchesCondition(field, this.state.stickerType, this.state.stickerOther),
     );
-    const customerName = this.state.printSections.customerName
-      ? this.state.template?.customerName ?? customer?.name ?? ""
-      : "";
     const previewItems = this.previewItems(StickerFactory.build({
-      customerName,
+      customerName: "",
       format: previewFormat,
       sideCount: previewSideCount,
       lotCount: Number(this.state.lotCount || 1),
@@ -53,19 +47,18 @@ export default class Pagination extends MarkingComponent {
     const availableSections: Record<PrintSection, boolean> = {
       insideFrame: !!this.state.template,
       outsideFrame: outsideFields.length > 0,
-      customerName: !!(this.state.template?.customerName ?? customer?.name ?? "").trim(),
+      customerName: false,
       fscLogo: this.state.stickerType === "TNR" && this.state.stickerFsc,
     };
     const sectionCounts: Record<PrintSection, string> = {
       insideFrame: "สติ๊กเกอร์ในกรอบ",
       outsideFrame: outsideFields.length ? `สติ๊กเกอร์นอกกรอบ (${StickerFactory.outsideGroups(outsideFields).length} ชุด)` : "สติ๊กเกอร์นอกกรอบ",
-      customerName: "ชื่อ Customer",
+      customerName: "",
       fscLogo: "โลโก้ FSC",
     };
     const printOptions: Array<{ key: PrintSection; title: string; description: string }> = [
       { key: "insideFrame", title: "ในกรอบ", description: sectionCounts.insideFrame },
       { key: "outsideFrame", title: "นอกกรอบ", description: sectionCounts.outsideFrame },
-      { key: "customerName", title: "ชื่อ Customer", description: sectionCounts.customerName },
       { key: "fscLogo", title: "FSC", description: sectionCounts.fscLogo },
     ];
     const hasSelectedPrintSection = Object.entries(this.state.printSections)

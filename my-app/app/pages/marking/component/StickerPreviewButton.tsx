@@ -4,7 +4,6 @@ import { Component } from "react";
 import Button from "@/app/components/Button";
 import Modal from "@/app/components/Modal";
 import type { StickerItem, StickerKind } from "@/app/types/marking-sticker";
-import StickerFactory from "./StickerFactory";
 import StickerPreviewPages from "./StickerPreviewPages";
 
 const PREVIEW_MODE_LABELS: Record<StickerKind, string> = {
@@ -99,14 +98,14 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
             )}
             {outsideGroups.length > 1 && (
               <div className="sticker-template-preview-modes sticker-template-preview-groups" aria-label="เลือกนอกกรอบ">
-                {outsideGroups.map((group) => (
+                {outsideGroups.map((group, index) => (
                   <button
                     type="button"
                     className={group === activeGroup ? "active" : ""}
                     onClick={() => this.setState({ previewGroup: group })}
                     key={group}
                   >
-                    {StickerFactory.outsideGroupTitle(group)}
+                    {`นอกกรอบ ${index + 1}`}
                   </button>
                 ))}
               </div>

@@ -1,6 +1,8 @@
 export type FieldType = "text" | "number" | "date" | "textarea";
 export type CounterType = "lot" | "pallet" | "sequence";
 export type FontScale = "normal" | "xlarge";
+export type StickerGroupLayout = "2x2" | "8x2";
+export type LegacyStickerGroupLayout = StickerGroupLayout | "4x2";
 
 export interface TemplateField {
   key: string;
@@ -30,7 +32,7 @@ export interface TemplateField {
   stickerOrder?: number;
   stickerGroup?: string;
   stickerGroupOrder?: number;
-  stickerGroupLayout?: "2x2" | "4x2";
+  stickerGroupLayout?: LegacyStickerGroupLayout;
   uppercase?: boolean;
   fontScale?: FontScale;
   hideLabel?: boolean;

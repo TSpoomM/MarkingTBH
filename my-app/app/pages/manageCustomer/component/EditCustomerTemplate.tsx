@@ -96,7 +96,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
           <>
             <div className="template-name-status-row">
               <label className="customer-name">
-                <span>ชื่อ Customer *</span>
+                <span>ชื่อ Template *</span>
                 <Input
                   bare
                   value={name}

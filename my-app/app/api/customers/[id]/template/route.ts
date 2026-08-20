@@ -55,7 +55,7 @@ const fieldSchema = z.object({
   }).optional(),
   stickerGroup: z.string().optional(),
   stickerGroupOrder: z.number().int().min(0).optional(),
-  stickerGroupLayout: z.enum(["2x2", "4x2"]).optional(),
+  stickerGroupLayout: z.enum(["2x2", "4x2", "8x2"]).optional(),
   uppercase: z.boolean().optional(),
   fontScale: z.enum(["normal", "xlarge"]).optional(),
   hideLabel: z.boolean().optional(),

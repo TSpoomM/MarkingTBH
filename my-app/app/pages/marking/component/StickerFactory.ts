@@ -1,7 +1,6 @@
 import type { MarkingContent } from "@/app/types/marking";
 import { STICKER_FORMAT_PALLETS } from "@/app/types/constants";
-import { TemplateField } from "@/app/types/customer";
-import type { CounterType } from "@/app/types/customer";
+import type { CounterType, LegacyStickerGroupLayout, StickerGroupLayout, TemplateField } from "@/app/types/customer";
 import type {
   OutsideStickerGroup,
   StickerBuildOptions,
@@ -11,6 +10,14 @@ import type {
 
 export default class StickerFactory {
   static readonly DEFAULT_COUNTER_DIGITS = 4;
+
+  static normalizeGroupLayout(layout?: LegacyStickerGroupLayout): StickerGroupLayout {
+    return layout === "8x2" || layout === "4x2" ? "8x2" : "2x2";
+  }
+
+  static isVerticalGroupLayout(layout?: LegacyStickerGroupLayout) {
+    return this.normalizeGroupLayout(layout) === "8x2";
+  }
 
   static chunk<T>(items: T[], size: number) {
     return Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
@@ -164,7 +171,7 @@ export default class StickerFactory {
       const name = field.stickerGroup?.trim() || inferred.groupName || "นอกกรอบ";
       const order = field.stickerGroupOrder ?? index;
       const groupKey = field.stickerGroupOrder === undefined ? name : `${order}:${name}`;
-      const group = groups.get(groupKey) ?? { name, order, layout: field.stickerGroupLayout ?? "2x2", fields: [] };
+      const group = groups.get(groupKey) ?? { name, order, layout: this.normalizeGroupLayout(field.stickerGroupLayout), fields: [] };
       group.order = Math.min(group.order, field.stickerGroupOrder ?? index);
       group.fields.push({
         ...field,
@@ -194,7 +201,7 @@ export default class StickerFactory {
       kind: StickerKind,
       detailsForSticker: (lot: number, pallet: number, sequence: number) => StickerItem["details"],
       group?: string,
-      groupLayout?: "2x2" | "4x2",
+      groupLayout?: StickerGroupLayout,
     ) => {
       const generated: StickerItem[] = [];
       let sequenceBase = 0;
@@ -226,7 +233,7 @@ export default class StickerFactory {
       kind: StickerKind,
       detailsForSticker: (lot: number, pallet: number, sequence: number) => StickerItem["details"],
       group?: string,
-      groupLayout?: "2x2" | "4x2",
+      groupLayout?: StickerGroupLayout,
     ) => {
       items.push(...buildLayoutItems(kind, detailsForSticker, group, groupLayout));
     };

@@ -592,7 +592,8 @@ select {
 	width: 194mm;
 	height: 281mm;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	grid-template-rows: repeat(4, minmax(0, 1fr))
+	grid-template-rows: repeat(8, minmax(0, 1fr));
+	gap: 1.5mm 3mm
 }
 
 .print-sheet .sticker-label {
@@ -721,23 +722,27 @@ select {
 	text-overflow: clip
 }
 
-.print-sheet .sticker-label.customerName {
+.print-sheet .sticker-label.customerName,
+.print-sheet .sticker-label.outsideFrame.sticker-text-only {
 	padding: 1.5mm 3mm;
 	align-items: center;
 	justify-content: center;
 	text-align: center
 }
 
-.print-sheet .sticker-label.customerName header {
+.print-sheet .sticker-label.customerName header,
+.print-sheet .sticker-label.outsideFrame.sticker-text-only header {
 	display: none
 }
 
-.print-sheet .sticker-label.customerName p {
+.print-sheet .sticker-label.customerName p,
+.print-sheet .sticker-label.outsideFrame.sticker-text-only p {
 	margin: 0;
 	font-family: Arial, sans-serif;
-	font-size: 24px;
 	font-weight: 700;
-	line-height: 1.15
+	line-height: 1.05;
+	max-width: 100%;
+	white-space: nowrap
 }
 
 .pdf-preview {
@@ -772,7 +777,7 @@ select {
 
 .pdf-preview .sticker-page-frame-vertical {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	grid-template-rows: repeat(4, minmax(0, 1fr));
+	grid-template-rows: repeat(8, minmax(0, 1fr));
 	aspect-ratio: 194 / 281
 }
 
@@ -822,7 +827,8 @@ select {
 	object-fit: contain
 }
 
-.pdf-preview .sticker-label.customerName {
+.pdf-preview .sticker-label.customerName,
+.pdf-preview .sticker-label.outsideFrame.sticker-text-only {
 	aspect-ratio: auto;
 	min-height: 90px
 }
@@ -908,19 +914,22 @@ select {
 	text-overflow: clip
 }
 
-.pdf-preview .sticker-label.customerName {
+.pdf-preview .sticker-label.customerName,
+.pdf-preview .sticker-label.outsideFrame.sticker-text-only {
 	align-items: center;
 	text-align: center;
 	min-height: 30px;
 	padding: 6px 8px
 }
 
-.pdf-preview .sticker-label.customerName p {
+.pdf-preview .sticker-label.customerName p,
+.pdf-preview .sticker-label.outsideFrame.sticker-text-only p {
 	margin: 0;
 	font-family: Arial, sans-serif;
-	font-size: clamp(18px, 4vw, 30px);
 	font-weight: 700;
-	line-height: 1.15
+	line-height: 1.05;
+	max-width: 100%;
+	white-space: nowrap
 }
 
 .admin-template-bar {
@@ -1438,8 +1447,10 @@ select {
 
 .editor-field-toggle {
 	height: 28px;
-	display: flex;
+	min-width: 48px;
+	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	padding: 0 10px;
 	border: 1px solid var(--primary);
 	border-radius: 6px;
@@ -1451,8 +1462,36 @@ select {
 	flex-shrink: 0
 }
 
+.editor-field-summary-actions {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	flex-shrink: 0
+}
+
+.summary-delete-field {
+	height: 28px;
+	min-width: 48px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 10px;
+	border: 1px solid #d8b6ba;
+	border-radius: 6px;
+	background: #fbf2f2;
+	color: #9d3e43;
+	box-shadow: none;
+	font-weight: 800
+}
+
 .editor-field-summary:hover .editor-field-toggle {
 	background: var(--primary);
+	color: #fff
+}
+
+.summary-delete-field:hover {
+	border-color: #c7858b;
+	background: #a85861;
 	color: #fff
 }
 
@@ -5023,7 +5062,7 @@ select {
 		grid-template-columns: minmax(94px, auto) repeat(2, minmax(140px, 1fr));
 	}
 
-	.customer-admin .outside-field-wrap .delete-field {
+	.customer-admin .outside-field-wrap .editor-field .delete-field {
 		grid-column: 5;
 		grid-row: 2;
 		width: 100%;
@@ -5067,7 +5106,7 @@ select {
 		grid-row: 4;
 	}
 
-	.customer-admin .outside-field-wrap .delete-field {
+	.customer-admin .outside-field-wrap .editor-field .delete-field {
 		grid-column: 3;
 		grid-row: 3;
 	}
@@ -5084,7 +5123,7 @@ select {
 	.customer-admin .outside-field-wrap .editor-field>label:nth-of-type(3),
 	.customer-admin .outside-field-wrap .editor-field>label:nth-of-type(4),
 	.customer-admin .outside-field-wrap .condition-selector,
-	.customer-admin .outside-field-wrap .delete-field {
+	.customer-admin .outside-field-wrap .editor-field .delete-field {
 		grid-column: 1;
 		grid-row: auto;
 	}
@@ -6475,4 +6514,36 @@ select {
 .details-panel .app-select:hover,
 .customer-name .app-select:hover {
 	transform: none;
+}
+
+.editor-field-summary-actions .summary-delete-field {
+	height: 28px;
+	min-height: 28px;
+	min-width: 48px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	align-self: center;
+	padding: 0 10px;
+	border: 1px solid #d8b6ba;
+	border-radius: 6px;
+	background: #fbf2f2;
+	color: #9d3e43;
+	box-shadow: none;
+	font-size: 11px;
+	font-weight: 800;
+	line-height: 1;
+}
+
+.editor-field-summary-actions .summary-delete-field>span {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+}
+
+.editor-field-summary-actions .summary-delete-field:hover {
+	border-color: #c7858b;
+	background: #a85861;
+	color: #fff;
 }

@@ -4,12 +4,12 @@ import Input from "@/app/components/Input";
 import Modal from "@/app/components/Modal";
 import Select from "@/app/components/Select";
 import TemplateFieldUtils from "./TemplateFieldUtils";
-import type { CounterType, TemplateField } from "@/app/types/customer";
+import type { CounterType, StickerGroupLayout, TemplateField } from "@/app/types/customer";
 import type { TemplateFieldEditorProps } from "@/app/types/manage-customer";
 
-const OUTSIDE_TABLE_LAYOUT_OPTIONS: Array<{ value: "2x2" | "4x2"; label: string; description: string }> = [
+const OUTSIDE_TABLE_LAYOUT_OPTIONS: Array<{ value: StickerGroupLayout; label: string; description: string }> = [
   { value: "2x2", label: "2 x 2 แนวนอน", description: "A4 แนวนอน 4 ดวง/หน้า (ค่าเริ่มต้น)" },
-  { value: "4x2", label: "4 x 2 แนวตั้ง", description: "A4 แนวตั้ง 8 ดวง/หน้า ประหยัดกระดาษกว่า" },
+  { value: "8x2", label: "8 x 2 แนวตั้ง", description: "A4 แนวตั้ง 8 ดวง/หน้า สำหรับกระดาษสติ๊กเกอร์แนวตั้ง" },
 ];
 
 interface State {
@@ -18,7 +18,7 @@ interface State {
   draggingTableOrder: number | null;
   draggingSegmentKey: string | null;
   addTableLayoutPromptOpen: boolean;
-  pendingTableLayout: "2x2" | "4x2";
+  pendingTableLayout: StickerGroupLayout;
 }
 
 export default class TemplateFieldEditor extends Component<TemplateFieldEditorProps, State> {
@@ -42,6 +42,10 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
   private confirmAddTable() {
     this.props.onAddTable?.(this.state.pendingTableLayout);
     this.closeAddTablePrompt();
+  }
+
+  private isSingleRowOutsideTable(layout: TemplateField["stickerGroupLayout"]) {
+    return layout === "8x2" || layout === "4x2";
   }
 
   private dragFieldIndex: number | null = null;
@@ -178,6 +182,15 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           const isExpanded = expanded[field.key] ?? false;
           const countableField = TemplateFieldUtils.isCounterField(field);
           const tableOrder = field.stickerGroupOrder ?? 0;
+          const isSingleRowOutsideTable = section === "outside" && this.isSingleRowOutsideTable(field.stickerGroupLayout);
+          const isInsideNettField = section === "inside" && field.key === "nett" && !field.segments?.length;
+          const previousSingleRowTableField = fields
+            .slice(0, index)
+            .find((item) => (
+              (item.stickerGroupOrder ?? 0) === tableOrder &&
+              this.isSingleRowOutsideTable(item.stickerGroupLayout)
+            ));
+          if (isSingleRowOutsideTable && previousSingleRowTableField) return null;
           const previousTableOrder = fields[index - 1]?.stickerGroupOrder ?? 0;
           const nextTableOrder = fields[index + 1]?.stickerGroupOrder ?? 0;
           const showTableHeader = section === "outside" && (index === 0 || tableOrder !== previousTableOrder);
@@ -254,7 +267,20 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                   {field.label.trim() || "(ยังไม่ตั้งชื่อ Field)"}
                 </span>
                 {field.locked && <span className="field-lock-icon" title="Locked" aria-label="Locked" />}
-                <span className="editor-field-toggle" aria-hidden="true">{isExpanded ? "ซ่อน" : "แก้ไข"}</span>
+                <div className="editor-field-summary-actions">
+                  <span className="editor-field-toggle" aria-hidden="true">{isExpanded ? "ซ่อน" : "แก้ไข"}</span>
+                  <Button
+                    type="button"
+                    // className="delete-field summary-delete-field"
+                    className="delete-field summary-delete-field"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onRemove(section, index);
+                    }}
+                  >
+                    ลบ
+                  </Button>
+                </div>
               </div>
               {isExpanded && (
                 <>
@@ -264,7 +290,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       <span>ชื่อ Field</span>
                       <Input bare value={field.label} onChange={(event) => onChange(section, index, { label: event.target.value })} />
                     </label>
-                    {!field.segments?.length && (
+                    {section === "outside" && !field.segments?.length && (
                       <label className="required-toggle field-lock-toggle">
                         <Input
                           bare
@@ -272,7 +298,29 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           checked={field.locked === true}
                           onChange={(event) => onChange(section, index, { locked: event.target.checked })}
                         />
-                        <span>Lock</span>
+                        <span>Lock (FSC)</span>
+                      </label>
+                    )}
+                    {isInsideNettField && (
+                      <label className="required-toggle nett-default-toggle">
+                        <Input
+                          bare
+                          type="checkbox"
+                          checked={field.defaultValue !== undefined}
+                          onChange={(event) => onChange(section, index, { defaultValue: event.target.checked ? field.defaultValue ?? "1260" : undefined })}
+                        />
+                        <span>ใช้ค่า default</span>
+                      </label>
+                    )}
+                    {isInsideNettField && field.defaultValue !== undefined && (
+                      <label className="nett-default-value">
+                        <span>ค่า default</span>
+                        <Input
+                          bare
+                          type="number"
+                          value={field.defaultValue}
+                          onChange={(event) => onChange(section, index, { defaultValue: event.target.value })}
+                        />
                       </label>
                     )}
                     {section === "outside" && (
@@ -291,13 +339,13 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         <Input
                           bare
                           type="checkbox"
-                          checked={field.hideLabel !== true}
-                          onChange={(event) => onChange(section, index, { hideLabel: !event.target.checked })}
+                          checked={field.hideLabel === true}
+                          onChange={(event) => onChange(section, index, { hideLabel: event.target.checked })}
                         />
                         <span>พิมพ์แค่ข้อความใน Field</span>
                       </label>
                     )}
-                    {section === "outside" && (
+                    {section === "outside" && !isSingleRowOutsideTable && (
                       <label className="required-toggle field-font-scale">
                         <Input
                           bare
@@ -308,7 +356,6 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         <span>ขนาดใหญ่พิเศษ</span>
                       </label>
                     )}
-                    <Button className="delete-field" onClick={() => onRemove(section, index)}>ลบ</Button>
                   </article>
                   {!!field.segments?.length && (
                     <div className="editor-segments-row">
@@ -469,7 +516,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                   )}
                 </>
               )}
-              {showTableFooter && (
+              {showTableFooter && !isSingleRowOutsideTable && (
                 <Button
                   type="button"
                   className="outside-add-row-button"

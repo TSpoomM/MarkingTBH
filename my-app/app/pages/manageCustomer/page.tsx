@@ -4,7 +4,7 @@ import { Component, type FormEvent } from "react";
 import Modal from "@/app/components/Modal";
 import Navbar from "@/app/components/Navbar";
 import Toast from "@/app/components/Toast";
-import type { Customer, CustomerTemplate, TemplateField } from "@/app/types/customer";
+import type { Customer, CustomerTemplate, StickerGroupLayout, TemplateField } from "@/app/types/customer";
 import {
   DEFAULT_STICKER_DEFAULTS,
   type CreateCustomerPayload,
@@ -54,8 +54,8 @@ const normalizeDraftField = (section: "inside" | "outside", field: TemplateField
     fontScale: section === "outside" ? field.fontScale : undefined,
     showOnSticker: field.showOnSticker ?? true,
     uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
-    defaultValue: field.locked ? field.defaultValue ?? field.label : undefined,
-    locked: field.segments?.length ? false : field.locked,
+    defaultValue: field.defaultValue ?? (field.locked ? field.label : undefined),
+    locked: section === "outside" && !field.segments?.length ? field.locked : false,
   });
 
 const cloneTemplateField = (field: TemplateField): TemplateField => ({
@@ -70,6 +70,12 @@ const withRequiredStickerFields = () => [...REQUIRED_STICKER_FIELDS];
 const withRequiredStickerLayouts = (layouts: CustomerFormState["stickerLayouts"]): CustomerFormState["stickerLayouts"] => ({
   ...layouts,
 });
+const normalizeStickerGroupLayout = (layout: TemplateField["stickerGroupLayout"]): StickerGroupLayout => (
+  layout === "8x2" || layout === "4x2" ? "8x2" : "2x2"
+);
+const isSingleRowStickerGroupLayout = (layout: TemplateField["stickerGroupLayout"]) => (
+  normalizeStickerGroupLayout(layout) === "8x2"
+);
 const defaultStickerDefaults = () => ({ ...DEFAULT_STICKER_DEFAULTS });
 
 export default class CustomerForm extends Component<Record<string, never>, CustomerFormState> {
@@ -344,7 +350,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     return {
       order,
       name: field?.stickerGroup ?? `นอกกรอบ ${order + 1}`,
-      layout: field?.stickerGroupLayout ?? "2x2" as const,
+      layout: normalizeStickerGroupLayout(field?.stickerGroupLayout),
     };
   }
 
@@ -352,7 +358,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     return fields.length ? Math.max(...fields.map((field) => field.stickerGroupOrder ?? 0)) + 1 : 0;
   }
 
-  private addTemplateTable = (layout: "2x2" | "4x2") => {
+  private addTemplateTable = (layout: StickerGroupLayout) => {
     const tableOrder = this.nextOutsideGroupOrder(this.state.templateOutsideDraft);
     this.setState({
       templateOutsideDraft: [
@@ -367,12 +373,13 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           stickerGroupOrder: tableOrder,
           stickerGroupLayout: layout,
           uppercase: true,
+          fontScale: undefined,
         },
       ],
     });
   };
 
-  private addCreateTemplateTable = (layout: "2x2" | "4x2") => {
+  private addCreateTemplateTable = (layout: StickerGroupLayout) => {
     const tableOrder = this.nextOutsideGroupOrder(this.state.createOutsideDraft);
     this.setState({
       createOutsideDraft: [
@@ -387,6 +394,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           stickerGroupOrder: tableOrder,
           stickerGroupLayout: layout,
           uppercase: true,
+          fontScale: undefined,
         },
       ],
     });
@@ -511,14 +519,14 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       label: field.label.trim(),
       type: "text",
       displayFormat: hasSegmentAffixes ? undefined : field.displayFormat?.trim() || undefined,
-      defaultValue: field.locked ? field.label.trim() : undefined,
-      locked: field.segments?.length ? false : field.locked === true,
+      defaultValue: field.defaultValue?.trim() || (field.locked ? field.label.trim() : undefined),
+      locked: section === "outside" && !field.segments?.length ? field.locked === true : false,
       required: true,
       condition: undefined,
       showOnSticker: field.showOnSticker ?? true,
       stickerOrder: field.showOnSticker === false ? undefined : field.stickerOrder ?? index,
       uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
-      fontScale: section === "outside" ? field.fontScale : undefined,
+      fontScale: section === "outside" && !isSingleRowStickerGroupLayout(field.stickerGroupLayout) ? field.fontScale : undefined,
       segments: field.segments?.map((segment, segmentIndex) => ({
         ...segment,
         key: TemplateFieldUtils.uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
@@ -532,6 +540,17 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       })),
     });
   });
+
+  private enforceOutsideTableRules(fields: TemplateField[]) {
+    const seenSingleRowTables = new Set<number>();
+    return fields.flatMap((field) => {
+      const tableOrder = field.stickerGroupOrder ?? 0;
+      if (!isSingleRowStickerGroupLayout(field.stickerGroupLayout)) return [field];
+      if (seenSingleRowTables.has(tableOrder)) return [];
+      seenSingleRowTables.add(tableOrder);
+      return [{ ...field, fontScale: undefined }];
+    });
+  }
 
   private validateTemplateDrafts = (
     inside: TemplateField[],
@@ -561,7 +580,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       return;
     }
     const inside = this.cleanTemplateFields("inside", this.state.templateInsideDraft);
-    const outside = this.cleanTemplateFields("outside", this.state.templateOutsideDraft);
+    const outside = this.enforceOutsideTableRules(this.cleanTemplateFields("outside", this.state.templateOutsideDraft));
     if ([...inside, ...outside].some((field) => !field.label)) {
       this.setState({ templateNotice: { kind: "error", text: "กรุณากรอกชื่อ Field ให้ครบ" } });
       return;
@@ -725,7 +744,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     event.preventDefault();
     this.setState({ notice: undefined });
     const inside = this.cleanTemplateFields("inside", this.state.createInsideDraft);
-    const outside = this.cleanTemplateFields("outside", this.state.createOutsideDraft);
+    const outside = this.enforceOutsideTableRules(this.cleanTemplateFields("outside", this.state.createOutsideDraft));
     const validationError = this.validateTemplateDrafts(inside, outside, this.state.stickerLayouts);
     if (validationError) {
       this.setState({ notice: { kind: "error", text: validationError } });
@@ -802,7 +821,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
     const prompt = this.state.duplicateNamePrompt;
     if (!prompt) return;
     const inside = this.cleanTemplateFields("inside", this.state.createInsideDraft);
-    const outside = this.cleanTemplateFields("outside", this.state.createOutsideDraft);
+    const outside = this.enforceOutsideTableRules(this.cleanTemplateFields("outside", this.state.createOutsideDraft));
     this.setState({ saving: true, duplicateNamePrompt: undefined });
     try {
       const response = await fetch(`/api/customers/${prompt.customerId}/template`, {

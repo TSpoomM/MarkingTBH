@@ -1,4 +1,4 @@
-import type { Customer, StickerDefaults, TemplateField } from "@/app/types/customer";
+import type { Customer, StickerDefaults, StickerGroupLayout, TemplateField } from "@/app/types/customer";
 import type {
   FixedInsideField,
   InsideGroup,
@@ -86,7 +86,7 @@ export interface CreateCustomerFormProps {
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
   onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
-  onAddTable: (layout: "2x2" | "4x2") => void;
+  onAddTable: (layout: StickerGroupLayout) => void;
   onRenameTable: (tableOrder: number, name: string) => void;
   onRemoveTable: (tableOrder: number) => void;
   onMoveTable: (fromOrder: number, toOrder: number) => void;
@@ -117,7 +117,7 @@ export interface EditCustomerTemplateProps {
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
   onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
-  onAddTable: (layout: "2x2" | "4x2") => void;
+  onAddTable: (layout: StickerGroupLayout) => void;
   onRenameTable: (tableOrder: number, name: string) => void;
   onRemoveTable: (tableOrder: number) => void;
   onMoveTable: (fromOrder: number, toOrder: number) => void;
@@ -150,7 +150,7 @@ export interface TemplateFieldEditorProps {
   onAdd: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemove: (section: "inside" | "outside", index: number) => void;
   onMove: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
-  onAddTable?: (layout: "2x2" | "4x2") => void;
+  onAddTable?: (layout: StickerGroupLayout) => void;
   onRenameTable?: (tableOrder: number, name: string) => void;
   onRemoveTable?: (tableOrder: number) => void;
   onMoveTable?: (fromOrder: number, toOrder: number) => void;
@@ -189,7 +189,7 @@ export const initialGroups: InsideGroup[] = [
 
 export const fixedInsideFields = [
   { key: "gross", label: "GROSS", required: true },
-  { key: "nett", label: "NETT", required: true },
+  { key: "nett", label: "NETT", required: true, defaultValue: "1260" },
   { key: "destination", label: "DESTINATION", required: true },
   { key: "contractNo", label: "CONTRACT NO.", required: true },
 ] as const;

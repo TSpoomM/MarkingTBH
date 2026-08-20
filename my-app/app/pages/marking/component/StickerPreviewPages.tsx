@@ -13,7 +13,7 @@ interface StickerPreviewPagesProps {
 export default class StickerPreviewPages extends Component<StickerPreviewPagesProps> {
   private isVerticalOutside() {
     const { mode, items } = this.props;
-    return mode === "outsideFrame" && items[0]?.groupLayout === "4x2";
+    return mode === "outsideFrame" && StickerFactory.isVerticalGroupLayout(items[0]?.groupLayout);
   }
 
   private layout() {
@@ -26,7 +26,7 @@ export default class StickerPreviewPages extends Component<StickerPreviewPagesPr
 
   private pageSize() {
     if (this.props.mode === "customerName") return 16;
-    if (this.isVerticalOutside()) return 8;
+    if (this.isVerticalOutside()) return 16;
     return 4;
   }
 

@@ -7,18 +7,12 @@ import TableSection from "./TableSection";
 
 export default class OrderTable extends MarkingComponent {
   render() {
-    const customer = this.state.customers.find(
-      (item) => String(item.id) === this.state.customerId,
-    );
     const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
       StickerFactory.matchesCondition(field, this.state.stickerType, this.state.stickerOther),
     );
     const outsideGroups = StickerFactory.outsideGroups(outsideFields);
-    const customerName = this.state.printSections.customerName
-      ? this.state.template?.customerName ?? customer?.name ?? ""
-      : "";
     const stickerItems = StickerFactory.build({
-      customerName,
+      customerName: "",
       format: this.state.stickerFormat,
       sideCount: Number(this.state.stickerSides || 0),
       lotCount: Number(this.state.lotCount || 1),
@@ -38,8 +32,9 @@ export default class OrderTable extends MarkingComponent {
     ).map((items) => ({ items, layout: "frame" as const }));
     const outsideFramePages = outsideGroups.flatMap((group) => {
       const groupItems = stickerItems.filter((item) => item.kind === "outsideFrame" && item.group === group.name);
-      const layout = group.layout === "4x2" ? "frameVertical" as const : "frame" as const;
-      return StickerFactory.chunk(groupItems, group.layout === "4x2" ? 8 : 4).map((items) => ({ items, layout }));
+      const isVertical = StickerFactory.isVerticalGroupLayout(group.layout);
+      const layout = isVertical ? "frameVertical" as const : "frame" as const;
+      return StickerFactory.chunk(groupItems, isVertical ? 16 : 4).map((items) => ({ items, layout }));
     });
     const framePages = [
       ...(this.state.printSections.insideFrame ? insideFramePages : []),
@@ -79,8 +74,8 @@ export default class OrderTable extends MarkingComponent {
               <TableSection
                 key={`${group.name}-${groupIndex}`}
                 number={String(groupIndex + 3)}
-                title={`${StickerFactory.outsideGroupTitle(group.name)}`}
-                subtitle={`กรอกข้อมูลสำหรับลูกค้า ${customer?.name ?? "ที่เลือก"}`}
+                title={`นอกกรอบ ${groupIndex + 1}`}
+                subtitle={`กรอกข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ ${groupIndex + 1}`}
                 fields={group.fields}
                 rows={this.state.outsideRows}
                 lotStart={this.state.lotStart}
@@ -91,7 +86,7 @@ export default class OrderTable extends MarkingComponent {
               <TableSection
                 number="3"
                 title="ข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
-                subtitle={`กรอกข้อมูลสำหรับลูกค้า ${customer?.name ?? "ที่เลือก"}`}
+                subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
                 fields={[]}
                 rows={[]}
                 lotStart={this.state.lotStart}
