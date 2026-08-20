@@ -6424,6 +6424,7 @@ select {
 .custom-select-list button.selected {
 	background: #dff2e9;
 	color: #0f5f46;
+	border-color: #0b5f45;
 }
 
 .custom-select-list button.selected::after {

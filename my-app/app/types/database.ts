@@ -23,3 +23,10 @@ export type EmployeeReportAccessRow = RowDataPacket & {
   section: string | number | null;
   location_emp: string | null;
 };
+
+export type ActionLogRow = RowDataPacket & {
+  Logid: number;
+  empId: string;
+  createdDate: Date | string;
+  action: string;
+};

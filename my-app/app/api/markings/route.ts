@@ -3,6 +3,7 @@ import { markingService } from "@/app/services/marking.service";
 import { getRequestCurrentUserId } from "@/app/lib/requestCurrentUser";
 import { adminAuthService } from "@/app/lib/adminAuth";
 import { markingRepository } from "@/app/repositories/marking.repository";
+import { logAction } from "@/app/lib/actionLogger";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const result = await markingService.save(await request.json(), await getRequestCurrentUserId(request));
+    const payload = await request.json();
+    const employeeId = await getRequestCurrentUserId(request);
+    const result = await markingService.save(payload, employeeId);
+    const actionType = (payload as { actionType?: string })?.actionType === "print" ? "พิมพ์สติ๊กเกอร์" : "บันทึกข้อมูล";
+    const customerId = (payload as { customerId?: number | string })?.customerId;
+    await logAction(employeeId, `${actionType} Marking ลูกค้า ID ${customerId} (Marking ID ${result.id})`);
     return Response.json(
       { data: result, message: "บันทึกข้อมูลเรียบร้อยแล้ว" },
       { status: 201 },

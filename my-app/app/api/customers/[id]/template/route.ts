@@ -1,5 +1,6 @@
 import { customerService } from "../../../../services/customer.service";
 import { adminAuthService } from "@/app/lib/adminAuth";
+import { logAction } from "@/app/lib/actionLogger";
 import { z, ZodError } from "zod";
 import type { CustomerTemplateRouteContext } from "@/app/types/api";
 
@@ -110,6 +111,7 @@ export async function PUT(
       input.sticker,
       access.userId,
     );
+    await logAction(access.userId, `แก้ไข Template ลูกค้า ID ${customerId}`);
     return Response.json({ data, message: "อัปเดต Template แล้ว" });
   } catch (error) {
     if (error instanceof ZodError) {

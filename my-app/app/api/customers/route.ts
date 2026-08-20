@@ -1,5 +1,6 @@
 import { customerService } from "../../services/customer.service";
 import { adminAuthService } from "@/app/lib/adminAuth";
+import { logAction } from "@/app/lib/actionLogger";
 import { z, ZodError } from "zod";
 
 export const runtime = "nodejs";
@@ -196,6 +197,7 @@ export async function POST(request: Request) {
       );
     }
     const data = await customerService.createCustomer(input, access.userId);
+    await logAction(access.userId, `เพิ่มลูกค้าใหม่: ${data.name} (ID ${data.id})`);
     return Response.json({ data, message: "เพิ่มลูกค้าเรียบร้อยแล้ว" }, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
