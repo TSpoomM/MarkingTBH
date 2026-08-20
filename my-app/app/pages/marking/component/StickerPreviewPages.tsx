@@ -11,15 +11,23 @@ interface StickerPreviewPagesProps {
 }
 
 export default class StickerPreviewPages extends Component<StickerPreviewPagesProps> {
+  private isVerticalOutside() {
+    const { mode, items } = this.props;
+    return mode === "outsideFrame" && items[0]?.groupLayout === "4x2";
+  }
+
   private layout() {
     const { mode } = this.props;
     if (mode === "customerName") return "customerName" as const;
     if (mode === "fscLogo") return "fsc" as const;
+    if (this.isVerticalOutside()) return "frameVertical" as const;
     return "frame" as const;
   }
 
   private pageSize() {
-    return this.props.mode === "customerName" ? 16 : 4;
+    if (this.props.mode === "customerName") return 16;
+    if (this.isVerticalOutside()) return 8;
+    return 4;
   }
 
   render() {

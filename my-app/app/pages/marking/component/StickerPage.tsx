@@ -5,7 +5,7 @@ import StickerLabel from "./StickerLabel";
 import { STICKER_PAGE_CLASS } from "@/app/types/constants";
 import type { StickerItem } from "@/app/types/marking-sticker";
 
-export default class StickerPage extends Component<{ items: StickerItem[]; layout: "frame" | "customerName" | "fsc" }> {
+export default class StickerPage extends Component<{ items: StickerItem[]; layout: "frame" | "frameVertical" | "customerName" | "fsc" }> {
   render() {
     const { items, layout } = this.props;
     return (

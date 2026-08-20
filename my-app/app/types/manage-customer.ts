@@ -86,7 +86,7 @@ export interface CreateCustomerFormProps {
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
   onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
-  onAddTable: () => void;
+  onAddTable: (layout: "2x2" | "4x2") => void;
   onRenameTable: (tableOrder: number, name: string) => void;
   onRemoveTable: (tableOrder: number) => void;
   onMoveTable: (fromOrder: number, toOrder: number) => void;
@@ -117,7 +117,7 @@ export interface EditCustomerTemplateProps {
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
   onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
-  onAddTable: () => void;
+  onAddTable: (layout: "2x2" | "4x2") => void;
   onRenameTable: (tableOrder: number, name: string) => void;
   onRemoveTable: (tableOrder: number) => void;
   onMoveTable: (fromOrder: number, toOrder: number) => void;
@@ -150,7 +150,7 @@ export interface TemplateFieldEditorProps {
   onAdd: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemove: (section: "inside" | "outside", index: number) => void;
   onMove: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
-  onAddTable?: () => void;
+  onAddTable?: (layout: "2x2" | "4x2") => void;
   onRenameTable?: (tableOrder: number, name: string) => void;
   onRemoveTable?: (tableOrder: number) => void;
   onMoveTable?: (fromOrder: number, toOrder: number) => void;

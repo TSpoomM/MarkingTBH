@@ -286,6 +286,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       showOnSticker: true,
       stickerGroup: outsideGroup?.name,
       stickerGroupOrder: outsideGroup?.order,
+      stickerGroupLayout: outsideGroup?.layout,
       uppercase: section === "outside" ? true : undefined,
     };
     const currentFields = this.state[key];
@@ -314,6 +315,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
       showOnSticker: true,
       stickerGroup: outsideGroup?.name,
       stickerGroupOrder: outsideGroup?.order,
+      stickerGroupLayout: outsideGroup?.layout,
       uppercase: section === "outside" ? true : undefined,
     };
     const currentFields = this.state[key];
@@ -336,17 +338,21 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
   }
 
   private outsideGroup(fields: TemplateField[], requestedOrder?: number) {
-    if (!fields.length) return { order: 0, name: "นอกกรอบ 1" };
+    if (!fields.length) return { order: 0, name: "นอกกรอบ 1", layout: "2x2" as const };
     const order = requestedOrder ?? Math.max(...fields.map((field) => field.stickerGroupOrder ?? 0));
     const field = [...fields].reverse().find((item) => (item.stickerGroupOrder ?? 0) === order);
-    return { order, name: field?.stickerGroup ?? `นอกกรอบ ${order + 1}` };
+    return {
+      order,
+      name: field?.stickerGroup ?? `นอกกรอบ ${order + 1}`,
+      layout: field?.stickerGroupLayout ?? "2x2" as const,
+    };
   }
 
   private nextOutsideGroupOrder(fields: TemplateField[]) {
     return fields.length ? Math.max(...fields.map((field) => field.stickerGroupOrder ?? 0)) + 1 : 0;
   }
 
-  private addTemplateTable = () => {
+  private addTemplateTable = (layout: "2x2" | "4x2") => {
     const tableOrder = this.nextOutsideGroupOrder(this.state.templateOutsideDraft);
     this.setState({
       templateOutsideDraft: [
@@ -359,13 +365,14 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           showOnSticker: true,
           stickerGroup: `นอกกรอบ ${tableOrder + 1}`,
           stickerGroupOrder: tableOrder,
+          stickerGroupLayout: layout,
           uppercase: true,
         },
       ],
     });
   };
 
-  private addCreateTemplateTable = () => {
+  private addCreateTemplateTable = (layout: "2x2" | "4x2") => {
     const tableOrder = this.nextOutsideGroupOrder(this.state.createOutsideDraft);
     this.setState({
       createOutsideDraft: [
@@ -378,6 +385,7 @@ export default class CustomerForm extends Component<Record<string, never>, Custo
           showOnSticker: true,
           stickerGroup: `นอกกรอบ ${tableOrder + 1}`,
           stickerGroupOrder: tableOrder,
+          stickerGroupLayout: layout,
           uppercase: true,
         },
       ],

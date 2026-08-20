@@ -32,17 +32,18 @@ export default class OrderTable extends MarkingComponent {
       insideRow: this.state.insideRows[0],
       outsideRow: this.state.outsideRows[0],
     });
-    const insideStickerPages = StickerFactory.chunk(
+    const insideFramePages = StickerFactory.chunk(
       stickerItems.filter((item) => item.kind === "insideFrame"),
       4,
-    );
-    const outsideStickerItems = outsideGroups.flatMap((group) =>
-      stickerItems.filter((item) => item.kind === "outsideFrame" && item.group === group.name),
-    );
-    const outsideStickerPages = StickerFactory.chunk(outsideStickerItems, 4);
-    const frameStickerPages = [
-      ...(this.state.printSections.insideFrame ? insideStickerPages : []),
-      ...(this.state.printSections.outsideFrame ? outsideStickerPages : []),
+    ).map((items) => ({ items, layout: "frame" as const }));
+    const outsideFramePages = outsideGroups.flatMap((group) => {
+      const groupItems = stickerItems.filter((item) => item.kind === "outsideFrame" && item.group === group.name);
+      const layout = group.layout === "4x2" ? "frameVertical" as const : "frame" as const;
+      return StickerFactory.chunk(groupItems, group.layout === "4x2" ? 8 : 4).map((items) => ({ items, layout }));
+    });
+    const framePages = [
+      ...(this.state.printSections.insideFrame ? insideFramePages : []),
+      ...(this.state.printSections.outsideFrame ? outsideFramePages : []),
     ];
     const customerNameStickerPages = StickerFactory.chunk(
       stickerItems.filter((item) => item.kind === "customerName"),
@@ -102,8 +103,8 @@ export default class OrderTable extends MarkingComponent {
         </div>
 
         <div className="print-sheet">
-          {frameStickerPages.map((page, index) => (
-            <StickerPage items={page} key={`frame-${index}`} layout="frame" />
+          {framePages.map((page, index) => (
+            <StickerPage items={page.items} key={`frame-${index}`} layout={page.layout} />
           ))}
           {customerNameStickerPages.map((page, index) => (
             <StickerPage items={page} key={`customer-${index}`} layout="customerName" />

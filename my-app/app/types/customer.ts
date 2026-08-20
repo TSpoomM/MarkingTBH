@@ -30,6 +30,7 @@ export interface TemplateField {
   stickerOrder?: number;
   stickerGroup?: string;
   stickerGroupOrder?: number;
+  stickerGroupLayout?: "2x2" | "4x2";
   uppercase?: boolean;
   fontScale?: FontScale;
   hideLabel?: boolean;

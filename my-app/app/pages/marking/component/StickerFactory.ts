@@ -164,7 +164,7 @@ export default class StickerFactory {
       const name = field.stickerGroup?.trim() || inferred.groupName || "นอกกรอบ";
       const order = field.stickerGroupOrder ?? index;
       const groupKey = field.stickerGroupOrder === undefined ? name : `${order}:${name}`;
-      const group = groups.get(groupKey) ?? { name, order, fields: [] };
+      const group = groups.get(groupKey) ?? { name, order, layout: field.stickerGroupLayout ?? "2x2", fields: [] };
       group.order = Math.min(group.order, field.stickerGroupOrder ?? index);
       group.fields.push({
         ...field,
@@ -194,6 +194,7 @@ export default class StickerFactory {
       kind: StickerKind,
       detailsForSticker: (lot: number, pallet: number, sequence: number) => StickerItem["details"],
       group?: string,
+      groupLayout?: "2x2" | "4x2",
     ) => {
       const generated: StickerItem[] = [];
       let sequenceBase = 0;
@@ -212,6 +213,7 @@ export default class StickerFactory {
               stickerType,
               details: detailsForSticker(lotStart + lotIndex, pallet, sequence),
               group,
+              groupLayout,
             });
           }
         }
@@ -224,8 +226,9 @@ export default class StickerFactory {
       kind: StickerKind,
       detailsForSticker: (lot: number, pallet: number, sequence: number) => StickerItem["details"],
       group?: string,
+      groupLayout?: "2x2" | "4x2",
     ) => {
-      items.push(...buildLayoutItems(kind, detailsForSticker, group));
+      items.push(...buildLayoutItems(kind, detailsForSticker, group, groupLayout));
     };
 
     if (effectiveLayouts.insideFrame) {
@@ -233,7 +236,7 @@ export default class StickerFactory {
     }
     if (effectiveLayouts.outsideFrame) {
       this.outsideGroups(outsideFields).forEach((group) => {
-        addLayoutItems("outsideFrame", (lot, pallet, sequence) => this.fieldValues(group.fields, outsideRow, lot, pallet, sequence), group.name);
+        addLayoutItems("outsideFrame", (lot, pallet, sequence) => this.fieldValues(group.fields, outsideRow, lot, pallet, sequence), group.name, group.layout);
       });
     }
     if (effectiveLayouts.customerName) addLayoutItems("customerName", () => []);

@@ -21,6 +21,7 @@ export interface StickerItem {
   stickerType: string;
   details: StickerDetail[];
   group?: string;
+  groupLayout?: "2x2" | "4x2";
   logoCount?: number;
 }
 
@@ -43,6 +44,7 @@ export interface StickerBuildOptions {
 export interface OutsideStickerGroup {
   name: string;
   order: number;
+  layout: "2x2" | "4x2";
   fields: TemplateField[];
 }
 

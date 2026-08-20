@@ -1,10 +1,9 @@
-
-> my-app@0.1.0 dev
-> next dev
-
+yarn run v1.22.22
+$ next dev
 ▲ Next.js 16.2.11 (Turbopack)
 - Local:         http://localhost:3001
 - Network:       http://10.3.8.126:3001
 - Environments: .env
-✓ Ready in 3.4s
+✓ Ready in 1791ms
 [?25h
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.

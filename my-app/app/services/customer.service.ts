@@ -273,6 +273,7 @@ export class CustomerService {
           stickerOrder: field.stickerOrder ?? index,
           stickerGroup: field.stickerGroup,
           stickerGroupOrder: field.stickerGroupOrder,
+          stickerGroupLayout: field.stickerGroupLayout === "4x2" ? "4x2" as const : undefined,
           uppercase: section === "Outside" ? field.uppercase ?? true : field.uppercase,
           fontScale: this.normalizeFontScale(field.fontScale),
           hideLabel: field.hideLabel,

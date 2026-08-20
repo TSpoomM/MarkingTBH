@@ -1,16 +1,24 @@
 import { Component, type DragEvent } from "react";
 import Button from "@/app/components/Button";
 import Input from "@/app/components/Input";
+import Modal from "@/app/components/Modal";
 import Select from "@/app/components/Select";
 import TemplateFieldUtils from "./TemplateFieldUtils";
 import type { CounterType, TemplateField } from "@/app/types/customer";
 import type { TemplateFieldEditorProps } from "@/app/types/manage-customer";
+
+const OUTSIDE_TABLE_LAYOUT_OPTIONS: Array<{ value: "2x2" | "4x2"; label: string; description: string }> = [
+  { value: "2x2", label: "2 x 2 แนวนอน", description: "A4 แนวนอน 4 ดวง/หน้า (ค่าเริ่มต้น)" },
+  { value: "4x2", label: "4 x 2 แนวตั้ง", description: "A4 แนวตั้ง 8 ดวง/หน้า ประหยัดกระดาษกว่า" },
+];
 
 interface State {
   expanded: Record<string, boolean>;
   draggingFieldKey: string | null;
   draggingTableOrder: number | null;
   draggingSegmentKey: string | null;
+  addTableLayoutPromptOpen: boolean;
+  pendingTableLayout: "2x2" | "4x2";
 }
 
 export default class TemplateFieldEditor extends Component<TemplateFieldEditorProps, State> {
@@ -19,7 +27,22 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
     draggingFieldKey: null,
     draggingTableOrder: null,
     draggingSegmentKey: null,
+    addTableLayoutPromptOpen: false,
+    pendingTableLayout: "2x2",
   };
+
+  private openAddTablePrompt() {
+    this.setState({ addTableLayoutPromptOpen: true, pendingTableLayout: "2x2" });
+  }
+
+  private closeAddTablePrompt() {
+    this.setState({ addTableLayoutPromptOpen: false });
+  }
+
+  private confirmAddTable() {
+    this.props.onAddTable?.(this.state.pendingTableLayout);
+    this.closeAddTablePrompt();
+  }
 
   private dragFieldIndex: number | null = null;
   private dragTableOrder: number | null = null;
@@ -139,7 +162,10 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
       onRenameTable,
       onRemoveTable,
     } = this.props;
-    const { expanded, draggingFieldKey, draggingTableOrder, draggingSegmentKey } = this.state;
+    const {
+      expanded, draggingFieldKey, draggingTableOrder, draggingSegmentKey,
+      addTableLayoutPromptOpen, pendingTableLayout,
+    } = this.state;
 
     return (
       <div className="template-editor-panel">
@@ -268,7 +294,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           checked={field.hideLabel !== true}
                           onChange={(event) => onChange(section, index, { hideLabel: !event.target.checked })}
                         />
-                        <span>พิมพ์แค่ชื่อ Field</span>
+                        <span>พิมพ์แค่ข้อความใน Field</span>
                       </label>
                     )}
                     {section === "outside" && (
@@ -456,7 +482,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           );
         })}
         {section === "outside" && (
-          <Button className="add-field-button" onClick={onAddTable}>
+          <Button className="add-field-button" onClick={() => this.openAddTablePrompt()}>
             เพิ่ม Table
           </Button>
         )}
@@ -464,6 +490,42 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           <Button className="add-field-button" onClick={() => onAdd(section)}>
             เพิ่ม Field
           </Button>
+        )}
+        {section === "outside" && onAddTable && (
+          <Modal
+            open={addTableLayoutPromptOpen}
+            title="เลือกรูปแบบตารางนอกกรอบ"
+            subtitle="เลือก Template ก่อนเพิ่ม Table ใหม่ (เปลี่ยนภายหลังไม่ได้ ต้องลบแล้วเพิ่มใหม่)"
+            onClose={() => this.closeAddTablePrompt()}
+            footer={(
+              <div className="print-export-actions">
+                <Button type="button" className="print-export-secondary" onClick={() => this.closeAddTablePrompt()}>
+                  ยกเลิก
+                </Button>
+                <Button type="button" className="export-button" onClick={() => this.confirmAddTable()}>
+                  เพิ่ม Table
+                </Button>
+              </div>
+            )}
+          >
+            <div className="editor-body choice-list outside-table-layout-choices">
+              {OUTSIDE_TABLE_LAYOUT_OPTIONS.map((option) => (
+                <label
+                  className={`choice ${pendingTableLayout === option.value ? "selected" : ""}`}
+                  key={option.value}
+                >
+                  <Input
+                    bare
+                    type="radio"
+                    name="outside-table-layout"
+                    checked={pendingTableLayout === option.value}
+                    onChange={() => this.setState({ pendingTableLayout: option.value })}
+                  />
+                  <span><b>{option.label}</b><small>{option.description}</small></span>
+                </label>
+              ))}
+            </div>
+          </Modal>
         )}
       </div>
     );

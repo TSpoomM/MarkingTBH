@@ -6,8 +6,9 @@ export const FONT_SCALE_MULTIPLIERS: Record<NonNullable<FontScale>, number> = {
   xlarge: 1.7,
 };
 
-export const STICKER_PAGE_CLASS: Record<"frame" | "customerName" | "fsc", string> = {
+export const STICKER_PAGE_CLASS: Record<"frame" | "frameVertical" | "customerName" | "fsc", string> = {
   frame: "sticker-page-frame",
+  frameVertical: "sticker-page-frame-vertical",
   customerName: "sticker-page-customer",
   fsc: "sticker-page-fsc",
 };

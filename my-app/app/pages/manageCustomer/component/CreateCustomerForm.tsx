@@ -61,7 +61,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
           />
         )}
         <form onSubmit={onSubmit}>
-          <section className="config-card">
+          <section className="config-card template-basics-card">
             <SectionHeading
               number="1"
               title="เพิ่ม Template"
