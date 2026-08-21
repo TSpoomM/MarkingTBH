@@ -1,14 +1,14 @@
 import {
-  customerRepository,
-  CustomerRepository,
-} from "../repositories/customer.repository";
-import type { CounterType, CustomerTemplate, TemplateField } from "@/app/types/customer";
-import { DEFAULT_STICKER_DEFAULTS, DEFAULT_STICKER_LAYOUTS, type CreateCustomerPayload } from "@/app/types/customer-form";
+  templateRepository,
+  TemplateRepository,
+} from "../repositories/template.repository";
+import type { CounterType, TemplateDetail, TemplateField } from "@/app/types/template";
+import { DEFAULT_STICKER_DEFAULTS, DEFAULT_STICKER_LAYOUTS, type CreateTemplatePayload } from "@/app/types/template-form";
 
-export class CustomerService {
-  constructor(private readonly repository: CustomerRepository) {}
+export class TemplateService {
+  constructor(private readonly repository: TemplateRepository) {}
 
-  private requiredStickerFields(): CustomerTemplate["sticker"]["enabledFields"] {
+  private requiredStickerFields(): TemplateDetail["sticker"]["enabledFields"] {
     return ["side", "format", "type", "other"];
   }
 
@@ -100,13 +100,13 @@ export class CustomerService {
     };
   }
 
-  private parseSticker(value: string | null): CustomerTemplate["sticker"] {
+  private parseSticker(value: string | null): TemplateDetail["sticker"] {
     try {
       const parsed = JSON.parse(value ?? "") as {
         sticker?: {
           enabledFields?: Array<"side" | "format" | "type" | "other">;
-          layouts?: Partial<CustomerTemplate["sticker"]["layouts"]>;
-          defaults?: Partial<CustomerTemplate["sticker"]["defaults"]>;
+          layouts?: Partial<TemplateDetail["sticker"]["layouts"]>;
+          defaults?: Partial<TemplateDetail["sticker"]["defaults"]>;
           isActive?: boolean;
         };
       };
@@ -177,6 +177,8 @@ export class CustomerService {
               condition: this.normalizeCondition(field.condition),
               showOnSticker: field.showOnSticker ?? true,
               stickerOrder: field.stickerOrder ?? index,
+              isCounter: field.isCounter,
+              counterType: field.counterType,
               fontScale: this.normalizeFontScale(field.fontScale),
               hideLabel: field.hideLabel,
             });
@@ -275,6 +277,8 @@ export class CustomerService {
           stickerGroupOrder: field.stickerGroupOrder,
           stickerGroupLayout: field.stickerGroupLayout === "8x2" || field.stickerGroupLayout === "4x2" ? "8x2" as const : undefined,
           uppercase: section === "Outside" ? field.uppercase ?? true : field.uppercase,
+          isCounter: field.isCounter,
+          counterType: field.counterType,
           fontScale: this.normalizeFontScale(field.fontScale),
           hideLabel: field.hideLabel,
         });
@@ -298,31 +302,36 @@ export class CustomerService {
     }
   }
 
-  getCustomers(includeInactive = false) {
+  getTemplates(includeInactive = false) {
     return this.repository.findAll(includeInactive);
   }
 
-  async renameCustomerIfChanged(customerId: number, name: string | undefined) {
+  async renameTemplateIfChanged(templateId: number, name: string | undefined) {
     if (!name) return;
     const trimmed = name.trim();
     if (!trimmed) return;
-    const customers = await this.repository.findAll(true);
-    const current = customers.find((customer) => customer.c_id === customerId);
+    const templates = await this.repository.findAll(true);
+    const current = templates.find((template) => template.id === templateId);
     if (!current) throw new Error("ไม่พบข้อมูลลูกค้า");
     if (trimmed === current.c_name) return;
-    const duplicate = customers.find((customer) =>
-      customer.c_id !== customerId && customer.c_name.trim().toLowerCase() === trimmed.toLowerCase(),
+    const duplicate = templates.find((template) =>
+      template.id !== templateId && template.c_name.trim().toLowerCase() === trimmed.toLowerCase(),
     );
     if (duplicate) throw new Error(`มีลูกค้าชื่อ "${duplicate.c_name}" อยู่แล้ว กรุณาตั้งชื่ออื่น`);
-    await this.repository.updateName(customerId, trimmed);
+    await this.repository.updateName(templateId, trimmed);
   }
 
-  async updateCustomerActiveIfChanged(customerId: number, isActive: boolean | undefined) {
+  async updateTemplateActiveIfChanged(templateId: number, isActive: boolean | undefined) {
     if (isActive === undefined) return;
-    await this.repository.updateActive(customerId, isActive);
+    await this.repository.updateActive(templateId, isActive);
   }
 
-  async createCustomer(input: CreateCustomerPayload, createdBy: string) {
+  async createTemplate(input: CreateTemplatePayload, createdBy: string) {
+    const name = input.name.trim();
+    const templates = await this.repository.findAll(true);
+    const duplicate = templates.find((template) => template.c_name.trim().toLowerCase() === name.toLowerCase());
+    if (duplicate) throw new Error(`มีลูกค้าชื่อ "${duplicate.c_name}" อยู่แล้ว กรุณาตั้งชื่ออื่น`);
+
     const inside = input.template
       ? JSON.stringify({
         version: 2,
@@ -341,37 +350,37 @@ export class CustomerService {
         version: input.configuration.version,
         tables: input.configuration.outside.tables,
       });
-    const customerId = await this.repository.createWithTemplate(
-      input.name.trim(),
+    const templateId = await this.repository.createWithTemplate(
+      name,
       inside,
       outside,
       createdBy,
       input.isActive ?? true,
     );
-    return { id: customerId, name: input.name.trim() };
+    return { id: templateId, name };
   }
 
-  async getCustomerTemplate(customerId: number): Promise<CustomerTemplate> {
-    const customers = await this.repository.findAll(true);
-    const customer = customers.find((item) => item.c_id === customerId);
-    if (!customer) throw new Error("ไม่พบข้อมูลลูกค้า");
+  async getTemplate(id: number): Promise<TemplateDetail> {
+    const templates = await this.repository.findAll(true);
+    const template = templates.find((item) => item.id === id);
+    if (!template) throw new Error("ไม่พบข้อมูลลูกค้า");
 
-    const template = await this.repository.findLatestTemplate(customerId);
-    if (!template) throw new Error("ลูกค้ารายนี้ยังไม่มี Template ในฐานข้อมูล");
+    const latestTemplate = await this.repository.findLatestTemplate(id);
+    if (!latestTemplate) throw new Error("ลูกค้ารายนี้ยังไม่มี Template ในฐานข้อมูล");
     return {
-      customerId,
-      customerName: customer.c_name,
-      templateId: template.id,
-      sticker: this.parseSticker(template.inside),
-      inside: this.parseFields(template.inside, "Inside"),
-      outside: this.parseFields(template.outside, "Outside", true),
+      id,
+      customerName: latestTemplate.c_name,
+      templateId: latestTemplate.id,
+      sticker: this.parseSticker(latestTemplate.inside),
+      inside: this.parseFields(latestTemplate.inside, "Inside"),
+      outside: this.parseFields(latestTemplate.outside, "Outside", true),
     };
   }
 
   private buildInsideTemplateJson(
     previousInside: string | null,
     fields: TemplateField[],
-    stickerPatch?: Partial<CustomerTemplate["sticker"]>,
+    stickerPatch?: Partial<TemplateDetail["sticker"]>,
   ) {
     const currentSticker = this.parseSticker(previousInside);
     const sticker = {
@@ -394,13 +403,13 @@ export class CustomerService {
   }
 
   async saveTemplate(
-    customerId: number,
+    templateId: number,
     insideFields: TemplateField[],
     fields: TemplateField[],
-    sticker: Partial<CustomerTemplate["sticker"]> | undefined,
+    sticker: Partial<TemplateDetail["sticker"]> | undefined,
     updatedBy: string,
   ) {
-    const template = await this.repository.findLatestTemplate(customerId);
+    const template = await this.repository.findLatestTemplate(templateId);
     if (!template) throw new Error("ลูกค้ารายนี้ยังไม่มี Template ในฐานข้อมูล");
     const affectedRows = await this.repository.updateTemplate(
       template.id,
@@ -409,8 +418,8 @@ export class CustomerService {
       updatedBy,
     );
     if (!affectedRows) throw new Error("อัปเดต Template ไม่สำเร็จ");
-    return this.getCustomerTemplate(customerId);
+    return this.getTemplate(templateId);
   }
 }
 
-export const customerService = new CustomerService(customerRepository);
+export const templateService = new TemplateService(templateRepository);

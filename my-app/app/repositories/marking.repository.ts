@@ -1,5 +1,5 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
-import type { TemplateField } from "@/app/types/customer";
+import type { TemplateField } from "@/app/types/template";
 import type { CreateMarkingInput, MarkingContent, MarkingHistoryFieldMeta, MarkingHistoryItem } from "@/app/types/marking";
 import type { Pool } from "mysql2/promise";
 import { pool } from "../lib/db";
@@ -160,25 +160,25 @@ export class MarkingRepository {
     return meta;
   }
 
-  private async findHistoryFieldMeta(customerIds: number[]) {
-    const uniqueIds = Array.from(new Set(customerIds.filter(Boolean)));
+  private async findHistoryFieldMeta(templateIds: number[]) {
+    const uniqueIds = Array.from(new Set(templateIds.filter(Boolean)));
     if (!uniqueIds.length) return new Map<number, MarkingHistoryItem["fieldMeta"]>();
     const placeholders = uniqueIds.map(() => "?").join(",");
     const [rows] = await this.pool.execute<RowDataPacket[]>(
-      `SELECT t.c_id, t.inside, t.outside
+      `SELECT t.id, t.inside, t.outside
        FROM tb_template t
        INNER JOIN (
-         SELECT c_id, MAX(id) AS id
+         SELECT id, MAX(id) AS id
          FROM tb_template
-         WHERE c_id IN (${placeholders})
-         GROUP BY c_id
+         WHERE id IN (${placeholders})
+         GROUP BY id
        ) latest ON latest.id = t.id`,
       uniqueIds,
     );
     return new Map(rows.map((row) => {
       const record = row as Record<string, unknown>;
       return [
-        this.numberValue(record.c_id),
+        this.numberValue(record.id),
         {
           inside: this.buildFieldMeta(this.parseTemplateFields(record.inside, "Inside")),
           outside: this.buildFieldMeta(this.parseTemplateFields(record.outside, "Outside")),
@@ -194,7 +194,7 @@ export class MarkingRepository {
        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
       [
         input.employeeId,
-        input.customerId,
+        input.templateId,
         input.totalLot,
         input.stickerSides,
         JSON.stringify(input.contentInside),
@@ -204,7 +204,7 @@ export class MarkingRepository {
     return result.insertId;
   }
 
-  async findLastLotEnd(customerId: number, productionYear: number, employeeLocation: string) {
+  async findLastLotEnd(templateId: number, productionYear: number, employeeLocation: string) {
     const [rows] = await this.pool.execute<Array<RowDataPacket & { content_inside: string | null }>>(
       `SELECT l.content_inside
        FROM tb_marking l
@@ -212,7 +212,7 @@ export class MarkingRepository {
        WHERE l.cus_id = ?
          AND TRIM(COALESCE(e.location_emp, '')) = ?
        ORDER BY l.created_date DESC`,
-      [customerId, employeeLocation],
+      [templateId, employeeLocation],
     );
 
     let lastLotEnd = 0;
@@ -237,16 +237,22 @@ export class MarkingRepository {
 
   async findHistory(limit = 100): Promise<MarkingHistoryItem[]> {
     const [rows] = await this.pool.execute<RowDataPacket[]>(
-      `SELECT l.*, c.c_name, e.emp_name, e.emp_name_en, e.location_emp
+      `SELECT l.*, t.c_name, e.emp_name, e.emp_name_en, e.location_emp
        FROM tb_marking l
-       LEFT JOIN tb_customer c ON c.c_id = l.cus_id
+       LEFT JOIN tb_template t ON t.id = (
+         SELECT latest_template.id
+         FROM tb_template latest_template
+         WHERE latest_template.id = l.cus_id
+         ORDER BY latest_template.created_date DESC, latest_template.id DESC
+         LIMIT 1
+       )
        LEFT JOIN tb_employee_list e ON TRIM(e.fs_id) = TRIM(l.emp_id)
        ORDER BY l.created_date DESC
        LIMIT ?`,
       [limit],
     );
 
-    const fieldMetaByCustomer = await this.findHistoryFieldMeta(rows.map((row) => this.numberValue(row.cus_id)));
+    const fieldMetaByTemplate = await this.findHistoryFieldMeta(rows.map((row) => this.numberValue(row.cus_id)));
 
     return rows.map((row, index) => {
       const record = row as Record<string, unknown>;
@@ -262,7 +268,7 @@ export class MarkingRepository {
         employeeId: String(record.emp_id ?? ""),
         employeeName: String(record.emp_name ?? record.emp_name_en ?? record.emp_id ?? ""),
         employeeLocation: String(record.location_emp ?? ""),
-        customerId: this.numberValue(record.cus_id),
+        templateId: this.numberValue(record.cus_id),
         customerName: String(record.c_name ?? ""),
         totalLot: this.numberValue(record.total_lot),
         stickerSides: this.numberValue(record.sticker_sides),
@@ -280,7 +286,7 @@ export class MarkingRepository {
           : String(record.created_date ?? ""),
         inside,
         outside,
-        fieldMeta: fieldMetaByCustomer.get(this.numberValue(record.cus_id)),
+        fieldMeta: fieldMetaByTemplate.get(this.numberValue(record.cus_id)),
       };
     });
   }

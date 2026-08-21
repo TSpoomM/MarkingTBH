@@ -1,4 +1,4 @@
-import { customerService } from "../../services/customer.service";
+import { templateService } from "../../services/template.service";
 import { adminAuthService } from "@/app/lib/adminAuth";
 import { logAction } from "@/app/lib/actionLogger";
 import { z, ZodError } from "zod";
@@ -26,19 +26,19 @@ export async function GET(request: Request) {
         return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
       }
     }
-    const rows = await customerService.getCustomers(includeInactive);
-    const customers = rows
-      .map((row) => ({ id: row.c_id, name: row.c_name, isActive: isActiveValue(row.is_active) }))
-      .filter((customer) => includeInactive || customer.isActive)
+    const rows = await templateService.getTemplates(includeInactive);
+    const templates = rows
+      .map((row) => ({ id: row.id, name: row.c_name, isActive: isActiveValue(row.is_active) }))
+      .filter((template) => includeInactive || template.isActive)
       .sort((first, second) =>
         Number(second.isActive) - Number(first.isActive) ||
         first.name.localeCompare(second.name),
       );
     return Response.json({
-      data: customers,
+      data: templates,
     });
   } catch (error) {
-    console.error("GET /api/customers", error);
+    console.error("GET /api/templates", error);
     return Response.json(
       { message: "เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบ XAMPP และไฟล์ .env" },
       { status: 500 },
@@ -68,6 +68,8 @@ const outsideFieldSchema = z.object({
   stickerOrder: z.number().int().min(0).optional(),
   system: z.boolean().optional(),
   uppercase: z.boolean().optional(),
+  isCounter: z.boolean().optional(),
+  counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
   defaultValue: z.string().optional(),
   locked: z.boolean().optional(),
   fontScale: z.enum(["normal", "xlarge"]).optional(),
@@ -104,11 +106,13 @@ const templateFieldSchema = z.object({
   stickerGroupOrder: z.number().int().min(0).optional(),
   stickerGroupLayout: z.enum(["2x2", "4x2", "8x2"]).optional(),
   uppercase: z.boolean().optional(),
+  isCounter: z.boolean().optional(),
+  counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
   fontScale: z.enum(["normal", "xlarge"]).optional(),
   hideLabel: z.boolean().optional(),
 });
 
-const createCustomerSchema = z.object({
+const createTemplateSchema = z.object({
   name: z.string().trim().min(1, "กรุณากรอกชื่อลูกค้า").max(200),
   isActive: z.boolean().default(true),
   configuration: z.object({
@@ -184,7 +188,7 @@ export async function POST(request: Request) {
     if (!access.isAdmin) {
       return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
     }
-    const input = createCustomerSchema.parse(await request.json());
+    const input = createTemplateSchema.parse(await request.json());
     if (
       !input.configuration.sticker.enabledFields.includes("side") ||
       !input.configuration.sticker.enabledFields.includes("format") ||
@@ -196,7 +200,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    const data = await customerService.createCustomer(input, access.userId);
+    const data = await templateService.createTemplate(input, access.userId);
     await logAction(access.userId, `เพิ่มลูกค้าใหม่: ${data.name} (ID ${data.id})`);
     return Response.json({ data, message: "เพิ่มลูกค้าเรียบร้อยแล้ว" }, { status: 201 });
   } catch (error) {
@@ -206,7 +210,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    console.error("POST /api/customers", error);
+    console.error("POST /api/templates", error);
     return Response.json(
       { message: "เพิ่มลูกค้าไม่สำเร็จ กรุณาตรวจสอบชื่อซ้ำและโครงสร้างฐานข้อมูล" },
       { status: 500 },

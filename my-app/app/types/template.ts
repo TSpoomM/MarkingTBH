@@ -30,15 +30,17 @@ export interface TemplateField {
   };
   showOnSticker?: boolean;
   stickerOrder?: number;
+  isCounter?: boolean;
   stickerGroup?: string;
   stickerGroupOrder?: number;
   stickerGroupLayout?: LegacyStickerGroupLayout;
   uppercase?: boolean;
+  counterType?: CounterType;
   fontScale?: FontScale;
   hideLabel?: boolean;
 }
 
-export interface Customer {
+export interface Template {
   id: number;
   name: string;
   isActive: boolean;
@@ -59,8 +61,8 @@ export interface StickerDefaults {
   stickerFsc: boolean;
 }
 
-export interface CustomerTemplate {
-  customerId: number;
+export interface TemplateDetail {
+  id: number;
   customerName: string;
   templateId: number | null;
   sticker: {

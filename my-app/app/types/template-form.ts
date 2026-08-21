@@ -1,4 +1,4 @@
-import type { CustomerTemplate, StickerDefaults, TemplateField } from "./customer";
+import type { TemplateDetail, StickerDefaults, TemplateField } from "./template";
 
 export const STICKER_FORMATS = {
   "5533": [5, 5, 3, 3],
@@ -75,7 +75,7 @@ export interface OutsideTable {
   fields: OutsideField[];
 }
 
-export interface CustomerConfiguration {
+export interface TemplateConfiguration {
   version: 2;
   sticker: {
     enabledFields: StickerField[];
@@ -89,11 +89,11 @@ export interface CustomerConfiguration {
   outside: { tables: OutsideTable[] };
 }
 
-export interface CreateCustomerPayload {
+export interface CreateTemplatePayload {
   name: string;
   isActive?: boolean;
-  configuration: CustomerConfiguration;
-  template?: Pick<CustomerTemplate, "sticker"> & {
+  configuration: TemplateConfiguration;
+  template?: Pick<TemplateDetail, "sticker"> & {
     inside: TemplateField[];
     outside: TemplateField[];
   };

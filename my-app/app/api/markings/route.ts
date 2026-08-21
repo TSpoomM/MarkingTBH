@@ -28,8 +28,8 @@ export async function POST(request: Request) {
     const employeeId = await getRequestCurrentUserId(request);
     const result = await markingService.save(payload, employeeId);
     const actionType = (payload as { actionType?: string })?.actionType === "print" ? "พิมพ์สติ๊กเกอร์" : "บันทึกข้อมูล";
-    const customerId = (payload as { customerId?: number | string })?.customerId;
-    await logAction(employeeId, `${actionType} Marking ลูกค้า ID ${customerId} (Marking ID ${result.id})`);
+    const templateId = (payload as { templateId?: number | string })?.templateId;
+    await logAction(employeeId, `${actionType} Marking ลูกค้า ID ${templateId} (Marking ID ${result.id})`);
     return Response.json(
       { data: result, message: "บันทึกข้อมูลเรียบร้อยแล้ว" },
       { status: 201 },

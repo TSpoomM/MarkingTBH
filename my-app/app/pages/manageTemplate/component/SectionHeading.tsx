@@ -1,5 +1,5 @@
 import { Component } from "react";
-import type { SectionHeadingProps } from "@/app/types/manage-customer";
+import type { SectionHeadingProps } from "@/app/types/manage-template";
 
 export default class SectionHeading extends Component<SectionHeadingProps> {
   render() {

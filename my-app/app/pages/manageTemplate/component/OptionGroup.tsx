@@ -1,5 +1,5 @@
 import { Component } from "react";
-import type { OptionGroupProps } from "@/app/types/manage-customer";
+import type { OptionGroupProps } from "@/app/types/manage-template";
 
 export default class OptionGroup extends Component<OptionGroupProps> {
   render() {

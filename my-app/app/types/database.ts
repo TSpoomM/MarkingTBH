@@ -1,12 +1,12 @@
 import type { RowDataPacket } from "mysql2";
 
-export type CustomerRow = RowDataPacket & { c_id: number; c_name: string; is_active?: number | string | boolean | null };
+export type TemplateListRow = RowDataPacket & { id: number; c_name: string; is_active?: number | string | boolean | null };
 
 export type ActiveColumnRow = RowDataPacket & { column_name: string; column_type: string };
 
 export type TemplateRow = RowDataPacket & {
   id: number;
-  c_id: number;
+  c_name: string;
   inside: string | null;
   outside: string | null;
 };

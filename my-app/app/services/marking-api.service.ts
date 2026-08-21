@@ -1,8 +1,8 @@
 import type {
-  Customer,
-  CustomerTemplate,
+  Template,
+  TemplateDetail,
   TemplateField,
-} from "@/app/types/customer";
+} from "@/app/types/template";
 import type {
   SaveMarkingPayload,
 } from "@/app/types/marking";
@@ -23,17 +23,17 @@ export class MarkingApiService {
     return body;
   }
 
-  getCustomers(): Promise<Customer[]> {
-    return this.request("/api/customers?includeInactive=visible");
+  getTemplates(): Promise<Template[]> {
+    return this.request("/api/templates?includeInactive=visible");
   }
 
-  getTemplate(customerId: number): Promise<CustomerTemplate> {
-    return this.request(`/api/customers/${customerId}/template`);
+  getTemplate(templateId: number): Promise<TemplateDetail> {
+    return this.request(`/api/templates/${templateId}/template`);
   }
 
-  async getNextLotStart(customerId: number, productionDate: string): Promise<number> {
+  async getNextLotStart(templateId: number, productionDate: string): Promise<number> {
     const result = await this.request<{ lotStart: number }>(
-      `/api/customers/${customerId}/next-lot?productionDate=${encodeURIComponent(productionDate)}`,
+      `/api/templates/${templateId}/next-lot?productionDate=${encodeURIComponent(productionDate)}`,
     );
     return result.lotStart;
   }
@@ -46,8 +46,8 @@ export class MarkingApiService {
     });
   }
 
-  saveTemplate(customerId: number, inside: TemplateField[], outside: TemplateField[]): Promise<CustomerTemplate> {
-    return this.request(`/api/customers/${customerId}/template`, {
+  saveTemplate(templateId: number, inside: TemplateField[], outside: TemplateField[]): Promise<TemplateDetail> {
+    return this.request(`/api/templates/${templateId}/template`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ inside, outside }),

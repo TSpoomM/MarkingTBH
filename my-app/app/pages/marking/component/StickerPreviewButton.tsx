@@ -9,7 +9,7 @@ import StickerPreviewPages from "./StickerPreviewPages";
 const PREVIEW_MODE_LABELS: Record<StickerKind, string> = {
   insideFrame: "ในกรอบ",
   outsideFrame: "นอกกรอบ",
-  customerName: "ชื่อ Customer",
+  customerName: "ชื่อ Template",
   fscLogo: "โลโก้ FSC",
 };
 
@@ -38,18 +38,20 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
     return PREVIEW_MODE_ORDER.filter((kind) => kinds.has(kind));
   }
 
-  private firstPreviewMode() {
-    return this.previewModes()[0] ?? "insideFrame";
-  }
-
   private outsideGroups(items: StickerItem[]) {
-    const groups: string[] = [];
+    const groups: Array<{ key: string; name: string; items: StickerItem[] }> = [];
     items.forEach((item) => {
-      const name = item.group ?? "";
-      if (!name || groups.includes(name)) return;
-      groups.push(name);
+      const name = item.group?.trim() || "นอกกรอบ";
+      const key = `${item.groupOrder ?? 0}:${name}`;
+      const group = groups.find((entry) => entry.key === key);
+      if (group) group.items.push(item);
+      else groups.push({ key, name, items: [item] });
     });
     return groups;
+  }
+
+  private firstPreviewMode() {
+    return this.previewModes()[0] ?? "insideFrame";
   }
 
   render() {
@@ -57,12 +59,10 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
     const { previewOpen, previewMode, previewGroup } = this.state;
     const previewModes = this.previewModes();
     const activeMode = previewModes.includes(previewMode) ? previewMode : this.firstPreviewMode();
-    const modePreviewItems = items.filter((item) => item.kind === activeMode);
-    const outsideGroups = activeMode === "outsideFrame" ? this.outsideGroups(modePreviewItems) : [];
-    const activeGroup = outsideGroups.includes(previewGroup ?? "") ? previewGroup : (outsideGroups[0] ?? null);
-    const activePreviewItems = activeGroup
-      ? modePreviewItems.filter((item) => item.group === activeGroup)
-      : modePreviewItems;
+    const modeItems = items.filter((item) => item.kind === activeMode);
+    const outsideGroups = activeMode === "outsideFrame" ? this.outsideGroups(modeItems) : [];
+    const activeOutsideGroup = outsideGroups.find((group) => group.key === previewGroup) ?? outsideGroups[0];
+    const activeItems = activeOutsideGroup?.items ?? modeItems;
 
     return (
       // <div className="sticker-preview-wrap">
@@ -70,7 +70,11 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
         <Button
           className={`sticker-preview-open marking-preview-open ${className}`.trim()}
           disabled={items.length === 0}
-          onClick={() => this.setState({ previewOpen: true, previewMode: this.firstPreviewMode(), previewGroup: null })}
+          onClick={() => this.setState({
+            previewOpen: true,
+            previewMode: this.firstPreviewMode(),
+            previewGroup: null,
+          })}
           title={items.length === 0 ? "ยังไม่มีข้อมูลสำหรับ Preview Sticker" : "ดู Preview Sticker"}
         >
           ดู Preview Sticker
@@ -96,22 +100,22 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
                 ))}
               </div>
             )}
-            {outsideGroups.length > 1 && (
-              <div className="sticker-template-preview-modes sticker-template-preview-groups" aria-label="เลือกนอกกรอบ">
-                {outsideGroups.map((group, index) => (
+            {outsideGroups.length > 0 && (
+              <div className="sticker-template-preview-modes sticker-template-preview-groups" aria-label="เลือก Table นอกกรอบ">
+                {outsideGroups.map((group) => (
                   <button
                     type="button"
-                    className={group === activeGroup ? "active" : ""}
-                    onClick={() => this.setState({ previewGroup: group })}
-                    key={group}
+                    className={group.key === activeOutsideGroup?.key ? "active" : ""}
+                    onClick={() => this.setState({ previewGroup: group.key })}
+                    key={group.key}
                   >
-                    {`นอกกรอบ ${index + 1}`}
+                    {group.name}
                   </button>
                 ))}
               </div>
             )}
             <div className="container pdf-preview sticker-template-real-preview">
-              <StickerPreviewPages items={activePreviewItems} mode={activeMode} />
+              <StickerPreviewPages items={activeItems} mode={activeMode} />
             </div>
           </div>
         </Modal>

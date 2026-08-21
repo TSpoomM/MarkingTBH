@@ -50,7 +50,7 @@ export interface NavbarProps {
   title: string;
   subtitle?: string;
   action?: ReactNode;
-  activeNav?: "marking" | "history" | "customers";
+  activeNav?: "marking" | "history" | "templates";
 }
 
 export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {

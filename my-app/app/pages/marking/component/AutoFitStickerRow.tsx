@@ -8,7 +8,7 @@ import type { StickerItem } from "@/app/types/marking-sticker";
 // one line. Text is never wrapped and never clipped — a verify loop keeps nudging the
 // size down (past any single-pass rounding error) until scrollWidth truly fits.
 export default class AutoFitStickerRow extends Component<
-  { detail: StickerItem["details"][number]; cardScale: number },
+  { detail: StickerItem["details"][number]; cardScale: number; maxFontSize?: number },
   { fontSize: number }
 > {
   private readonly defaultFontSize = 35;
@@ -31,8 +31,12 @@ export default class AutoFitStickerRow extends Component<
     }
   }
 
-  componentDidUpdate(previousProps: { detail: StickerItem["details"][number]; cardScale: number }) {
-    if (previousProps.detail !== this.props.detail || previousProps.cardScale !== this.props.cardScale) {
+  componentDidUpdate(previousProps: { detail: StickerItem["details"][number]; cardScale: number; maxFontSize?: number }) {
+    if (
+      previousProps.detail !== this.props.detail ||
+      previousProps.cardScale !== this.props.cardScale ||
+      previousProps.maxFontSize !== this.props.maxFontSize
+    ) {
       this.fit();
     }
   }
@@ -49,8 +53,9 @@ export default class AutoFitStickerRow extends Component<
     const rowScale = FONT_SCALE_MULTIPLIERS[this.props.detail.fontScale ?? "normal"] ?? 1;
     const baseFontSize = (Number.isFinite(inheritedFontSize) ? inheritedFontSize : this.defaultFontSize)
       * this.props.cardScale * rowScale;
+    const maxFontSize = this.props.maxFontSize ?? Number.POSITIVE_INFINITY;
 
-    let fontSize = baseFontSize;
+    let fontSize = Math.min(baseFontSize, maxFontSize);
     element.style.fontSize = `${fontSize}px`;
     let availableWidth = element.clientWidth;
     let requiredWidth = element.scrollWidth;

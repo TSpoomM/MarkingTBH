@@ -10,7 +10,7 @@ import {
 
 export const markingSchema = z.object({
   employeeId: z.string().trim().min(1).optional(),
-  customerId: z.coerce.number().int().positive("กรุณาเลือกลูกค้า"),
+  templateId: z.coerce.number().int().positive("กรุณาเลือกลูกค้า"),
   totalLot: z.coerce.number().nonnegative(),
   stickerSides: z.coerce.number().int().min(1).max(6),
   lotCount: z.coerce.number().int().min(1),

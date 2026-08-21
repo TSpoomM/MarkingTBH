@@ -1,23 +1,22 @@
-import type { ResultSetHeader } from "mysql2";
+import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool } from "mysql2/promise";
 import { pool } from "../lib/db";
-import type { ActiveColumnRow, CustomerRow, TemplateRow } from "@/app/types/database";
+import type { ActiveColumnRow, TemplateListRow, TemplateRow } from "@/app/types/database";
 
-export class CustomerRepository {
-  private activeColumn: { tableName: "tb_customer" | "tb_template"; columnName: string; columnType: string } | null | undefined;
+export class TemplateRepository {
+  private activeColumn: { tableName: "tb_template"; columnName: string; columnType: string } | null | undefined;
 
   constructor(private readonly pool: Pool) {}
 
   private async findActiveColumn() {
     if (this.activeColumn !== undefined) return this.activeColumn;
-    const [rows] = await this.pool.query<Array<ActiveColumnRow & { table_name: "tb_customer" | "tb_template" }>>(
+    const [rows] = await this.pool.query<Array<ActiveColumnRow & { table_name: "tb_template" }>>(
       `SELECT TABLE_NAME AS table_name, COLUMN_NAME AS column_name, COLUMN_TYPE AS column_type
        FROM INFORMATION_SCHEMA.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE()
-         AND TABLE_NAME IN ('tb_template', 'tb_customer')
+         AND TABLE_NAME = 'tb_template'
          AND COLUMN_NAME IN ('is_active', 'active', 'c_active', 'status')
-       ORDER BY FIELD(TABLE_NAME, 'tb_template', 'tb_customer'),
-         FIELD(COLUMN_NAME, 'is_active', 'active', 'c_active', 'status')
+       ORDER BY FIELD(COLUMN_NAME, 'is_active', 'active', 'c_active', 'status')
        LIMIT 1`,
     );
     this.activeColumn = rows[0]
@@ -26,11 +25,11 @@ export class CustomerRepository {
     return this.activeColumn;
   }
 
-  private columnRef(alias: "c" | "t", columnName: string) {
+  private columnRef(alias: "t", columnName: string) {
     return `${alias}.\`${columnName}\``;
   }
 
-  private activeValue(isActive: boolean, activeColumn: NonNullable<CustomerRepository["activeColumn"]>) {
+  private activeValue(isActive: boolean, activeColumn: NonNullable<TemplateRepository["activeColumn"]>) {
     const columnType = activeColumn.columnType.toLowerCase();
     const columnName = activeColumn.columnName.toLowerCase();
     if (columnType.includes("'inactive'") || columnType.includes("'active'") || columnName === "status") {
@@ -45,7 +44,7 @@ export class CustomerRepository {
   async findAll(includeInactive = false) {
     const activeColumn = await this.findActiveColumn();
     const activeSource = activeColumn
-      ? this.columnRef(activeColumn.tableName === "tb_template" ? "t" : "c", activeColumn.columnName)
+      ? this.columnRef("t", activeColumn.columnName)
       : null;
     const activeExpression = activeColumn
       ? `CASE
@@ -59,34 +58,36 @@ export class CustomerRepository {
           ELSE 1
         END`;
     const whereClause = includeInactive ? "" : `WHERE ${activeExpression} = 1`;
-    const [rows] = await this.pool.query<CustomerRow[]>(
-      `SELECT c.c_id, c.c_name, ${activeExpression} AS is_active
-       FROM tb_customer c
-       LEFT JOIN tb_template t ON t.id = (
+    const [rows] = await this.pool.query<TemplateListRow[]>(
+      `SELECT t.id, t.c_name, ${activeExpression} AS is_active
+       FROM tb_template t
+       ${whereClause}
+         ${whereClause ? "AND" : "WHERE"} t.id = (
          SELECT latest_template.id
          FROM tb_template latest_template
-         WHERE latest_template.c_id = c.c_id
+         WHERE latest_template.id = t.id
          ORDER BY latest_template.created_date DESC, latest_template.id DESC
          LIMIT 1
        )
-       ${whereClause}
        ORDER BY is_active DESC, c_name ASC`,
     );
     return rows;
   }
 
-  async updateName(customerId: number, name: string) {
+  async updateName(templateId: number, name: string) {
+    const template = await this.findLatestTemplate(templateId);
+    if (!template) return 0;
     const [result] = await this.pool.execute<ResultSetHeader>(
-      "UPDATE tb_customer SET c_name = ? WHERE c_id = ?",
-      [name, customerId],
+      "UPDATE tb_template SET c_name = ? WHERE id = ?",
+      [name, template.id],
     );
     return result.affectedRows;
   }
 
-  async updateActive(customerId: number, isActive: boolean) {
+  async updateActive(templateId: number, isActive: boolean) {
     const activeColumn = await this.findActiveColumn();
     if (!activeColumn) {
-      const template = await this.findLatestTemplate(customerId);
+      const template = await this.findLatestTemplate(templateId);
       if (!template) return 0;
       const parsed = JSON.parse(template.inside || "{}") as { sticker?: Record<string, unknown> };
       const nextInside = JSON.stringify({
@@ -103,14 +104,7 @@ export class CustomerRepository {
       return result.affectedRows;
     }
     const value = this.activeValue(isActive, activeColumn);
-    if (activeColumn.tableName === "tb_customer") {
-      const [result] = await this.pool.execute<ResultSetHeader>(
-        `UPDATE tb_customer SET \`${activeColumn.columnName}\` = ? WHERE c_id = ?`,
-        [value, customerId],
-      );
-      return result.affectedRows;
-    }
-    const template = await this.findLatestTemplate(customerId);
+    const template = await this.findLatestTemplate(templateId);
     if (!template) return 0;
     const [result] = await this.pool.execute<ResultSetHeader>(
       `UPDATE tb_template SET \`${activeColumn.columnName}\` = ? WHERE id = ?`,
@@ -119,14 +113,14 @@ export class CustomerRepository {
     return result.affectedRows;
   }
 
-  async findLatestTemplate(customerId: number) {
+  async findLatestTemplate(templateId: number) {
     const [rows] = await this.pool.execute<TemplateRow[]>(
-      `SELECT id, c_id, inside, outside
+      `SELECT id, id, c_name, inside, outside
        FROM tb_template
-       WHERE c_id = ?
+       WHERE id = ?
        ORDER BY created_date DESC, id DESC
        LIMIT 1`,
-      [customerId],
+      [templateId],
     );
     return rows[0] ?? null;
   }
@@ -170,24 +164,22 @@ export class CustomerRepository {
           isActive,
         },
       });
-      const [customerResult] = await connection.execute<ResultSetHeader>(
-        activeColumn?.tableName === "tb_customer"
-          ? `INSERT INTO tb_customer (c_name, \`${activeColumn.columnName}\`) VALUES (?, ?)`
-          : "INSERT INTO tb_customer (c_name) VALUES (?)",
-        activeColumn?.tableName === "tb_customer" ? [name, activeDbValue] : [name],
+      const [nextTemplateListRows] = await connection.execute<Array<RowDataPacket & { next_id: number }>>(
+        "SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM tb_template",
       );
+      const templateId = Number(nextTemplateListRows[0]?.next_id ?? 1);
       await connection.execute<ResultSetHeader>(
-        activeColumn?.tableName === "tb_template"
-          ? `INSERT INTO tb_template (c_id, inside, outside, created_by, created_date, \`${activeColumn.columnName}\`)
-             VALUES (?, ?, ?, ?, NOW(), ?)`
-          : `INSERT INTO tb_template (c_id, inside, outside, created_by, created_date)
-             VALUES (?, ?, ?, ?, NOW())`,
-        activeColumn?.tableName === "tb_template"
-          ? [customerResult.insertId, inside, outside, createdBy, activeDbValue]
-          : [customerResult.insertId, insideWithActive, outside, createdBy],
+        activeColumn
+          ? `INSERT INTO tb_template (id, c_name, inside, outside, created_by, created_date, \`${activeColumn.columnName}\`)
+             VALUES (?, ?, ?, ?, ?, NOW(), ?)`
+          : `INSERT INTO tb_template (id, c_name, inside, outside, created_by, created_date)
+             VALUES (?, ?, ?, ?, ?, NOW())`,
+        activeColumn
+          ? [templateId, name, inside, outside, createdBy, activeDbValue]
+          : [templateId, name, insideWithActive, outside, createdBy],
       );
       await connection.commit();
-      return customerResult.insertId;
+      return templateId;
     } catch (error) {
       await connection.rollback();
       throw error;
@@ -197,4 +189,4 @@ export class CustomerRepository {
   }
 }
 
-export const customerRepository = new CustomerRepository(pool);
+export const templateRepository = new TemplateRepository(pool);

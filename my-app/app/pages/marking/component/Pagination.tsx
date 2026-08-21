@@ -15,6 +15,7 @@ export default class Pagination extends MarkingComponent {
       const signature = [
         item.kind,
         item.group ?? "",
+        item.groupOrder ?? "",
         item.details.map((detail) => `${detail.label}:${detail.values.map((value) => value.label ?? "").join("|")}`).join(";"),
       ].join("|");
       if (seen.has(signature)) return false;
@@ -29,6 +30,7 @@ export default class Pagination extends MarkingComponent {
     const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
       StickerFactory.matchesCondition(field, this.state.stickerType, this.state.stickerOther),
     );
+    const outsideGroups = StickerFactory.outsideGroups(outsideFields);
     const previewItems = this.previewItems(StickerFactory.build({
       customerName: "",
       format: previewFormat,
@@ -45,24 +47,39 @@ export default class Pagination extends MarkingComponent {
       outsideRow: this.state.outsideRows[0],
     }));
     const availableSections: Record<PrintSection, boolean> = {
-      insideFrame: !!this.state.template,
-      outsideFrame: outsideFields.length > 0,
+      insideFrame: !!this.state.template && this.state.template.sticker.layouts.insideFrame !== false,
+      outsideFrame: this.state.template?.sticker.layouts.outsideFrame !== false && outsideGroups.length > 0,
       customerName: false,
       fscLogo: this.state.stickerType === "TNR" && this.state.stickerFsc,
     };
-    const sectionCounts: Record<PrintSection, string> = {
-      insideFrame: "สติ๊กเกอร์ในกรอบ",
-      outsideFrame: outsideFields.length ? `สติ๊กเกอร์นอกกรอบ (${StickerFactory.outsideGroups(outsideFields).length} ชุด)` : "สติ๊กเกอร์นอกกรอบ",
-      customerName: "",
-      fscLogo: "โลโก้ FSC",
-    };
-    const printOptions: Array<{ key: PrintSection; title: string; description: string }> = [
-      { key: "insideFrame", title: "ในกรอบ", description: sectionCounts.insideFrame },
-      { key: "outsideFrame", title: "นอกกรอบ", description: sectionCounts.outsideFrame },
-      { key: "fscLogo", title: "FSC", description: sectionCounts.fscLogo },
+    const printOptions: Array<{
+      key: string;
+      section: PrintSection;
+      title: string;
+      description: string;
+      outsideGroupKey?: string;
+    }> = [
+      ...(availableSections.insideFrame
+        ? [{ key: "insideFrame", section: "insideFrame" as const, title: "ในกรอบ", description: "สติ๊กเกอร์ในกรอบ" }]
+        : []),
+      ...(availableSections.outsideFrame
+        ? outsideGroups.map((group) => ({
+          key: `outside-${StickerFactory.outsideGroupKey(group)}`,
+          section: "outsideFrame" as const,
+          title: group.name,
+          description: "สติ๊กเกอร์นอกกรอบ",
+          outsideGroupKey: StickerFactory.outsideGroupKey(group),
+        }))
+        : []),
+      ...(availableSections.fscLogo
+        ? [{ key: "fscLogo", section: "fscLogo" as const, title: "FSC", description: "โลโก้ FSC" }]
+        : []),
     ];
-    const hasSelectedPrintSection = Object.entries(this.state.printSections)
-      .some(([section, enabled]) => enabled && availableSections[section as PrintSection]);
+    const isOptionSelected = (option: (typeof printOptions)[number]) => (
+      this.state.printSections[option.section] &&
+      (!option.outsideGroupKey || this.state.printOutsideGroups[option.outsideGroupKey] !== false)
+    );
+    const hasSelectedPrintSection = printOptions.some(isOptionSelected);
 
     return (
       <>
@@ -111,19 +128,19 @@ export default class Pagination extends MarkingComponent {
           <div className="print-export-body">
             <div className="print-export-options">
               {printOptions.map((option) => {
-                const disabled = !availableSections[option.key];
                 return (
-                  <label className={`print-export-option ${disabled ? "disabled" : ""}`} key={option.key}>
+                  <label className="print-export-option" key={option.key}>
                     <input
                       type="checkbox"
-                      checked={this.state.printSections[option.key] && !disabled}
-                      disabled={disabled}
-                      onChange={(event) => this.actions.setPrintSection(option.key, event.target.checked)}
+                      checked={isOptionSelected(option)}
+                      onChange={(event) => option.outsideGroupKey
+                        ? this.actions.setPrintOutsideGroup(option.outsideGroupKey, event.target.checked)
+                        : this.actions.setPrintSection(option.section, event.target.checked)}
                     />
                     <span className="print-export-check" aria-hidden="true" />
                     <span>
                       <b>{option.title}</b>
-                      <small>{disabled ? "ยังไม่มีข้อมูลสำหรับปริ้นรายการนี้" : option.description}</small>
+                      <small>{option.description}</small>
                     </span>
                   </label>
                 );

@@ -4,31 +4,30 @@ import { Component, type CSSProperties } from "react";
 import Image from "next/image";
 import AutoFitStickerDetails from "./AutoFitStickerDetails";
 import AutoFitStickerText from "./AutoFitStickerText";
-import StickerFactory from "./StickerFactory";
 import type { StickerItem } from "@/app/types/marking-sticker";
 
-export default class StickerLabel extends Component<{ item: StickerItem }> {
-  private isTextOnlyOutside() {
-    const { item } = this.props;
-    return item.kind === "outsideFrame" && StickerFactory.isVerticalGroupLayout(item.groupLayout);
-  }
+const VERTICAL_OUTSIDE_MAX_FONT_PT = 50;
+const VERTICAL_OUTSIDE_MAX_FONT_PX = VERTICAL_OUTSIDE_MAX_FONT_PT * (96 / 72);
 
-  private textOnlyValue() {
+export default class StickerLabel extends Component<{ item: StickerItem }> {
+  private isVerticalOutside() {
     const { item } = this.props;
-    if (item.kind === "customerName") return item.customerName;
-    return item.details
-      .flatMap((detail) => detail.values.map((value) => value.value.trim()))
-      .filter(Boolean)
-      .join(" ");
+    return item.kind === "outsideFrame" &&
+      (item.groupLayout === "8x2" || item.groupLayout === "4x2");
   }
 
   private style(): CSSProperties {
     const { item } = this.props;
-    if (item.kind === "customerName" || this.isTextOnlyOutside()) return {};
+    if (item.kind === "customerName") return {};
 
+    const isVerticalOutside = this.isVerticalOutside();
     const countPressure = item.kind === "outsideFrame" ? 0 : Math.max(0, item.details.length - 5) * 1.1;
-    const fontSize = Math.max(22, 35 - countPressure);
-    const gap = Math.max(1.4, Math.min(4.5, fontSize / 6));
+    // 8x2 rows are forced to a single merged line (see StickerFactory.mergeDetailsToSingleRow),
+    // so there's no row count to shrink for — width-based fit in AutoFitStickerRow handles the rest.
+    const fontSize = isVerticalOutside
+      ? VERTICAL_OUTSIDE_MAX_FONT_PX
+      : Math.max(22, 35 - countPressure);
+    const gap = isVerticalOutside ? 0.8 : Math.max(1.4, Math.min(4.5, fontSize / 6));
     const longestLabelLength = Math.max(
       ...item.details.filter((detail) => !detail.hideLabel).map((detail) => detail.label.length),
       0,
@@ -45,11 +44,11 @@ export default class StickerLabel extends Component<{ item: StickerItem }> {
 
   render() {
     const { item } = this.props;
-    const textOnly = item.kind === "customerName" || this.isTextOnlyOutside();
+    const isVerticalOutside = this.isVerticalOutside();
     return (
-      <article className={`sticker-label ${item.kind} ${this.isTextOnlyOutside() ? "sticker-text-only" : ""}`.trim()} style={this.style()}>
-        {textOnly ? (
-          <AutoFitStickerText text={this.textOnlyValue()} />
+      <article className={`sticker-label ${item.kind}`} style={this.style()}>
+        {item.kind === "customerName" ? (
+          <AutoFitStickerText text={item.customerName} />
         ) : item.kind === "fscLogo" ? (
           Array.from({ length: item.logoCount ?? 1 }, (_, index) => (
             <Image
@@ -64,7 +63,10 @@ export default class StickerLabel extends Component<{ item: StickerItem }> {
             />
           ))
         ) : (
-          <AutoFitStickerDetails details={item.details} />
+          <AutoFitStickerDetails
+            details={item.details}
+            maxRowFontSize={isVerticalOutside ? VERTICAL_OUTSIDE_MAX_FONT_PX : undefined}
+          />
         )}
       </article>
     );

@@ -28,14 +28,14 @@ export default class FilterPanel extends MarkingComponent {
             <Select
               label="Template"
               hint={this.state.template ? `สติ๊กเกอร์นอกกรอบมี ${this.state.template.outside.length} ช่องข้อมูล` : undefined}
-              value={this.state.customerId}
-              onChange={(event) => void this.actions.selectCustomer(event.target.value)}
+              value={this.state.templateId}
+              onChange={(event) => void this.actions.selectTemplate(event.target.value)}
               disabled={this.state.isLoading}
             >
               <option value="">{this.state.isLoading ? "กำลังโหลด Template..." : "เลือก Template"}</option>
-              {this.state.customers.map((customer) => (
-                <option value={customer.id} key={customer.id} disabled={customer.isActive === false}>
-                  {customer.isActive === false ? `[Inactive] ${customer.name}` : customer.name}
+              {this.state.templates.map((template) => (
+                <option value={template.id} key={template.id} disabled={template.isActive === false}>
+                  {template.isActive === false ? `[Inactive] ${template.name}` : template.name}
                 </option>
               ))}
             </Select>

@@ -1,8 +1,8 @@
-import { customerService } from "../../../../services/customer.service";
+import { templateService } from "../../../../services/template.service";
 import { adminAuthService } from "@/app/lib/adminAuth";
 import { logAction } from "@/app/lib/actionLogger";
 import { z, ZodError } from "zod";
-import type { CustomerTemplateRouteContext } from "@/app/types/api";
+import type { TemplateDetailRouteContext } from "@/app/types/api";
 
 export const runtime = "nodejs";
 
@@ -11,15 +11,15 @@ const stickerTypeConditionSchema = z.enum(["TNR", "NON TNR", "NON-TNR", "FCS"])
 
 export async function GET(
   _request: Request,
-  context: CustomerTemplateRouteContext,
+  context: TemplateDetailRouteContext,
 ) {
   try {
     const { id } = await context.params;
-    const customerId = Number(id);
-    if (!Number.isInteger(customerId) || customerId <= 0) {
+    const templateId = Number(id);
+    if (!Number.isInteger(templateId) || templateId <= 0) {
       return Response.json({ message: "รหัสลูกค้าไม่ถูกต้อง" }, { status: 400 });
     }
-    return Response.json({ data: await customerService.getCustomerTemplate(customerId) });
+    return Response.json({ data: await templateService.getTemplate(templateId) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "โหลด template ไม่สำเร็จ";
     const isMissing = message === "ไม่พบข้อมูลลูกค้า" || message.includes("ยังไม่มี");
@@ -57,6 +57,8 @@ const fieldSchema = z.object({
   stickerGroupOrder: z.number().int().min(0).optional(),
   stickerGroupLayout: z.enum(["2x2", "4x2", "8x2"]).optional(),
   uppercase: z.boolean().optional(),
+  isCounter: z.boolean().optional(),
+  counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
   fontScale: z.enum(["normal", "xlarge"]).optional(),
   hideLabel: z.boolean().optional(),
 });
@@ -89,7 +91,7 @@ const updateSchema = z.object({
 
 export async function PUT(
   request: Request,
-  context: CustomerTemplateRouteContext,
+  context: TemplateDetailRouteContext,
 ) {
   try {
     const access = await adminAuthService.requireAdmin(request);
@@ -97,21 +99,21 @@ export async function PUT(
       return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
     }
     const { id } = await context.params;
-    const customerId = Number(id);
-    if (!Number.isInteger(customerId) || customerId <= 0) {
+    const templateId = Number(id);
+    if (!Number.isInteger(templateId) || templateId <= 0) {
       return Response.json({ message: "รหัสลูกค้าไม่ถูกต้อง" }, { status: 400 });
     }
     const input = updateSchema.parse(await request.json());
-    await customerService.renameCustomerIfChanged(customerId, input.name);
-    await customerService.updateCustomerActiveIfChanged(customerId, input.isActive);
-    const data = await customerService.saveTemplate(
-      customerId,
+    await templateService.renameTemplateIfChanged(templateId, input.name);
+    await templateService.updateTemplateActiveIfChanged(templateId, input.isActive);
+    const data = await templateService.saveTemplate(
+      templateId,
       input.inside,
       input.outside,
       input.sticker,
       access.userId,
     );
-    await logAction(access.userId, `แก้ไข Template ลูกค้า ID ${customerId}`);
+    await logAction(access.userId, `แก้ไข Template ลูกค้า ID ${templateId}`);
     return Response.json({ data, message: "อัปเดต Template แล้ว" });
   } catch (error) {
     if (error instanceof ZodError) {

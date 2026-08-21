@@ -1,5 +1,5 @@
 import type { MarkingState } from "../types/marking";
-import type { FontScale } from "../types/customer";
+import type { FontScale } from "../types/template";
 
 export const FONT_SCALE_MULTIPLIERS: Record<NonNullable<FontScale>, number> = {
   normal: 1,
@@ -9,7 +9,7 @@ export const FONT_SCALE_MULTIPLIERS: Record<NonNullable<FontScale>, number> = {
 export const STICKER_PAGE_CLASS: Record<"frame" | "frameVertical" | "customerName" | "fsc", string> = {
   frame: "sticker-page-frame",
   frameVertical: "sticker-page-frame-vertical",
-  customerName: "sticker-page-customer",
+  customerName: "sticker-page-template",
   fsc: "sticker-page-fsc",
 };
 
@@ -23,8 +23,8 @@ export const STICKER_TYPE_OPTIONS = ["TNR", "NON TNR"] as const;
 export const STICKER_OTHER_OPTIONS = ["Dome", "Inter"] as const;
 
 export const INITIAL_MARKING_STATE: MarkingState = {
-  customers: [],
-  customerId: "",
+  templates: [],
+  templateId: "",
   template: null,
   totalLot: "",
   stickerSides: "",
@@ -38,6 +38,7 @@ export const INITIAL_MARKING_STATE: MarkingState = {
     customerName: false,
     fscLogo: true,
   },
+  printOutsideGroups: {},
   lotCount: "1",
   lotStart: 1,
   productionDate: "",
@@ -54,7 +55,7 @@ export const INITIAL_MARKING_STATE: MarkingState = {
 };
 
 export const MESSAGES = {
-  selectCustomer: "กรุณาเลือกลูกค้า",
+  selectTemplate: "กรุณาเลือกลูกค้า",
   enterLot: "กรุณากรอกจำนวน Lot ให้ถูดต้อง",
   loadFailed: "โหลดข้อมูลไม่สำเร็จ",
   saveFailed: "บันทึกไม่สำเร็จ",

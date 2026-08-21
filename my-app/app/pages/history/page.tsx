@@ -19,7 +19,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
     items: [],
     isLoading: true,
     notice: "",
-    customerQuery: "",
+    templateQuery: "",
     employeeQuery: "",
     action: "all",
     date: "",
@@ -53,8 +53,8 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
     }
   }
 
-  private setCustomerQuery = (event: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ customerQuery: event.target.value });
+  private setTemplateQuery = (event: ChangeEvent<HTMLInputElement>) => {
+    this.setState({ templateQuery: event.target.value });
   };
 
   private setEmployeeQuery = (event: ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +71,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
 
   private clearFilters = () => {
     this.setState({
-      customerQuery: "",
+      templateQuery: "",
       employeeQuery: "",
       action: "all",
       date: "",
@@ -92,14 +92,14 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
   };
 
   private filteredItems() {
-    const normalizedCustomer = this.state.customerQuery.trim().toLowerCase();
+    const normalizedTemplate = this.state.templateQuery.trim().toLowerCase();
     const normalizedEmployee = this.state.employeeQuery.trim().toLowerCase();
     return this.state.items.filter((item) => {
       const matchesAction = this.state.action === "all" || item.actionType === this.state.action;
       const matchesDate = !this.state.date || item.productionDate === this.state.date || item.createdDate.startsWith(this.state.date);
-      const matchesCustomer = !normalizedCustomer || (item.customerName || "").toLowerCase().includes(normalizedCustomer);
+      const matchesTemplate = !normalizedTemplate || (item.customerName || "").toLowerCase().includes(normalizedTemplate);
       const matchesEmployee = !normalizedEmployee || (item.employeeName || "").toLowerCase().includes(normalizedEmployee);
-      return matchesAction && matchesDate && matchesCustomer && matchesEmployee;
+      return matchesAction && matchesDate && matchesTemplate && matchesEmployee;
     });
   }
 
@@ -352,7 +352,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
   render() {
     const filteredItems = this.filteredItems();
     const activeFilters = [
-      this.state.customerQuery,
+      this.state.templateQuery,
       this.state.employeeQuery,
       this.state.action !== "all" ? this.state.action : "",
       this.state.date,
@@ -388,8 +388,8 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
             <Autocomplete
               label="ลูกค้า"
               options={this.uniqueValues((item) => item.customerName)}
-              value={this.state.customerQuery}
-              onChange={this.setCustomerQuery}
+              value={this.state.templateQuery}
+              onChange={this.setTemplateQuery}
               placeholder="พิมพ์เพื่อเลือกลูกค้า"
             />
             <Autocomplete
@@ -455,7 +455,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
                         <td>{this.formatDateTime(item.createdDate)}</td>
                         <td>{item.employeeName || "-"}</td>
                         <td>{item.employeeLocation || "-"}</td>
-                        <td>{item.customerName || `Customer #${item.customerId}`}</td>
+                        <td>{item.customerName || `Template #${item.templateId}`}</td>
                         <td><span className={`history-badge ${item.actionType}`}>{this.actionLabel(item.actionType)}</span></td>
                         <td>{this.detailText(item)}</td>
                         <td>

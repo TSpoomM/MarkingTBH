@@ -1,4 +1,4 @@
-import type { FontScale, LegacyStickerGroupLayout, StickerGroupLayout, TemplateField, StickerLayouts } from "@/app/types/customer";
+import type { FontScale, LegacyStickerGroupLayout, StickerGroupLayout, TemplateField, StickerLayouts } from "@/app/types/template";
 import type { MarkingContent } from "@/app/types/marking";
 
 export type StickerKind = "insideFrame" | "outsideFrame" | "customerName" | "fscLogo";
@@ -21,6 +21,7 @@ export interface StickerItem {
   stickerType: string;
   details: StickerDetail[];
   group?: string;
+  groupOrder?: number;
   groupLayout?: LegacyStickerGroupLayout;
   logoCount?: number;
 }

@@ -9,20 +9,20 @@ import {
   STICKER_SIDE_OPTIONS,
   STICKER_TYPE_OPTIONS,
 } from "@/app/types/constants";
-import type { EditCustomerTemplateProps } from "@/app/types/manage-customer";
+import type { EditTemplateFormProps } from "@/app/types/manage-template";
 import SectionHeading from "./SectionHeading";
 import StickerTemplatePreview from "./StickerTemplatePreview";
 import TemplateFieldEditor from "./TemplateFieldEditor";
 
-export default class EditCustomerTemplate extends Component<EditCustomerTemplateProps> {
-  private templateOptionLabel(customer: EditCustomerTemplateProps["customers"][number]) {
-    return customer.isActive === false ? `[Inactive] ${customer.name}` : customer.name;
+export default class EditTemplateForm extends Component<EditTemplateFormProps> {
+  private templateOptionLabel(template: EditTemplateFormProps["templates"][number]) {
+    return template.isActive === false ? `[Inactive] ${template.name}` : template.name;
   }
 
   render() {
     const {
-      customers,
-      selectedCustomerId,
+      templates,
+      selectedTemplateId,
       name,
       isActive,
       insideDraft,
@@ -30,11 +30,11 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       stickerLayouts,
       stickerDefaults,
       notice,
-      loadingCustomers,
+      loadingTemplates,
       loadingTemplate,
       savingTemplate,
       onDismissNotice,
-      onSelectCustomer,
+      onSelectTemplate,
       onNameChange,
       onActiveChange,
       onSave,
@@ -47,6 +47,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
       onMoveField,
       onAddTable,
       onRenameTable,
+      onChangeTableLayout,
       onRemoveTable,
       onMoveTable,
     } = this.props;
@@ -67,35 +68,35 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
             onClose={onDismissNotice}
           />
         )}
-        <label className="customer-name">
+        <label className="template-name">
           <span>เลือก Template</span>
           <Select
             bare
-            value={selectedCustomerId}
-            onChange={(event) => onSelectCustomer(event.target.value)}
-            disabled={loadingCustomers || loadingTemplate}
+            value={selectedTemplateId}
+            onChange={(event) => onSelectTemplate(event.target.value)}
+            disabled={loadingTemplates || loadingTemplate}
           >
             <option value="">
-              {loadingCustomers ? "กำลังโหลดลูกค้า..." : "เลือก Template ที่ต้องการแก้ไข"}
+              {loadingTemplates ? "กำลังโหลดลูกค้า..." : "เลือก Template ที่ต้องการแก้ไข"}
             </option>
-            {customers.map((customer) => (
-              <option value={customer.id} key={customer.id}>
-                {this.templateOptionLabel(customer)}
+            {templates.map((template) => (
+              <option value={template.id} key={template.id}>
+                {this.templateOptionLabel(template)}
               </option>
             ))}
           </Select>
         </label>
-        {!selectedCustomerId && !loadingCustomers && (
-          <div className="customer-empty-guide">
+        {!selectedTemplateId && !loadingTemplates && (
+          <div className="template-empty-guide">
             <strong>เริ่มจากเลือก Template ที่ต้องการแก้ไข</strong>
             <span>หลังเลือกแล้ว ระบบจะแสดง Preview ด้านบน และ Field editor สำหรับในกรอบ/นอกกรอบด้านล่าง</span>
           </div>
         )}
         {loadingTemplate && <div className="outside-empty"><strong>กำลังโหลด Template...</strong></div>}
-        {selectedCustomerId && !loadingTemplate && (
+        {selectedTemplateId && !loadingTemplate && (
           <>
             <div className="template-name-status-row">
-              <label className="customer-name">
+              <label className="template-name">
                 <span>ชื่อ Template *</span>
                 <Input
                   bare
@@ -207,6 +208,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                 onMove={onMoveField}
                 onAddTable={onAddTable}
                 onRenameTable={onRenameTable}
+                onChangeTableLayout={onChangeTableLayout}
                 onRemoveTable={onRemoveTable}
                 onMoveTable={onMoveTable}
               />
@@ -214,7 +216,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
             <div className="container bottom-action">
               <div className="bottom-action-buttons">
                 <StickerTemplatePreview
-                  customerName={name.trim() || "Customer"}
+                  customerName={name.trim() || "Template"}
                   insideFields={insideDraft}
                   outsideFields={outsideDraft}
                   layouts={stickerLayouts}
@@ -225,7 +227,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                   type="button"
                   className="template-cancel-button"
                   onClick={onCancel}
-                  disabled={!selectedCustomerId || loadingTemplate || savingTemplate}
+                  disabled={!selectedTemplateId || loadingTemplate || savingTemplate}
                 >
                   ยกเลิก
                 </Button>
@@ -233,7 +235,7 @@ export default class EditCustomerTemplate extends Component<EditCustomerTemplate
                   type="button"
                   className="export-button"
                   onClick={onSave}
-                  disabled={!selectedCustomerId || loadingTemplate}
+                  disabled={!selectedTemplateId || loadingTemplate}
                   loading={savingTemplate}
                   loadingText="กำลังบันทึก..."
                 >

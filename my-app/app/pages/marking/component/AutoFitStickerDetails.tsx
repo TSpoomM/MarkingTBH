@@ -6,7 +6,10 @@ import type { StickerItem } from "@/app/types/marking-sticker";
 
 // Layer A: shrinks the whole card (font + gap) only as far as needed to stop the
 // row COUNT from overflowing the card vertically. It never touches per-row width fit.
-export default class AutoFitStickerDetails extends Component<{ details: StickerItem["details"] }, { scale: number }> {
+export default class AutoFitStickerDetails extends Component<
+  { details: StickerItem["details"]; maxRowFontSize?: number },
+  { scale: number }
+> {
   private readonly minScale = 0.15;
   private readonly ref = createRef<HTMLDListElement>();
   private resizeObserver: ResizeObserver | undefined;
@@ -25,8 +28,13 @@ export default class AutoFitStickerDetails extends Component<{ details: StickerI
     }
   }
 
-  componentDidUpdate(previousProps: { details: StickerItem["details"] }) {
-    if (previousProps.details !== this.props.details) this.fit();
+  componentDidUpdate(previousProps: { details: StickerItem["details"]; maxRowFontSize?: number }) {
+    if (
+      previousProps.details !== this.props.details ||
+      previousProps.maxRowFontSize !== this.props.maxRowFontSize
+    ) {
+      this.fit();
+    }
   }
 
   componentWillUnmount() {
@@ -58,7 +66,7 @@ export default class AutoFitStickerDetails extends Component<{ details: StickerI
   private fit = () => window.requestAnimationFrame(this.fitNow);
 
   render() {
-    const { details } = this.props;
+    const { details, maxRowFontSize } = this.props;
     return (
       <dl
         className="sticker-details"
@@ -69,6 +77,7 @@ export default class AutoFitStickerDetails extends Component<{ details: StickerI
           <AutoFitStickerRow
             detail={detail}
             cardScale={this.state.scale}
+            maxFontSize={maxRowFontSize}
             key={`${detail.label}-${detail.values.map((value) => value.value).join("-")}-${index}`}
           />
         ))}

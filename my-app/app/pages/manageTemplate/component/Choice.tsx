@@ -1,5 +1,5 @@
 import { Component } from "react";
-import type { ChoiceProps } from "@/app/types/manage-customer";
+import type { ChoiceProps } from "@/app/types/manage-template";
 import Input from "@/app/components/Input";
 
 export default class Choice extends Component<ChoiceProps> {

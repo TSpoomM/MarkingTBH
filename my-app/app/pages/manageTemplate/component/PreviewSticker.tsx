@@ -1,6 +1,6 @@
 import { Component } from "react";
 import TemplateFieldUtils from "./TemplateFieldUtils";
-import type { PreviewStickerProps } from "@/app/types/manage-customer";
+import type { PreviewStickerProps } from "@/app/types/manage-template";
 import Input from "@/app/components/Input";
 
 export default class PreviewSticker extends Component<PreviewStickerProps> {

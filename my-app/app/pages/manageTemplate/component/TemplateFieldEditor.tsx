@@ -4,12 +4,12 @@ import Input from "@/app/components/Input";
 import Modal from "@/app/components/Modal";
 import Select from "@/app/components/Select";
 import TemplateFieldUtils from "./TemplateFieldUtils";
-import type { CounterType, StickerGroupLayout, TemplateField } from "@/app/types/customer";
-import type { TemplateFieldEditorProps } from "@/app/types/manage-customer";
+import type { CounterType, StickerGroupLayout, TemplateField } from "@/app/types/template";
+import type { TemplateFieldEditorProps } from "@/app/types/manage-template";
 
 const OUTSIDE_TABLE_LAYOUT_OPTIONS: Array<{ value: StickerGroupLayout; label: string; description: string }> = [
   { value: "2x2", label: "2 x 2 แนวนอน", description: "A4 แนวนอน 4 ดวง/หน้า (ค่าเริ่มต้น)" },
-  { value: "8x2", label: "8 x 2 แนวตั้ง", description: "A4 แนวตั้ง 8 ดวง/หน้า สำหรับกระดาษสติ๊กเกอร์แนวตั้ง" },
+  { value: "8x2", label: "8 x 2 แนวตั้ง", description: "A4 แนวตั้ง 16 ดวง/หน้า สำหรับกระดาษสติ๊กเกอร์แนวตั้ง" },
 ];
 
 interface State {
@@ -42,10 +42,6 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
   private confirmAddTable() {
     this.props.onAddTable?.(this.state.pendingTableLayout);
     this.closeAddTablePrompt();
-  }
-
-  private isSingleRowOutsideTable(layout: TemplateField["stickerGroupLayout"]) {
-    return layout === "8x2" || layout === "4x2";
   }
 
   private dragFieldIndex: number | null = null;
@@ -164,6 +160,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
       onRemove,
       onAddTable,
       onRenameTable,
+      onChangeTableLayout,
       onRemoveTable,
     } = this.props;
     const {
@@ -182,15 +179,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           const isExpanded = expanded[field.key] ?? false;
           const countableField = TemplateFieldUtils.isCounterField(field);
           const tableOrder = field.stickerGroupOrder ?? 0;
-          const isSingleRowOutsideTable = section === "outside" && this.isSingleRowOutsideTable(field.stickerGroupLayout);
           const isInsideNettField = section === "inside" && field.key === "nett" && !field.segments?.length;
-          const previousSingleRowTableField = fields
-            .slice(0, index)
-            .find((item) => (
-              (item.stickerGroupOrder ?? 0) === tableOrder &&
-              this.isSingleRowOutsideTable(item.stickerGroupLayout)
-            ));
-          if (isSingleRowOutsideTable && previousSingleRowTableField) return null;
           const previousTableOrder = fields[index - 1]?.stickerGroupOrder ?? 0;
           const nextTableOrder = fields[index + 1]?.stickerGroupOrder ?? 0;
           const showTableHeader = section === "outside" && (index === 0 || tableOrder !== previousTableOrder);
@@ -198,6 +187,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           const fieldNumber = section === "outside"
             ? fields.slice(0, index + 1).filter((item) => (item.stickerGroupOrder ?? 0) === tableOrder).length
             : index + 1;
+          const isVerticalTable = field.stickerGroupLayout === "8x2" || field.stickerGroupLayout === "4x2";
           const isDraggingThis = draggingFieldKey === field.key;
           let wrapElement: HTMLDivElement | null = null;
           return (
@@ -234,6 +224,15 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                     value={field.stickerGroup ?? `นอกกรอบ ${tableOrder + 1}`}
                     onChange={(event) => onRenameTable?.(tableOrder, event.target.value)}
                   />
+                  <Select
+                    bare
+                    aria-label="รูปแบบ Table"
+                    value={field.stickerGroupLayout === "8x2" || field.stickerGroupLayout === "4x2" ? "8x2" : "2x2"}
+                    onChange={(event) => onChangeTableLayout?.(tableOrder, event.target.value as StickerGroupLayout)}
+                  >
+                    <option value="2x2">2 × 2</option>
+                    <option value="8x2">8 × 2</option>
+                  </Select>
                   <Button type="button" onClick={() => onRemoveTable?.(tableOrder)}>
                     ลบ Table
                   </Button>
@@ -288,7 +287,14 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                     <div className="editor-number editor-number-spacer" aria-hidden="true" />
                     <label>
                       <span>ชื่อ Field</span>
-                      <Input bare value={field.label} onChange={(event) => onChange(section, index, { label: event.target.value })} />
+                      <Input
+                        bare
+                        value={field.label}
+                        onChange={(event) => onChange(section, index, {
+                          label: event.target.value.toUpperCase(),
+                          ...(field.locked ? { defaultValue: event.target.value.toUpperCase() } : {}),
+                        })}
+                      />
                     </label>
                     {section === "outside" && !field.segments?.length && (
                       <label className="required-toggle field-lock-toggle">
@@ -296,9 +302,15 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           bare
                           type="checkbox"
                           checked={field.locked === true}
-                          onChange={(event) => onChange(section, index, { locked: event.target.checked })}
+                          onChange={(event) => onChange(section, index, {
+                            locked: event.target.checked,
+                            defaultValue: event.target.checked ? field.label : undefined,
+                          })}
                         />
-                        <span>Lock (FSC)</span>
+                        <span className="toggle-copy">
+                          <strong>ล็อกค่าชื่อ field</strong>
+                          {/* <small>FSC / ชื่อลูกค้า</small> */}
+                        </span>
                       </label>
                     )}
                     {isInsideNettField && (
@@ -309,7 +321,10 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           checked={field.defaultValue !== undefined}
                           onChange={(event) => onChange(section, index, { defaultValue: event.target.checked ? field.defaultValue ?? "1260" : undefined })}
                         />
-                        <span>ใช้ค่า default</span>
+                        <span className="toggle-copy">
+                          <strong>ใช้ค่าเริ่มต้น</strong>
+                          <small>กรอกค่าให้อัตโนมัติ</small>
+                        </span>
                       </label>
                     )}
                     {isInsideNettField && field.defaultValue !== undefined && (
@@ -331,7 +346,10 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           checked={field.uppercase ?? true}
                           onChange={(event) => onChange(section, index, { uppercase: event.target.checked })}
                         />
-                        <span>ตัวพิมพ์ใหญ่</span>
+                        <span className="toggle-copy">
+                          <strong>ตัวพิมพ์ใหญ่</strong>
+                          {/* <small>แปลงข้อความอัตโนมัติ</small> */}
+                        </span>
                       </label>
                     )}
                     {section === "outside" && (
@@ -342,10 +360,43 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           checked={field.hideLabel === true}
                           onChange={(event) => onChange(section, index, { hideLabel: event.target.checked })}
                         />
-                        <span>พิมพ์แค่ข้อความใน Field</span>
+                        <span className="toggle-copy">
+                          <strong>ไม่พิมพ์ชื่อ Field</strong>
+                          {/* <small>ไม่พิมพ์ชื่อ Field</small> */}
+                        </span>
                       </label>
                     )}
-                    {section === "outside" && !isSingleRowOutsideTable && (
+                    {section === "outside" && !field.segments?.length && countableField && (
+                      <Button
+                        type="button"
+                        className={field.isCounter ? "outside-count-button active" : "outside-count-button"}
+                        onClick={() => onChange(section, index, {
+                          isCounter: !field.isCounter,
+                          type: !field.isCounter ? "number" : "text",
+                          counterType: !field.isCounter
+                            ? field.counterType ?? TemplateFieldUtils.inferCounterType(field)
+                            : field.counterType,
+                        })}
+                      >
+                        นับ
+                      </Button>
+                    )}
+                    {section === "outside" && !field.segments?.length && countableField && field.isCounter && (
+                      <div className="counter-type-control outside-counter-type-control">
+                        <span>นับแบบ</span>
+                        <Select
+                          bare
+                          value={field.counterType ?? TemplateFieldUtils.inferCounterType(field)}
+                          onChange={(event) => onChange(section, index, { counterType: event.target.value as CounterType })}
+                          aria-label="นับแบบ"
+                        >
+                          <option value="lot">Lot</option>
+                          <option value="pallet">Pallet</option>
+                          <option value="sequence">+1 ไปเรื่อยๆ</option>
+                        </Select>
+                      </div>
+                    )}
+                    {section === "outside" && !isVerticalTable && (
                       <label className="required-toggle field-font-scale">
                         <Input
                           bare
@@ -353,7 +404,10 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           checked={field.fontScale === "xlarge"}
                           onChange={(event) => onChange(section, index, { fontScale: event.target.checked ? "xlarge" : "normal" })}
                         />
-                        <span>ขนาดใหญ่พิเศษ</span>
+                        <span className="toggle-copy">
+                          <strong>ขนาดใหญ่พิเศษ</strong>
+                          {/* <small>ขยายข้อความบนสติ๊กเกอร์</small> */}
+                        </span>
                       </label>
                     )}
                   </article>
@@ -396,7 +450,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                               value={segment.label}
                               onChange={(event) => onChange(section, index, {
                                 segments: field.segments?.map((item, itemIndex) =>
-                                  itemIndex === segmentIndex ? { ...item, label: event.target.value } : item,
+                                  itemIndex === segmentIndex ? { ...item, label: event.target.value.toUpperCase() } : item,
                                 ),
                               })}
                             />
@@ -516,7 +570,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                   )}
                 </>
               )}
-              {showTableFooter && !isSingleRowOutsideTable && (
+              {showTableFooter && !isVerticalTable && (
                 <Button
                   type="button"
                   className="outside-add-row-button"
@@ -542,7 +596,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           <Modal
             open={addTableLayoutPromptOpen}
             title="เลือกรูปแบบตารางนอกกรอบ"
-            subtitle="เลือก Template ก่อนเพิ่ม Table ใหม่ (เปลี่ยนภายหลังไม่ได้ ต้องลบแล้วเพิ่มใหม่)"
+            subtitle="เลือกรูปแบบเริ่มต้นของ Table (สามารถเปลี่ยนภายหลังได้)"
             onClose={() => this.closeAddTablePrompt()}
             footer={(
               <div className="print-export-actions">

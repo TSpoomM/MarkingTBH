@@ -31,7 +31,11 @@ export default class OrderTable extends MarkingComponent {
       4,
     ).map((items) => ({ items, layout: "frame" as const }));
     const outsideFramePages = outsideGroups.flatMap((group) => {
-      const groupItems = stickerItems.filter((item) => item.kind === "outsideFrame" && item.group === group.name);
+      const groupKey = StickerFactory.outsideGroupKey(group);
+      if (this.state.printOutsideGroups[groupKey] === false) return [];
+      const groupItems = stickerItems.filter((item) =>
+        item.kind === "outsideFrame" && item.group === group.name && item.groupOrder === group.order,
+      );
       const isVertical = StickerFactory.isVerticalGroupLayout(group.layout);
       const layout = isVertical ? "frameVertical" as const : "frame" as const;
       return StickerFactory.chunk(groupItems, isVertical ? 16 : 4).map((items) => ({ items, layout }));
@@ -74,8 +78,8 @@ export default class OrderTable extends MarkingComponent {
               <TableSection
                 key={`${group.name}-${groupIndex}`}
                 number={String(groupIndex + 3)}
-                title={`นอกกรอบ ${groupIndex + 1}`}
-                subtitle={`กรอกข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ ${groupIndex + 1}`}
+                title={group.name}
+                subtitle={`กรอกข้อมูลสำหรับ ${group.name}`}
                 fields={group.fields}
                 rows={this.state.outsideRows}
                 lotStart={this.state.lotStart}
@@ -102,7 +106,7 @@ export default class OrderTable extends MarkingComponent {
             <StickerPage items={page.items} key={`frame-${index}`} layout={page.layout} />
           ))}
           {customerNameStickerPages.map((page, index) => (
-            <StickerPage items={page} key={`customer-${index}`} layout="customerName" />
+            <StickerPage items={page} key={`template-${index}`} layout="customerName" />
           ))}
           {fscLogoStickerPages.map((page, index) => (
             <StickerPage items={page} key={`fsc-${index}`} layout="fsc" />

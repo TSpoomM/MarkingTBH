@@ -9,29 +9,29 @@ import {
   STICKER_SIDE_OPTIONS,
   STICKER_TYPE_OPTIONS,
 } from "@/app/types/constants";
-import type { CreateCustomerFormProps } from "@/app/types/manage-customer";
+import type { CreateTemplateFormProps } from "@/app/types/manage-template";
 import SectionHeading from "./SectionHeading";
 import StickerTemplatePreview from "./StickerTemplatePreview";
 import TemplateFieldEditor from "./TemplateFieldEditor";
 import Button from "@/app/components/Button";
 
-export default class CreateCustomerForm extends Component<CreateCustomerFormProps> {
-  private templateOptionLabel(customer: CreateCustomerFormProps["customers"][number]) {
-    return customer.isActive === false ? `[Inactive] ${customer.name}` : customer.name;
+export default class CreateTemplateForm extends Component<CreateTemplateFormProps> {
+  private templateOptionLabel(template: CreateTemplateFormProps["templates"][number]) {
+    return template.isActive === false ? `[Inactive] ${template.name}` : template.name;
   }
 
   render() {
     const {
-      customers,
+      templates,
       name,
       isActive,
-      duplicateSourceCustomerId,
+      duplicateSourceTemplateId,
       stickerLayouts,
       stickerDefaults,
       insideDraft,
       outsideDraft,
       notice,
-      loadingCustomers,
+      loadingTemplates,
       duplicatingTemplate,
       saving,
       onDismissNotice,
@@ -47,6 +47,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
       onMoveField,
       onAddTable,
       onRenameTable,
+      onChangeTableLayout,
       onRemoveTable,
       onMoveTable,
     } = this.props;
@@ -68,7 +69,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               subtitle="กรอกชื่อลูกค้าและตั้งค่าสติ๊กเกอร์ให้ครบ แล้วบันทึกในขั้นตอนเดียว"
             />
             <div className="template-name-status-row">
-              <label className="customer-name">
+              <label className="template-name">
                 <span>ชื่อ Template *</span>
                 <Input
                   bare
@@ -91,24 +92,24 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 </button>
               </div>
             </div>
-            <label className="customer-name duplicate-template-picker">
+            <label className="template-name duplicate-template-picker">
               <span>คัดลอก Template จาก</span>
               <Select
                 bare
-                value={duplicateSourceCustomerId}
+                value={duplicateSourceTemplateId}
                 onChange={(event) => onDuplicateSourceChange(event.target.value)}
-                disabled={loadingCustomers || duplicatingTemplate}
+                disabled={loadingTemplates || duplicatingTemplate}
               >
                 <option value="">
-                  {loadingCustomers ? "กำลังโหลดลูกค้า..." : "เริ่มจากว่างเปล่า หรือเลือก Customer เดิม"}
+                  {loadingTemplates ? "กำลังโหลดลูกค้า..." : "เริ่มจากว่างเปล่า หรือเลือก Template เดิม"}
                 </option>
-                {customers.map((customer) => (
-                  <option value={customer.id} key={customer.id} disabled={customer.isActive === false}>
-                    {this.templateOptionLabel(customer)}
+                {templates.map((template) => (
+                  <option value={template.id} key={template.id} disabled={template.isActive === false}>
+                    {this.templateOptionLabel(template)}
                   </option>
                 ))}
               </Select>
-              <small>{duplicatingTemplate ? "กำลังคัดลอก Template..." : "คัดลอก Field และรูปแบบสติ๊กเกอร์ แล้วแก้ไขก่อนสร้าง Customer ใหม่"}</small>
+              <small>{duplicatingTemplate ? "กำลังคัดลอก Template..." : "คัดลอก Field และรูปแบบสติ๊กเกอร์ แล้วแก้ไขก่อนสร้าง Template ใหม่"}</small>
             </label>
             <div className="template-default-grid">
               <label>
@@ -175,7 +176,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
             <SectionHeading
               number="2"
               title="ตั้งค่า Sticker Template"
-              subtitle="กำหนด Field, เงื่อนไขบังคับ, Segment ตัวนับ และดู Preview ก่อนสร้าง Customer"
+              subtitle="กำหนด Field, เงื่อนไขบังคับ, Segment ตัวนับ และดู Preview ก่อนสร้าง Template"
             />
             <div className="template-manager-grid">
               <TemplateFieldEditor
@@ -197,6 +198,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
                 onMove={onMoveField}
                 onAddTable={onAddTable}
                 onRenameTable={onRenameTable}
+                onChangeTableLayout={onChangeTableLayout}
                 onRemoveTable={onRemoveTable}
                 onMoveTable={onMoveTable}
               />
@@ -206,7 +208,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
           <div className="container bottom-action">
             <div className="bottom-action-buttons">
               <StickerTemplatePreview
-                customerName={name.trim() || "Customer"}
+                customerName={name.trim() || "Template"}
                 insideFields={insideDraft}
                 outsideFields={outsideDraft}
                 layouts={stickerLayouts}
@@ -215,7 +217,7 @@ export default class CreateCustomerForm extends Component<CreateCustomerFormProp
               />
               <Link className="back-link" href="/">ยกเลิก</Link>
               <Button type="submit" className="export-button" disabled={saving}>
-                {saving ? "กำลังบันทึก..." : "สร้าง Customer"}
+                {saving ? "กำลังบันทึก..." : "สร้าง Template"}
               </Button>
             </div>
           </div>

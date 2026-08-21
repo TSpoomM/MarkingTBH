@@ -1,7 +1,7 @@
 export type ApiEnvelope<T> = { data?: T; message?: string };
 export type DataApiEnvelope<T> = { data: T; message?: string };
 
-export type CustomerTemplateRouteContext = {
+export type TemplateDetailRouteContext = {
   params: Promise<{ id: string }>;
 };
 

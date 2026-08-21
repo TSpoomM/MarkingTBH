@@ -12,7 +12,7 @@ import type {
   MarkingState,
   SaveMarkingPayload,
 } from "@/app/types/marking";
-import type { CounterType, TemplateField } from "@/app/types/customer";
+import type { CounterType, TemplateField } from "@/app/types/template";
 
 const uniqueSegmentKey = (
   fieldKey: string,
@@ -68,8 +68,8 @@ export class MarkingOrdersController {
     this.listeners.forEach((listener) => listener());
   }
 
-  private sortedCustomers(customers: MarkingState["customers"]) {
-    return customers
+  private sortedTemplates(templates: MarkingState["templates"]) {
+    return templates
       .sort((first, second) =>
         Number(second.isActive) - Number(first.isActive) ||
         first.name.localeCompare(second.name),
@@ -79,37 +79,37 @@ export class MarkingOrdersController {
   async initialize() {
     if (this.initialized) return;
     this.initialized = true;
-    const [session, customers] = await Promise.allSettled([
+    const [session, templates] = await Promise.allSettled([
       this.service.getSession(),
-      this.service.getCustomers(),
+      this.service.getTemplates(),
     ]);
     this.setState({
       isAdmin: session.status === "fulfilled" && session.value.user?.role === "admin",
-      customers: customers.status === "fulfilled" ? this.sortedCustomers(customers.value) : [],
+      templates: templates.status === "fulfilled" ? this.sortedTemplates(templates.value) : [],
       isLoading: false,
       notice:
-        customers.status === "rejected"
-          ? { type: "error", text: this.errorMessage(customers.reason, MESSAGES.loadFailed) }
+        templates.status === "rejected"
+          ? { type: "error", text: this.errorMessage(templates.reason, MESSAGES.loadFailed) }
           : null,
     });
   }
 
-  async selectCustomer(customerId: string) {
-    const selectedCustomer = this.state.customers.find((customer) => String(customer.id) === customerId);
-    if (selectedCustomer?.isActive === false) {
+  async selectTemplate(templateId: string) {
+    const selectedTemplate = this.state.templates.find((template) => String(template.id) === templateId);
+    if (selectedTemplate?.isActive === false) {
       this.setState({ notice: { type: "error", text: "Template นี้ Inactive อยู่" } });
       return;
     }
-    this.setState({ customerId, notice: null });
-    if (!customerId) {
+    this.setState({ templateId, notice: null });
+    if (!templateId) {
       this.setState({ template: null, insideRows: [], outsideRows: [] });
       return;
     }
     this.setState({ isLoading: true });
     try {
       const productionDate = this.state.productionDate || this.today();
-      const template = await this.service.getTemplate(Number(customerId));
-      const lotStart = await this.loadLotStart(customerId, productionDate);
+      const template = await this.service.getTemplate(Number(templateId));
+      const lotStart = await this.loadLotStart(templateId, productionDate);
       const stickerDefaults = template.sticker.defaults;
       this.setState({
         template,
@@ -123,6 +123,7 @@ export class MarkingOrdersController {
         productionDate,
         insideRows: [this.emptyRow(template.inside, lotStart)],
         outsideRows: template.outside.length ? [this.emptyRow(template.outside, lotStart)] : [],
+        printOutsideGroups: {},
       });
     } catch (error) {
       this.setState({ notice: { type: "error", text: this.errorMessage(error, MESSAGES.loadFailed) } });
@@ -140,8 +141,8 @@ export class MarkingOrdersController {
   setLotCount(lotCount: string) { this.setState({ lotCount }); }
   setProductionDate(productionDate: string) {
     this.setState({ productionDate });
-    if (this.state.customerId && productionDate) {
-      void this.refreshLotStart(this.state.customerId, productionDate);
+    if (this.state.templateId && productionDate) {
+      void this.refreshLotStart(this.state.templateId, productionDate);
     }
   }
   dismissNotice() { this.setState({ notice: null }); }
@@ -157,6 +158,15 @@ export class MarkingOrdersController {
     });
   }
 
+  setPrintOutsideGroup(groupKey: string, enabled: boolean) {
+    this.setState({
+      printOutsideGroups: {
+        ...this.state.printOutsideGroups,
+        [groupKey]: enabled,
+      },
+    });
+  }
+
   openExportModal() {
     const validationError = this.validate();
     if (validationError) {
@@ -166,17 +176,17 @@ export class MarkingOrdersController {
     this.setState({ isExportModalOpen: true, notice: null });
   }
 
-  private async loadLotStart(customerId: string, productionDate: string) {
+  private async loadLotStart(templateId: string, productionDate: string) {
     try {
-      return await this.service.getNextLotStart(Number(customerId), productionDate);
+      return await this.service.getNextLotStart(Number(templateId), productionDate);
     } catch {
       return 1;
     }
   }
 
-  private async refreshLotStart(customerId: string, productionDate: string) {
+  private async refreshLotStart(templateId: string, productionDate: string) {
     const previousLotStart = this.state.lotStart;
-    const lotStart = await this.loadLotStart(customerId, productionDate);
+    const lotStart = await this.loadLotStart(templateId, productionDate);
     this.setState({
       lotStart,
       insideRows: this.withCounterDefaults(this.state.insideRows, this.state.template?.inside ?? [], lotStart, previousLotStart),
@@ -188,7 +198,7 @@ export class MarkingOrdersController {
     const insideRows = this.withLockedDefaults("inside", this.state.insideRows);
     const outsideRows = this.withLockedDefaults("outside", this.state.outsideRows);
     return {
-      customerId: Number(this.state.customerId),
+      templateId: Number(this.state.templateId),
       totalLot: Number(this.state.totalLot || 0),
       stickerSides: Number(this.state.stickerSides || 1),
       lotCount: Number(this.state.lotCount || 1),
@@ -319,8 +329,8 @@ export class MarkingOrdersController {
   }
 
   private validate(): string {
-    const { customerId, template, insideRows, outsideRows } = this.state;
-    if (!customerId) return MESSAGES.selectCustomer;
+    const { templateId, template, insideRows, outsideRows } = this.state;
+    if (!templateId) return MESSAGES.selectTemplate;
     const stickerFields = template?.sticker.enabledFields ?? [];
     if (!this.state.productionDate) return "กรุณาเลือก Production Date";
     if (!Number.isInteger(Number(this.state.lotCount)) || Number(this.state.lotCount) < 1) return "กรุณากรอกจำนวน Lot";
@@ -440,7 +450,7 @@ export class MarkingOrdersController {
   }
 
   async saveTemplate() {
-    if (!this.state.customerId) return;
+    if (!this.state.templateId) return;
     const cleanFields = (section: "inside" | "outside", fields: TemplateField[]) => fields.map((field, index) => {
       const fieldKey = field.key.trim() || `${section}_field_${index + 1}`;
       const usedSegmentKeys = new Set<string>();
@@ -472,7 +482,7 @@ export class MarkingOrdersController {
     }
     this.setState({ isSaving: true });
     try {
-      const template = await this.service.saveTemplate(Number(this.state.customerId), inside, outside);
+      const template = await this.service.saveTemplate(Number(this.state.templateId), inside, outside);
       this.setState({
         template,
         insideRows: template.inside.length ? [this.emptyRow(template.inside, this.state.lotStart)] : [],

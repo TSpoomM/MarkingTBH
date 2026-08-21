@@ -1,6 +1,6 @@
 import type { MarkingContent } from "@/app/types/marking";
 import { STICKER_FORMAT_PALLETS } from "@/app/types/constants";
-import type { CounterType, LegacyStickerGroupLayout, StickerGroupLayout, TemplateField } from "@/app/types/customer";
+import type { CounterType, LegacyStickerGroupLayout, StickerGroupLayout, TemplateField } from "@/app/types/template";
 import type {
   OutsideStickerGroup,
   StickerBuildOptions,
@@ -53,9 +53,16 @@ export default class StickerFactory {
 
   private static counterType(field: TemplateField, segment?: { counterType?: CounterType }) {
     if (segment?.counterType) return segment.counterType;
+    if (field.counterType) return field.counterType;
     const key = field.key.toLowerCase();
     const label = field.label.toLowerCase();
     return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
+  }
+
+  private static isCounterField(field: Pick<TemplateField, "key" | "label">) {
+    const key = field.key.toLowerCase();
+    const label = field.label.toLowerCase();
+    return key.includes("lot") || key.includes("pallet") || label.includes("lot") || label.includes("pallet");
   }
 
   private static counterValue(
@@ -147,11 +154,30 @@ export default class StickerFactory {
           : [];
       }
       if (field.showOnSticker === false) return [];
+      if (field.isCounter && this.isCounterField(field)) {
+        const value = this.counterDisplayValue(field, row, lot, pallet, sequence, {
+          key: field.key,
+          counterType: field.counterType,
+        });
+        return value ? [{ label: field.label, values: [{ value }], order: field.stickerOrder ?? 0, fontScale: field.fontScale, hideLabel: field.hideLabel }] : [];
+      }
       const value = this.fieldValue(field, row?.[field.key]);
       return value ? [{ label: field.label, values: [{ value }], order: field.stickerOrder ?? 0, fontScale: field.fontScale, hideLabel: field.hideLabel }] : [];
     })
       .sort((a, b) => a.order - b.order)
       .map(({ label, values, order, fontScale, hideLabel }) => ({ label, values, order, fontScale, hideLabel }));
+  }
+
+  // 8x2 cells are too short for multiple rows, so every field on the table is folded
+  // onto one line here instead of being shrunk row-by-row (which used to overflow).
+  private static mergeDetailsToSingleRow(details: StickerItem["details"]): StickerItem["details"] {
+    if (details.length <= 1) return details;
+    const values = details.flatMap((detail, index) => [
+      ...(index > 0 ? [{ value: "    " }] : []),
+      ...(detail.hideLabel ? [] : [{ value: `${detail.label}: ` }]),
+      ...detail.values,
+    ]);
+    return values.length ? [{ label: "", values, order: 0, hideLabel: true }] : [];
   }
 
   private static splitOutsideLabel(label: string) {
@@ -182,6 +208,10 @@ export default class StickerFactory {
     return Array.from(groups.values()).sort((a, b) => a.order - b.order);
   }
 
+  static outsideGroupKey(group: Pick<OutsideStickerGroup, "name" | "order">) {
+    return `${group.order}:${group.name}`;
+  }
+
   static build(options: StickerBuildOptions) {
     const {
       customerName, format, sideCount, lotCount, lotStart, productionDate, stickerType, stickerFsc,
@@ -190,9 +220,9 @@ export default class StickerFactory {
     const palletsByLot = STICKER_FORMAT_PALLETS[format as keyof typeof STICKER_FORMAT_PALLETS];
     if (!palletsByLot || sideCount <= 0 || lotCount <= 0) return [];
     const effectiveLayouts = {
-      insideFrame: true,
-      outsideFrame: outsideFields.length > 0,
-      customerName: !!customerName.trim(),
+      insideFrame: options.layouts?.insideFrame !== false,
+      outsideFrame: options.layouts?.outsideFrame !== false && outsideFields.length > 0,
+      customerName: options.layouts?.customerName !== false && !!customerName.trim(),
       fscLogo: stickerType === "TNR" && stickerFsc,
     };
     const items: StickerItem[] = [];
@@ -202,6 +232,7 @@ export default class StickerFactory {
       detailsForSticker: (lot: number, pallet: number, sequence: number) => StickerItem["details"],
       group?: string,
       groupLayout?: StickerGroupLayout,
+      groupOrder?: number,
     ) => {
       const generated: StickerItem[] = [];
       let sequenceBase = 0;
@@ -221,6 +252,7 @@ export default class StickerFactory {
               details: detailsForSticker(lotStart + lotIndex, pallet, sequence),
               group,
               groupLayout,
+              groupOrder,
             });
           }
         }
@@ -234,8 +266,9 @@ export default class StickerFactory {
       detailsForSticker: (lot: number, pallet: number, sequence: number) => StickerItem["details"],
       group?: string,
       groupLayout?: StickerGroupLayout,
+      groupOrder?: number,
     ) => {
-      items.push(...buildLayoutItems(kind, detailsForSticker, group, groupLayout));
+      items.push(...buildLayoutItems(kind, detailsForSticker, group, groupLayout, groupOrder));
     };
 
     if (effectiveLayouts.insideFrame) {
@@ -243,7 +276,17 @@ export default class StickerFactory {
     }
     if (effectiveLayouts.outsideFrame) {
       this.outsideGroups(outsideFields).forEach((group) => {
-        addLayoutItems("outsideFrame", (lot, pallet, sequence) => this.fieldValues(group.fields, outsideRow, lot, pallet, sequence), group.name, group.layout);
+        const isVertical = this.isVerticalGroupLayout(group.layout);
+        addLayoutItems(
+          "outsideFrame",
+          (lot, pallet, sequence) => {
+            const details = this.fieldValues(group.fields, outsideRow, lot, pallet, sequence);
+            return isVertical ? this.mergeDetailsToSingleRow(details) : details;
+          },
+          group.name,
+          group.layout,
+          group.order,
+        );
       });
     }
     if (effectiveLayouts.customerName) addLayoutItems("customerName", () => []);

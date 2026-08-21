@@ -1,15 +1,15 @@
-import type { Customer, StickerDefaults, StickerGroupLayout, TemplateField } from "@/app/types/customer";
+import type { Template, StickerDefaults, StickerGroupLayout, TemplateField } from "@/app/types/template";
 import type {
   FixedInsideField,
   InsideGroup,
   OutsideTable,
   StickerField,
   StickerLayouts,
-} from "@/app/types/customer-form";
+} from "@/app/types/template-form";
 import type { FormEvent, ReactNode } from "react";
 
-export type CustomerFormNotice = { kind: "error" | "success"; text: string };
-export type CustomerManageMode = "edit" | "create";
+export type TemplateFormNotice = { kind: "error" | "success"; text: string };
+export type TemplateManageMode = "edit" | "create";
 
 export type StickerSelectableField = {
   key: string;
@@ -22,16 +22,16 @@ export type StickerSelectableField = {
   stickerOrder: number | undefined;
 };
 
-export interface CustomerFormState {
-  mode: CustomerManageMode;
-  customers: Customer[];
-  selectedCustomerId: string;
+export interface TemplateFormState {
+  mode: TemplateManageMode;
+  templates: Template[];
+  selectedTemplateId: string;
   templateName: string;
   templateInsideDraft: TemplateField[];
   templateOutsideDraft: TemplateField[];
   createInsideDraft: TemplateField[];
   createOutsideDraft: TemplateField[];
-  duplicateSourceCustomerId: string;
+  duplicateSourceTemplateId: string;
   name: string;
   isActive: boolean;
   templateIsActive: boolean;
@@ -43,23 +43,23 @@ export interface CustomerFormState {
   templateStickerDefaults: StickerDefaults;
   groups: InsideGroup[];
   tables: OutsideTable[];
-  notice: CustomerFormNotice | undefined;
-  templateNotice: CustomerFormNotice | undefined;
-  duplicateNamePrompt: { customerId: string; name: string } | undefined;
+  notice: TemplateFormNotice | undefined;
+  templateNotice: TemplateFormNotice | undefined;
+  duplicateNamePrompt: { templateId: string; name: string } | undefined;
   isAdmin: boolean;
   checkingRole: boolean;
-  loadingCustomers: boolean;
+  loadingTemplates: boolean;
   loadingTemplate: boolean;
   duplicatingTemplate: boolean;
   savingTemplate: boolean;
   saving: boolean;
 }
 
-export interface CreateCustomerFormProps {
-  customers: Customer[];
+export interface CreateTemplateFormProps {
+  templates: Template[];
   name: string;
   isActive: boolean;
-  duplicateSourceCustomerId: string;
+  duplicateSourceTemplateId: string;
   stickerLayouts: StickerLayouts;
   stickerDefaults: StickerDefaults;
   groups: InsideGroup[];
@@ -67,15 +67,15 @@ export interface CreateCustomerFormProps {
   fixedInsideFields: readonly FixedInsideField[];
   insideDraft: TemplateField[];
   outsideDraft: TemplateField[];
-  notice: CustomerFormNotice | undefined;
-  loadingCustomers: boolean;
+  notice: TemplateFormNotice | undefined;
+  loadingTemplates: boolean;
   duplicatingTemplate: boolean;
   saving: boolean;
   onDismissNotice: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onNameChange: (name: string) => void;
   onActiveChange: (isActive: boolean) => void;
-  onDuplicateSourceChange: (customerId: string) => void;
+  onDuplicateSourceChange: (templateId: string) => void;
   onStickerDefaultsChange: (defaults: StickerDefaults) => void;
   onSegmentCountChange: (groupKey: InsideGroup["key"], count: number) => void;
   onGroupSegmentChange: (groupKey: InsideGroup["key"], segmentIndex: number, label: string) => void;
@@ -88,25 +88,26 @@ export interface CreateCustomerFormProps {
   onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
   onAddTable: (layout: StickerGroupLayout) => void;
   onRenameTable: (tableOrder: number, name: string) => void;
+  onChangeTableLayout: (tableOrder: number, layout: StickerGroupLayout) => void;
   onRemoveTable: (tableOrder: number) => void;
   onMoveTable: (fromOrder: number, toOrder: number) => void;
 }
 
-export interface EditCustomerTemplateProps {
-  customers: Customer[];
-  selectedCustomerId: string;
+export interface EditTemplateFormProps {
+  templates: Template[];
+  selectedTemplateId: string;
   name: string;
   isActive: boolean;
   insideDraft: TemplateField[];
   outsideDraft: TemplateField[];
   stickerLayouts: StickerLayouts;
   stickerDefaults: StickerDefaults;
-  notice: CustomerFormNotice | undefined;
-  loadingCustomers: boolean;
+  notice: TemplateFormNotice | undefined;
+  loadingTemplates: boolean;
   loadingTemplate: boolean;
   savingTemplate: boolean;
   onDismissNotice: () => void;
-  onSelectCustomer: (customerId: string) => void;
+  onSelectTemplate: (templateId: string) => void;
   onNameChange: (name: string) => void;
   onActiveChange: (isActive: boolean) => void;
   onSave: () => void;
@@ -119,6 +120,7 @@ export interface EditCustomerTemplateProps {
   onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
   onAddTable: (layout: StickerGroupLayout) => void;
   onRenameTable: (tableOrder: number, name: string) => void;
+  onChangeTableLayout: (tableOrder: number, layout: StickerGroupLayout) => void;
   onRemoveTable: (tableOrder: number) => void;
   onMoveTable: (fromOrder: number, toOrder: number) => void;
 }
@@ -152,6 +154,7 @@ export interface TemplateFieldEditorProps {
   onMove: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
   onAddTable?: (layout: StickerGroupLayout) => void;
   onRenameTable?: (tableOrder: number, name: string) => void;
+  onChangeTableLayout?: (tableOrder: number, layout: StickerGroupLayout) => void;
   onRemoveTable?: (tableOrder: number) => void;
   onMoveTable?: (fromOrder: number, toOrder: number) => void;
 }

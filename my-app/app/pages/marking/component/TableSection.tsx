@@ -5,12 +5,19 @@ import EmptyState from "./EmptyState";
 import Input from "@/app/components/Input";
 import SectionTitle from "./SectionTitle";
 import StickerFactory from "./StickerFactory";
-import type { TemplateField } from "@/app/types/customer";
+import type { TemplateField } from "@/app/types/template";
 import type { TableSectionProps } from "@/app/types/marking-sticker";
 
 export default class TableSection extends Component<TableSectionProps> {
+  private isCounterField(field: Pick<TemplateField, "key" | "label">) {
+    const key = field.key.toLowerCase();
+    const label = field.label.toLowerCase();
+    return key.includes("lot") || key.includes("pallet") || label.includes("lot") || label.includes("pallet");
+  }
+
   private isLotCounter(field: TemplateField, segment?: { counterType?: string }) {
     if (segment?.counterType) return segment.counterType === "lot" || segment.counterType === "sequence";
+    if (field.counterType) return field.counterType === "lot" || field.counterType === "sequence";
     const key = field.key.toLowerCase();
     const label = field.label.toLowerCase();
     return !key.includes("pallet") && !label.includes("pallet");
@@ -66,8 +73,15 @@ export default class TableSection extends Component<TableSectionProps> {
                         <Input
                           bare
                           type={field.type === "textarea" ? "text" : field.type}
-                          value={row[field.key] ?? ""}
+                          inputMode={field.isCounter && this.isCounterField(field) ? "numeric" : undefined}
+                          value={row[field.key] ?? (field.isCounter && this.isCounterField(field) ? StickerFactory.previewCounterValue(field, lotStart) : "")}
                           onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
+                          onBlur={field.isCounter && this.isCounterField(field) && this.isLotCounter(field) ? (event) => {
+                            const raw = event.target.value;
+                            if (!/^\d+$/.test(raw)) return;
+                            const padded = raw.padStart(StickerFactory.DEFAULT_COUNTER_DIGITS, "0");
+                            if (padded !== raw) onChange(rowIndex, field.key, padded);
+                          } : undefined}
                           disabled={field.locked === true}
                           placeholder={field.placeholder ?? `กรอก ${field.label}`}
                         />

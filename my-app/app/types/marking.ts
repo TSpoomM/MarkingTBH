@@ -1,4 +1,4 @@
-import { Customer, CustomerTemplate, TemplateField } from "./customer";
+import { Template, TemplateDetail, TemplateField } from "./template";
 
 export type MarkingContent = Record<string, string>;
 export type Notice = { type: "error" | "success"; text: string };
@@ -7,9 +7,9 @@ export type PrintSection = "insideFrame" | "outsideFrame" | "customerName" | "fs
 export type PrintSections = Record<PrintSection, boolean>;
 
 export interface MarkingState {
-  customers: Customer[];
-  customerId: string;
-  template: CustomerTemplate | null;
+  templates: Template[];
+  templateId: string;
+  template: TemplateDetail | null;
   totalLot: string;
   stickerSides: string;
   stickerFormat: string;
@@ -17,6 +17,7 @@ export interface MarkingState {
   stickerFsc: boolean;
   stickerOther: string;
   printSections: PrintSections;
+  printOutsideGroups: Record<string, boolean>;
   lotCount: string;
   lotStart: number;
   productionDate: string;
@@ -33,7 +34,7 @@ export interface MarkingState {
 }
 
 export interface SaveMarkingPayload {
-  customerId: number;
+  templateId: number;
   totalLot: number;
   stickerSides: number;
   lotCount: number;
@@ -46,7 +47,7 @@ export interface SaveMarkingPayload {
 
 export interface CreateMarkingInput {
   employeeId: string;
-  customerId: number;
+  templateId: number;
   totalLot: number;
   stickerSides: number;
   lotCount: number;
@@ -62,7 +63,7 @@ export interface MarkingHistoryItem {
   employeeId: string;
   employeeName: string;
   employeeLocation: string;
-  customerId: number;
+  templateId: number;
   customerName: string;
   totalLot: number;
   stickerSides: number;

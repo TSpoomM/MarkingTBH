@@ -1,5 +1,5 @@
-import type { CounterType, TemplateField } from "@/app/types/customer";
-import type { StickerSelectableField } from "@/app/types/manage-customer";
+import type { CounterType, TemplateField } from "@/app/types/template";
+import type { StickerSelectableField } from "@/app/types/manage-template";
 
 export default class TemplateFieldUtils {
   static uid() {
@@ -58,7 +58,16 @@ export default class TemplateFieldUtils {
     const keyedField = (segmentKeyedField.fontScale as string) === "large"
       ? { ...segmentKeyedField, fontScale: "xlarge" as const }
       : segmentKeyedField;
-    if (!keyedField.segments?.length || !this.isCounterField(keyedField)) return keyedField;
+    if (!this.isCounterField(keyedField)) return keyedField;
+    if (!keyedField.segments?.length) {
+      return {
+        ...keyedField,
+        type: keyedField.isCounter ? "number" : keyedField.type ?? "text",
+        counterType: keyedField.isCounter
+          ? keyedField.counterType ?? this.inferCounterType(keyedField)
+          : keyedField.counterType,
+      };
+    }
     return {
       ...keyedField,
       segments: keyedField.segments.map((segment) => ({

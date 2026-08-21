@@ -4,7 +4,7 @@ export interface HistoryPageState {
   items: MarkingHistoryItem[];
   isLoading: boolean;
   notice: string;
-  customerQuery: string;
+  templateQuery: string;
   employeeQuery: string;
   action: "all" | MarkingHistoryItem["actionType"];
   date: string;

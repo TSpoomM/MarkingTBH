@@ -3,15 +3,15 @@ import Button from "@/app/components/Button";
 import Modal from "@/app/components/Modal";
 import StickerFactory from "@/app/pages/marking/component/StickerFactory";
 import StickerPreviewPages from "@/app/pages/marking/component/StickerPreviewPages";
-import type { TemplateField } from "@/app/types/customer";
+import type { TemplateField } from "@/app/types/template";
 import type { MarkingContent } from "@/app/types/marking";
 import type { StickerKind } from "@/app/types/marking-sticker";
-import type { StickerTemplatePreviewProps } from "@/app/types/manage-customer";
+import type { StickerTemplatePreviewProps } from "@/app/types/manage-template";
 
 const PREVIEW_MODE_LABELS: Record<StickerKind, string> = {
   insideFrame: "ในกรอบ",
   outsideFrame: "นอกกรอบ",
-  customerName: "ชื่อ Customer",
+  customerName: "ชื่อ Template",
   fscLogo: "โลโก้ FSC",
 };
 
