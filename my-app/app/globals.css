@@ -4519,10 +4519,11 @@ select {
 	.template-admin .outside-count-button {
 		border: 1px solid #98b8a6;
 		border-radius: 8px;
-		background: #e7f2ec;
+		background: #fbfdfb;
 		color: var(--primary-dark);
 		font-size: 14px;
 		font-weight: 850;
+		box-shadow: none;
 	}
 
 	.template-admin .outside-count-button:hover {
@@ -5251,6 +5252,10 @@ select {
 	.template-admin .outside-field-wrap .field-font-scale {
 		grid-column: 5;
 		grid-row: 2;
+	}
+
+	.template-admin .outside-field-wrap .editor-field:not(:has(.outside-counter-type-control)) .field-font-scale {
+		grid-column: 3;
 	}
 
 	.template-admin .outside-field-wrap .outside-counter-type-control .app-select {

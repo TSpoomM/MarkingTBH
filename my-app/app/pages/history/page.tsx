@@ -447,14 +447,14 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
           <section className={`panel history-filter ${isTemplateMode ? "template-history-filter" : ""}`}>
             <div className="history-filter-title">
               <strong>ค้นหารายการ</strong>
-              <span>กรองจากลูกค้า ผู้บันทึก การทำรายการ หรือวันที่</span>
+              <span>กรองจากTemplate ผู้บันทึก การทำรายการ หรือวันที่</span>
             </div>
             <Autocomplete
-              label="ลูกค้า"
+              label="Template"
               options={isTemplateMode ? this.uniqueTemplateValues() : this.uniqueValues((item) => item.customerName)}
               value={this.state.templateQuery}
               onChange={this.setTemplateQuery}
-              placeholder="พิมพ์เพื่อเลือกลูกค้า"
+              placeholder="พิมพ์เพื่อเลือกTemplate"
             />
             <Autocomplete
               label="ผู้บันทึก"
