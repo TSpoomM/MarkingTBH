@@ -17,7 +17,15 @@ const isActiveValue = (value: number | string | boolean | null | undefined) => {
 
 export async function GET(request: Request) {
   try {
-    const includeInactiveParam = new URL(request.url).searchParams.get("includeInactive");
+    const searchParams = new URL(request.url).searchParams;
+    if (searchParams.get("history") === "1") {
+      const access = await adminAuthService.requireAdmin(request);
+      if (!access.isAdmin) {
+        return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
+      }
+      return Response.json({ data: await templateService.getTemplateHistory() });
+    }
+    const includeInactiveParam = searchParams.get("includeInactive");
     const includeInactive = includeInactiveParam === "1" || includeInactiveParam === "visible";
     const visibleInactive = includeInactiveParam === "visible";
     if (includeInactive) {

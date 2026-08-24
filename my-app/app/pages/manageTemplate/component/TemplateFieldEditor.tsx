@@ -177,7 +177,6 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
         {!fields.length && <div className="editor-empty">ยังไม่มี Field</div>}
         {fields.map((field, index) => {
           const isExpanded = expanded[field.key] ?? false;
-          const countableField = TemplateFieldUtils.isCounterField(field);
           const tableOrder = field.stickerGroupOrder ?? 0;
           const isInsideNettField = section === "inside" && field.key === "nett" && !field.segments?.length;
           const previousTableOrder = fields[index - 1]?.stickerGroupOrder ?? 0;
@@ -366,7 +365,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         </span>
                       </label>
                     )}
-                    {section === "outside" && !field.segments?.length && countableField && (
+                    {section === "outside" && !field.segments?.length && (
                       <Button
                         type="button"
                         className={field.isCounter ? "outside-count-button active" : "outside-count-button"}
@@ -381,7 +380,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         นับ
                       </Button>
                     )}
-                    {section === "outside" && !field.segments?.length && countableField && field.isCounter && (
+                    {section === "outside" && !field.segments?.length && field.isCounter && (
                       <div className="counter-type-control outside-counter-type-control">
                         <span>นับแบบ</span>
                         <Select
@@ -486,24 +485,22 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                             </label>
                           </div>
                           <div className="editor-segment-actions" aria-label={`ตั้งค่า Section ${segmentIndex + 1}`}>
-                            {countableField && (
-                              <Button
-                                type="button"
-                                className={segment.isCounter ? "count-segment active" : "count-segment"}
-                                onClick={() => onChange(section, index, {
-                                  segments: field.segments?.map((item, itemIndex) => ({
-                                    ...item,
-                                    isCounter: itemIndex === segmentIndex ? !item.isCounter : item.isCounter,
-                                    type: itemIndex === segmentIndex && !item.isCounter ? "number" : item.type ?? "text",
-                                    counterType: itemIndex === segmentIndex && !item.isCounter
-                                      ? item.counterType ?? TemplateFieldUtils.inferCounterType(field)
-                                      : item.counterType,
-                                  })),
-                                })}
-                              >
-                                นับ
-                              </Button>
-                            )}
+                            <Button
+                              type="button"
+                              className={segment.isCounter ? "count-segment active" : "count-segment"}
+                              onClick={() => onChange(section, index, {
+                                segments: field.segments?.map((item, itemIndex) => ({
+                                  ...item,
+                                  isCounter: itemIndex === segmentIndex ? !item.isCounter : item.isCounter,
+                                  type: itemIndex === segmentIndex && !item.isCounter ? "number" : item.type ?? "text",
+                                  counterType: itemIndex === segmentIndex && !item.isCounter
+                                    ? item.counterType ?? TemplateFieldUtils.inferCounterType(field)
+                                    : item.counterType,
+                                })),
+                              })}
+                            >
+                              นับ
+                            </Button>
                             {segment.isCounter && (
                               <label className="counter-type-control">
                                 <span>นับแบบ</span>
@@ -521,7 +518,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                                 >
                                   <option value="lot">Lot</option>
                                   <option value="pallet">Pallet</option>
-                                  <option value="sequence">นับต่อเนื่อง (+1 ไม่วนรอบ)</option>
+                                  <option value="sequence">+1 ไปเรื่อยๆ</option>
                                 </Select>
                               </label>
                             )}
@@ -533,8 +530,8 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                                 onChange(section, index, {
                                   segments: segments.map((item) => ({
                                     ...item,
-                                    type: countableField && item.isCounter ? "number" : item.type ?? "text",
-                                    counterType: countableField && item.isCounter
+                                    type: item.isCounter ? "number" : item.type ?? "text",
+                                    counterType: item.isCounter
                                       ? item.counterType ?? TemplateFieldUtils.inferCounterType(field)
                                       : item.counterType,
                                   })),

@@ -19,12 +19,6 @@ export class TemplateService {
     return key || `field_${index + 1}`;
   }
 
-  private isCounterField(field: Pick<TemplateField, "key" | "label">) {
-    const key = field.key.toLowerCase();
-    const label = field.label.toLowerCase();
-    return key.includes("lot") || key.includes("pallet") || label.includes("lot") || label.includes("pallet");
-  }
-
   private counterType(field: Pick<TemplateField, "key" | "label">): CounterType {
     const key = field.key.toLowerCase();
     const label = field.label.toLowerCase();
@@ -86,7 +80,7 @@ export class TemplateService {
 
   private normalizeCounterSegments(field: TemplateField): TemplateField {
     const keyedField = this.normalizeSegmentKeys(field);
-    if (!keyedField.segments?.length || !this.isCounterField(keyedField)) return keyedField;
+    if (!keyedField.segments?.length) return keyedField;
     return {
       ...keyedField,
       segments: keyedField.segments.map((segment) => ({
@@ -304,6 +298,10 @@ export class TemplateService {
 
   getTemplates(includeInactive = false) {
     return this.repository.findAll(includeInactive);
+  }
+
+  getTemplateHistory() {
+    return this.repository.findHistory();
   }
 
   async renameTemplateIfChanged(templateId: number, name: string | undefined) {

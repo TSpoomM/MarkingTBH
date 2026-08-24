@@ -167,12 +167,7 @@ export class MarkingRepository {
     const [rows] = await this.pool.execute<RowDataPacket[]>(
       `SELECT t.id, t.inside, t.outside
        FROM tb_template t
-       INNER JOIN (
-         SELECT id, MAX(id) AS id
-         FROM tb_template
-         WHERE id IN (${placeholders})
-         GROUP BY id
-       ) latest ON latest.id = t.id`,
+       WHERE t.id IN (${placeholders})`,
       uniqueIds,
     );
     return new Map(rows.map((row) => {

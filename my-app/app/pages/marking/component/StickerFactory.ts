@@ -26,7 +26,7 @@ export default class StickerFactory {
   }
 
   static previewCounterValue(field: TemplateField, lotStart: number) {
-    const value = this.counterValue(field, lotStart || 1, 1, 1);
+    const value = this.counterValue(field, lotStart || 1, 1, 1, lotStart || 1);
     const type = this.counterType(field);
     return type === "lot" || type === "sequence" ? value.padStart(this.DEFAULT_COUNTER_DIGITS, "0") : value;
   }
@@ -59,23 +59,24 @@ export default class StickerFactory {
     return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
   }
 
-  private static isCounterField(field: Pick<TemplateField, "key" | "label">) {
-    const key = field.key.toLowerCase();
-    const label = field.label.toLowerCase();
-    return key.includes("lot") || key.includes("pallet") || label.includes("lot") || label.includes("pallet");
-  }
-
   private static counterValue(
     field: TemplateField,
     lot: number,
     pallet: number,
     sequence: number,
+    lotStart: number,
     segment?: { counterType?: CounterType },
+    seed?: number,
   ) {
     const type = this.counterType(field, segment);
-    if (type === "pallet") return String(pallet);
-    if (type === "sequence") return String(sequence);
-    return String(lot);
+    if (type === "pallet") return String((seed ?? 1) + pallet - 1);
+    if (type === "sequence") return String((seed ?? 1) + sequence - 1);
+    return String((seed ?? lotStart) + lot - lotStart);
+  }
+
+  private static counterSeed(row: MarkingContent | undefined, key: string) {
+    const seed = row?.[key]?.trim();
+    return seed && /^\d+$/.test(seed) ? Number(seed) : undefined;
   }
 
   private static counterDisplayValue(
@@ -84,13 +85,15 @@ export default class StickerFactory {
     lot: number,
     pallet: number,
     sequence: number,
+    lotStart: number,
     segment: { key: string; counterType?: CounterType },
   ) {
-    const value = this.counterValue(field, lot, pallet, sequence, segment);
+    const seed = this.counterSeed(row, segment.key);
+    const value = this.counterValue(field, lot, pallet, sequence, lotStart, segment, seed);
     const type = this.counterType(field, segment);
     if (type !== "lot" && type !== "sequence") return value;
-    const seed = row?.[segment.key];
-    const digits = seed && /^\d+$/.test(seed) ? Math.max(seed.length, this.DEFAULT_COUNTER_DIGITS) : this.DEFAULT_COUNTER_DIGITS;
+    const rawSeed = row?.[segment.key];
+    const digits = rawSeed && /^\d+$/.test(rawSeed) ? Math.max(rawSeed.length, this.DEFAULT_COUNTER_DIGITS) : this.DEFAULT_COUNTER_DIGITS;
     return value.padStart(digits, "0");
   }
 
@@ -134,6 +137,7 @@ export default class StickerFactory {
     lot: number,
     pallet: number,
     sequence: number,
+    lotStart: number,
   ) {
     return fields.flatMap((field) => {
       if (field.segments?.length) {
@@ -142,7 +146,7 @@ export default class StickerFactory {
           .sort((a, b) => (a.stickerOrder ?? 0) - (b.stickerOrder ?? 0));
         const values = selectedSegments.flatMap((segment) => {
           const value = segment.isCounter
-            ? this.counterDisplayValue(field, row, lot, pallet, sequence, segment)
+            ? this.counterDisplayValue(field, row, lot, pallet, sequence, lotStart, segment)
             : row?.[segment.key];
           return value
             ? [{ key: segment.key, label: segment.label, value, prefix: segment.prefix, suffix: segment.suffix }]
@@ -154,8 +158,8 @@ export default class StickerFactory {
           : [];
       }
       if (field.showOnSticker === false) return [];
-      if (field.isCounter && this.isCounterField(field)) {
-        const value = this.counterDisplayValue(field, row, lot, pallet, sequence, {
+      if (field.isCounter) {
+        const value = this.counterDisplayValue(field, row, lot, pallet, sequence, lotStart, {
           key: field.key,
           counterType: field.counterType,
         });
@@ -272,7 +276,7 @@ export default class StickerFactory {
     };
 
     if (effectiveLayouts.insideFrame) {
-      addLayoutItems("insideFrame", (lot, pallet, sequence) => this.fieldValues(insideFields, insideRow, lot, pallet, sequence));
+      addLayoutItems("insideFrame", (lot, pallet, sequence) => this.fieldValues(insideFields, insideRow, lot, pallet, sequence, lotStart));
     }
     if (effectiveLayouts.outsideFrame) {
       this.outsideGroups(outsideFields).forEach((group) => {
@@ -280,7 +284,7 @@ export default class StickerFactory {
         addLayoutItems(
           "outsideFrame",
           (lot, pallet, sequence) => {
-            const details = this.fieldValues(group.fields, outsideRow, lot, pallet, sequence);
+            const details = this.fieldValues(group.fields, outsideRow, lot, pallet, sequence, lotStart);
             return isVertical ? this.mergeDetailsToSingleRow(details) : details;
           },
           group.name,

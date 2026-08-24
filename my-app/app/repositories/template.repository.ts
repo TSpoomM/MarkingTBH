@@ -2,6 +2,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool } from "mysql2/promise";
 import { pool } from "../lib/db";
 import type { ActiveColumnRow, TemplateListRow, TemplateRow } from "@/app/types/database";
+import type { TemplateHistoryItem } from "@/app/types/history";
 
 export class TemplateRepository {
   private activeColumn: { tableName: "tb_template"; columnName: string; columnType: string } | null | undefined;
@@ -27,6 +28,33 @@ export class TemplateRepository {
 
   private columnRef(alias: "t", columnName: string) {
     return `${alias}.\`${columnName}\``;
+  }
+
+  private countTemplateFields(value: unknown, section: "inside" | "outside") {
+    try {
+      const parsed: unknown = JSON.parse(String(value ?? ""));
+      if (Array.isArray(parsed)) return parsed.length;
+      if (!parsed || typeof parsed !== "object") return 0;
+      const config = parsed as {
+        groups?: unknown[];
+        fields?: unknown[];
+        tables?: Array<{ fields?: unknown[] }>;
+      };
+      if (section === "inside") return (config.groups?.length ?? 0) + (config.fields?.length ?? 0);
+      if (Array.isArray(config.tables)) {
+        return config.tables.reduce((count, table) => count + (table.fields?.length ?? 0), 0);
+      }
+      return config.fields?.length ?? 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  private isoDate(value: unknown) {
+    if (!value) return "";
+    if (value instanceof Date) return value.toISOString();
+    const date = new Date(String(value));
+    return Number.isNaN(date.getTime()) ? String(value) : date.toISOString();
   }
 
   private activeValue(isActive: boolean, activeColumn: NonNullable<TemplateRepository["activeColumn"]>) {
@@ -72,6 +100,53 @@ export class TemplateRepository {
        ORDER BY is_active DESC, c_name ASC`,
     );
     return rows;
+  }
+
+  async findHistory(): Promise<TemplateHistoryItem[]> {
+    const [rows] = await this.pool.query<Array<RowDataPacket & {
+      id: number;
+      c_name: string;
+      inside: string | null;
+      outside: string | null;
+      created_by: string | null;
+      created_date: Date | string | null;
+      first_log_date: Date | string | null;
+      last_template_log_date: Date | string | null;
+    }>>(
+      `SELECT
+         t.id,
+         t.c_name,
+         t.inside,
+         t.outside,
+         t.created_by,
+         t.created_date,
+         (
+           SELECT MIN(l.createdDate)
+           FROM tb_action_log l
+           WHERE l.action LIKE CONCAT('%(ID ', t.id, ')%')
+              OR l.action LIKE CONCAT('%ลูกค้าใหม่%ID ', t.id, '%')
+         ) AS first_log_date,
+         (
+           SELECT MAX(l.createdDate)
+           FROM tb_action_log l
+           WHERE l.action LIKE CONCAT('%Template%ID ', t.id, '%')
+         ) AS last_template_log_date
+       FROM tb_template t
+       ORDER BY COALESCE(t.created_date, '1970-01-01') DESC, t.c_name ASC`,
+    );
+
+    return rows.map((row) => {
+      const updatedAt = this.isoDate(row.last_template_log_date ?? row.created_date);
+      return {
+        id: Number(row.id),
+        name: String(row.c_name ?? ""),
+        createdAt: this.isoDate(row.first_log_date ?? row.created_date),
+        updatedAt,
+        updatedBy: String(row.created_by ?? ""),
+        insideFieldCount: this.countTemplateFields(row.inside, "inside"),
+        outsideFieldCount: this.countTemplateFields(row.outside, "outside"),
+      };
+    });
   }
 
   async updateName(templateId: number, name: string) {

@@ -257,11 +257,13 @@ export class MarkingOrdersController {
   private isLotCounterKey(section: "inside" | "outside", key: string) {
     const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
     return fields?.some((field) =>
-      field.segments?.some((segment) =>
-        segment.key === key &&
-        segment.isCounter &&
-        this.counterType(field, segment) === "lot",
-      ),
+      field.key === key
+        ? field.isCounter && this.counterType(field, { counterType: field.counterType }) === "lot"
+        : field.segments?.some((segment) =>
+          segment.key === key &&
+          segment.isCounter &&
+          this.counterType(field, segment) === "lot",
+        ),
     ) ?? key.toLowerCase().includes("lot");
   }
 
@@ -531,8 +533,22 @@ export class MarkingOrdersController {
     return Object.fromEntries(fields.flatMap((field) =>
       field.segments?.length
         ? field.segments.map((segment) => [segment.key, segment.isCounter ? this.counterDefault(field, lotStart, segment) : ""])
-        : [[field.key, this.fieldDefault(field)]],
+        : [[field.key, field.isCounter ? this.counterDefault(field, lotStart, { counterType: field.counterType }) : this.fieldDefault(field)]],
     ));
+  }
+
+  private syncFieldCounterDefault(
+    row: MarkingContent,
+    field: TemplateField,
+    lotStart: number,
+    previousLotStart: number,
+  ) {
+    if (!field.isCounter) return;
+    const previousDefault = this.counterDefault(field, previousLotStart, { counterType: field.counterType });
+    const previousRawDefault = String(this.counterSeed(this.counterType(field, { counterType: field.counterType }), previousLotStart));
+    if (!row[field.key] || row[field.key] === previousDefault || row[field.key] === previousRawDefault) {
+      row[field.key] = this.counterDefault(field, lotStart, { counterType: field.counterType });
+    }
   }
 
   private withCounterDefaults(
@@ -544,6 +560,10 @@ export class MarkingOrdersController {
     return rows.map((row) => {
       const nextRow = { ...row };
       fields.forEach((field) => {
+        if (!field.segments?.length) {
+          this.syncFieldCounterDefault(nextRow, field, lotStart, previousLotStart);
+          return;
+        }
         field.segments?.forEach((segment) => {
           if (!segment.isCounter) return;
           const previousDefault = this.counterDefault(field, previousLotStart, segment);

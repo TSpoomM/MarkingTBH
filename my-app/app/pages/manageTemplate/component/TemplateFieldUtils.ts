@@ -6,12 +6,6 @@ export default class TemplateFieldUtils {
     return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
-  static isCounterField(field: Pick<TemplateField, "key" | "label">) {
-    const key = field.key.toLowerCase();
-    const label = field.label.toLowerCase();
-    return key.includes("lot") || key.includes("pallet") || label.includes("lot") || label.includes("pallet");
-  }
-
   static inferCounterType(field: Pick<TemplateField, "key" | "label">): CounterType {
     const key = field.key.toLowerCase();
     const label = field.label.toLowerCase();
@@ -58,7 +52,6 @@ export default class TemplateFieldUtils {
     const keyedField = (segmentKeyedField.fontScale as string) === "large"
       ? { ...segmentKeyedField, fontScale: "xlarge" as const }
       : segmentKeyedField;
-    if (!this.isCounterField(keyedField)) return keyedField;
     if (!keyedField.segments?.length) {
       return {
         ...keyedField,

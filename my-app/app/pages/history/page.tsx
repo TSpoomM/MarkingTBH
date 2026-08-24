@@ -9,15 +9,18 @@ import Navbar from "@/app/components/Navbar";
 import Select from "@/app/components/Select";
 import Toast from "@/app/components/Toast";
 import type { ApiEnvelope } from "@/app/types/api";
-import type { HistoryPageState } from "@/app/types/history";
+import type { HistoryPageState, TemplateHistoryItem } from "@/app/types/history";
 import type { MarkingContent, MarkingHistoryFieldMeta, MarkingHistoryItem } from "@/app/types/marking";
 
 export default class HistoryPage extends Component<Record<string, never>, HistoryPageState> {
   private isActive = false;
 
   state: HistoryPageState = {
+    mode: "logs",
     items: [],
+    templateItems: [],
     isLoading: true,
+    isTemplateLoading: false,
     notice: "",
     templateQuery: "",
     employeeQuery: "",
@@ -52,6 +55,31 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
       if (this.isActive) this.setState({ isLoading: false });
     }
   }
+
+  private async loadTemplateHistory() {
+    this.setState({ isTemplateLoading: true });
+    try {
+      const response = await fetch("/api/templates?history=1");
+      const body = (await response.json()) as ApiEnvelope<TemplateHistoryItem[]>;
+      if (!response.ok) throw new Error(body.message ?? "โหลดประวัติ Template ไม่สำเร็จ");
+      if (!this.isActive) return;
+      this.setState({ templateItems: body.data ?? [], notice: "" });
+    } catch (error) {
+      if (!this.isActive) return;
+      this.setState({
+        notice: error instanceof Error ? error.message : "โหลดประวัติ Template ไม่สำเร็จ",
+      });
+    } finally {
+      if (this.isActive) this.setState({ isTemplateLoading: false });
+    }
+  }
+
+  private setMode = (mode: HistoryPageState["mode"]) => {
+    this.setState({ mode, openId: null });
+    if (mode === "templates" && !this.state.templateItems.length && !this.state.isTemplateLoading) {
+      void this.loadTemplateHistory();
+    }
+  };
 
   private setTemplateQuery = (event: ChangeEvent<HTMLInputElement>) => {
     this.setState({ templateQuery: event.target.value });
@@ -103,8 +131,23 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
     });
   }
 
+  private filteredTemplateItems() {
+    const normalizedTemplate = this.state.templateQuery.trim().toLowerCase();
+    return this.state.templateItems.filter((item) => {
+      const matchesTemplate = !normalizedTemplate || item.name.toLowerCase().includes(normalizedTemplate);
+      const matchesDate = !this.state.date || item.createdAt.startsWith(this.state.date) || item.updatedAt.startsWith(this.state.date);
+      return matchesTemplate && matchesDate;
+    });
+  }
+
   private uniqueValues(pick: (item: MarkingHistoryItem) => string) {
     return Array.from(new Set(this.state.items.map(pick).filter(Boolean))).sort((a, b) =>
+      a.localeCompare(b, "th")
+    );
+  }
+
+  private uniqueTemplateValues() {
+    return Array.from(new Set(this.state.templateItems.map((item) => item.name).filter(Boolean))).sort((a, b) =>
       a.localeCompare(b, "th")
     );
   }
@@ -351,10 +394,14 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
 
   render() {
     const filteredItems = this.filteredItems();
+    const filteredTemplateItems = this.filteredTemplateItems();
+    const isTemplateMode = this.state.mode === "templates";
+    const visibleCount = isTemplateMode ? filteredTemplateItems.length : filteredItems.length;
+    const totalCount = isTemplateMode ? this.state.templateItems.length : this.state.items.length;
     const activeFilters = [
       this.state.templateQuery,
-      this.state.employeeQuery,
-      this.state.action !== "all" ? this.state.action : "",
+      isTemplateMode ? "" : this.state.employeeQuery,
+      !isTemplateMode && this.state.action !== "all" ? this.state.action : "",
       this.state.date,
     ].filter(Boolean).length;
     const selectedItem = this.state.openId
@@ -372,22 +419,39 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
         <main className="history-wrap">
           {this.state.notice && <Toast type="error" message={this.state.notice} onClose={this.dismissNotice} />}
 
+          <section className="history-mode-switch" aria-label="เลือกโหมดประวัติ">
+            <button
+              type="button"
+              className={this.state.mode === "logs" ? "active" : ""}
+              onClick={() => this.setMode("logs")}
+            >
+              Logs
+            </button>
+            <button
+              type="button"
+              className={this.state.mode === "templates" ? "active" : ""}
+              onClick={() => this.setMode("templates")}
+            >
+              Templates
+            </button>
+          </section>
+
           <section className="history-overview history-overview-single" aria-label="สรุปประวัติ">
             <div>
               <span>รายการทั้งหมด</span>
-              <strong>{filteredItems.length}</strong>
-              <small>จากทั้งหมด {this.state.items.length} รายการ</small>
+              <strong>{visibleCount}</strong>
+              <small>จากทั้งหมด {totalCount} รายการ</small>
             </div>
           </section>
 
-          <section className="panel history-filter">
+          <section className={`panel history-filter ${isTemplateMode ? "template-history-filter" : ""}`}>
             <div className="history-filter-title">
               <strong>ค้นหารายการ</strong>
               <span>กรองจากลูกค้า ผู้บันทึก การทำรายการ หรือวันที่</span>
             </div>
             <Autocomplete
               label="ลูกค้า"
-              options={this.uniqueValues((item) => item.customerName)}
+              options={isTemplateMode ? this.uniqueTemplateValues() : this.uniqueValues((item) => item.customerName)}
               value={this.state.templateQuery}
               onChange={this.setTemplateQuery}
               placeholder="พิมพ์เพื่อเลือกลูกค้า"
@@ -417,7 +481,7 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
             <div className="table-heading history-heading-with-total">
               <div className="section-title">
                 <div>
-                  <span>{filteredItems.length}</span>
+                  <span>{visibleCount}</span>
                   <div>
                     <h2>ประวัติ Marking</h2>
                     <p>รายการล่าสุด</p>
@@ -426,12 +490,47 @@ export default class HistoryPage extends Component<Record<string, never>, Histor
               </div>
               <div className="history-total-inline">
                 <span>รายการทั้งหมด</span>
-                <strong>{filteredItems.length}</strong>
-                <small>จากทั้งหมด {this.state.items.length} รายการ</small>
+                <strong>{visibleCount}</strong>
+                <small>จากทั้งหมด {totalCount} รายการ</small>
               </div>
             </div>
 
-            {this.state.isLoading ? (
+            {isTemplateMode ? (
+              this.state.isTemplateLoading ? (
+                <div className="history-empty">กำลังโหลด...</div>
+              ) : filteredTemplateItems.length === 0 ? (
+                <div className="history-empty">ไม่พบรายการ</div>
+              ) : (
+                <div className="history-table-wrap">
+                  <table className="history-table history-template-list">
+                    <thead>
+                      <tr>
+                        <th>Template</th>
+                        <th>สร้างเมื่อ</th>
+                        <th>แก้ไขล่าสุด</th>
+                        <th>ผู้แก้ล่าสุด</th>
+                        <th>Fields</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredTemplateItems.map((item) => (
+                        <tr className="history-row" key={item.id}>
+                          <td>{item.name || `Template #${item.id}`}</td>
+                          <td>{this.formatDateTime(item.createdAt)}</td>
+                          <td>{this.formatDateTime(item.updatedAt)}</td>
+                          <td>{item.updatedBy || "-"}</td>
+                          <td>
+                            <span className="history-field-count">
+                              ในกรอบ {item.insideFieldCount} / นอกกรอบ {item.outsideFieldCount}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : this.state.isLoading ? (
               <div className="history-empty">กำลังโหลด...</div>
             ) : filteredItems.length === 0 ? (
               <div className="history-empty">ไม่พบรายการ</div>

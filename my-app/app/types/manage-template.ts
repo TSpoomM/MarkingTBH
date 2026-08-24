@@ -182,7 +182,7 @@ export const createSegments = (group: InsideGroup["key"], count: number) =>
     isCounter: index === 0,
     counterType: group === "lotNo" ? "lot" as const : "pallet" as const,
     type: index === 0 ? "number" as const : "text" as const,
-    label: `ส่วนที่ ${index + 1}`,
+    label: `SECTION ${index + 1}`,
   }));
 
 export const initialGroups: InsideGroup[] = [

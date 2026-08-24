@@ -1,8 +1,21 @@
 import type { MarkingHistoryItem } from "@/app/types/marking";
 
+export interface TemplateHistoryItem {
+  id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  updatedBy: string;
+  insideFieldCount: number;
+  outsideFieldCount: number;
+}
+
 export interface HistoryPageState {
+  mode: "logs" | "templates";
   items: MarkingHistoryItem[];
+  templateItems: TemplateHistoryItem[];
   isLoading: boolean;
+  isTemplateLoading: boolean;
   notice: string;
   templateQuery: string;
   employeeQuery: string;
