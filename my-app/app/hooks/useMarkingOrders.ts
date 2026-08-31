@@ -521,7 +521,7 @@ export class MarkingOrdersController {
   ) {
     const type = this.counterType(field, segment);
     const value = this.counterSeed(type, lotStart);
-    return type !== "pallet" ? String(value).padStart(4, "0") : String(value);
+    return String(value);
   }
 
   private fieldDefault(field: TemplateField) {

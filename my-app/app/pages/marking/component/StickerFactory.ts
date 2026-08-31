@@ -9,8 +9,6 @@ import type {
 } from "@/app/types/marking-sticker";
 
 export default class StickerFactory {
-  static readonly DEFAULT_COUNTER_DIGITS = 4;
-
   static normalizeGroupLayout(layout?: LegacyStickerGroupLayout): StickerGroupLayout {
     return layout === "8x2" || layout === "4x2" ? "8x2" : "2x2";
   }
@@ -27,8 +25,7 @@ export default class StickerFactory {
 
   static previewCounterValue(field: TemplateField, lotStart: number) {
     const value = this.counterValue(field, lotStart || 1, 1, 1, lotStart || 1);
-    const type = this.counterType(field);
-    return type === "lot" || type === "sequence" ? value.padStart(this.DEFAULT_COUNTER_DIGITS, "0") : value;
+    return value;
   }
 
   static matchesCondition(field: TemplateField, stickerType: string, stickerOther: string) {
@@ -90,11 +87,7 @@ export default class StickerFactory {
   ) {
     const seed = this.counterSeed(row, segment.key);
     const value = this.counterValue(field, lot, pallet, sequence, lotStart, segment, seed);
-    const type = this.counterType(field, segment);
-    if (type !== "lot" && type !== "sequence") return value;
-    const rawSeed = row?.[segment.key];
-    const digits = rawSeed && /^\d+$/.test(rawSeed) ? Math.max(rawSeed.length, this.DEFAULT_COUNTER_DIGITS) : this.DEFAULT_COUNTER_DIGITS;
-    return value.padStart(digits, "0");
+    return value;
   }
 
   private static fieldValue(field: TemplateField, value: string | undefined) {

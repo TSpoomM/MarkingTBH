@@ -325,12 +325,13 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
     const insertIndex = section === "outside"
       ? this.lastOutsideGroupIndex(currentFields as TemplateField[], outsideGroup?.order ?? 0) + 1
       : currentFields.length;
+    const nextFields = [
+      ...currentFields.slice(0, insertIndex),
+      nextField,
+      ...currentFields.slice(insertIndex),
+    ];
     this.setState({
-      [key]: [
-        ...currentFields.slice(0, insertIndex),
-        nextField,
-        ...currentFields.slice(insertIndex),
-      ],
+      [key]: TemplateFieldUtils.renumberStickerOrders(nextFields),
     } as Pick<TemplateFormState, typeof key>);
   };
 
@@ -355,12 +356,13 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
     const insertIndex = section === "outside"
       ? this.lastOutsideGroupIndex(currentFields as TemplateField[], outsideGroup?.order ?? 0) + 1
       : currentFields.length;
+    const nextFields = [
+      ...currentFields.slice(0, insertIndex),
+      nextField,
+      ...currentFields.slice(insertIndex),
+    ];
     this.setState({
-      [key]: [
-        ...currentFields.slice(0, insertIndex),
-        nextField,
-        ...currentFields.slice(insertIndex),
-      ],
+      [key]: TemplateFieldUtils.renumberStickerOrders(nextFields),
     } as Pick<TemplateFormState, typeof key>);
   };
 
@@ -388,7 +390,7 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
   private addTemplateTable = (layout: StickerGroupLayout) => {
     const tableOrder = this.nextOutsideGroupOrder(this.state.templateOutsideDraft);
     this.setState({
-      templateOutsideDraft: [
+      templateOutsideDraft: TemplateFieldUtils.renumberStickerOrders([
         ...this.state.templateOutsideDraft,
         {
           key: `outside_field_${TemplateFieldUtils.uid()}`,
@@ -402,14 +404,14 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
           uppercase: true,
           fontScale: undefined,
         },
-      ],
+      ]),
     });
   };
 
   private addCreateTemplateTable = (layout: StickerGroupLayout) => {
     const tableOrder = this.nextOutsideGroupOrder(this.state.createOutsideDraft);
     this.setState({
-      createOutsideDraft: [
+      createOutsideDraft: TemplateFieldUtils.renumberStickerOrders([
         ...this.state.createOutsideDraft,
         {
           key: `outside_field_${TemplateFieldUtils.uid()}`,
@@ -423,7 +425,7 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
           uppercase: true,
           fontScale: undefined,
         },
-      ],
+      ]),
     });
   };
 
@@ -471,41 +473,49 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
 
   private removeTemplateTable = (tableOrder: number) => {
     this.setState({
-      templateOutsideDraft: this.state.templateOutsideDraft.filter((field) => (field.stickerGroupOrder ?? 0) !== tableOrder),
+      templateOutsideDraft: TemplateFieldUtils.renumberStickerOrders(
+        TemplateFieldUtils.renumberOutsideTableOrders(
+          this.state.templateOutsideDraft.filter((field) => (field.stickerGroupOrder ?? 0) !== tableOrder),
+        ),
+      ),
     });
   };
 
   private removeCreateTemplateTable = (tableOrder: number) => {
     this.setState({
-      createOutsideDraft: this.state.createOutsideDraft.filter((field) => (field.stickerGroupOrder ?? 0) !== tableOrder),
+      createOutsideDraft: TemplateFieldUtils.renumberStickerOrders(
+        TemplateFieldUtils.renumberOutsideTableOrders(
+          this.state.createOutsideDraft.filter((field) => (field.stickerGroupOrder ?? 0) !== tableOrder),
+        ),
+      ),
     });
   };
 
   private removeTemplateField = (section: "inside" | "outside", index: number) => {
     const key = section === "inside" ? "templateInsideDraft" : "templateOutsideDraft";
     this.setState({
-      [key]: this.state[key].filter((_, fieldIndex) => fieldIndex !== index),
+      [key]: TemplateFieldUtils.renumberStickerOrders(this.state[key].filter((_, fieldIndex) => fieldIndex !== index)),
     } as Pick<TemplateFormState, typeof key>);
   };
 
   private removeCreateTemplateField = (section: "inside" | "outside", index: number) => {
     const key = section === "inside" ? "createInsideDraft" : "createOutsideDraft";
     this.setState({
-      [key]: this.state[key].filter((_, fieldIndex) => fieldIndex !== index),
+      [key]: TemplateFieldUtils.renumberStickerOrders(this.state[key].filter((_, fieldIndex) => fieldIndex !== index)),
     } as Pick<TemplateFormState, typeof key>);
   };
 
-  private moveTemplateField = (section: "inside" | "outside", fromIndex: number, toIndex: number) => {
+  private moveTemplateField = (section: "inside" | "outside", fromIndex: number, toIndex: number, tableOrder?: number) => {
     const key = section === "inside" ? "templateInsideDraft" : "templateOutsideDraft";
     this.setState({
-      [key]: TemplateFieldUtils.moveField(this.state[key], fromIndex, toIndex),
+      [key]: TemplateFieldUtils.moveField(this.state[key], fromIndex, toIndex, section === "outside" ? tableOrder : undefined),
     } as Pick<TemplateFormState, typeof key>);
   };
 
-  private moveCreateTemplateField = (section: "inside" | "outside", fromIndex: number, toIndex: number) => {
+  private moveCreateTemplateField = (section: "inside" | "outside", fromIndex: number, toIndex: number, tableOrder?: number) => {
     const key = section === "inside" ? "createInsideDraft" : "createOutsideDraft";
     this.setState({
-      [key]: TemplateFieldUtils.moveField(this.state[key], fromIndex, toIndex),
+      [key]: TemplateFieldUtils.moveField(this.state[key], fromIndex, toIndex, section === "outside" ? tableOrder : undefined),
     } as Pick<TemplateFormState, typeof key>);
   };
 
@@ -581,7 +591,7 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
         required: true,
         condition: undefined,
         showOnSticker: field.showOnSticker ?? true,
-        stickerOrder: field.showOnSticker === false ? undefined : field.stickerOrder ?? index,
+        stickerOrder: field.showOnSticker === false ? undefined : index,
         uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
         isCounter: section === "outside" && !field.segments?.length ? field.isCounter : undefined,
         counterType: section === "outside" && !field.segments?.length ? field.counterType : undefined,
@@ -594,12 +604,16 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
           prefix: segment.prefix ?? "",
           suffix: segment.suffix ?? "",
           showOnSticker: segment.showOnSticker ?? true,
-          stickerOrder: segment.showOnSticker === false ? undefined : segment.stickerOrder ?? index * 10 + segmentIndex,
+          stickerOrder: segment.showOnSticker === false ? undefined : index * 10 + segmentIndex,
           counterType: segment.counterType ?? TemplateFieldUtils.inferCounterType({ ...field, key: fieldKey }),
         })),
       });
     });
-    return section === "outside" ? enforceOutsideVerticalSingleRows(cleaned) : cleaned;
+    return section === "outside"
+      ? TemplateFieldUtils.renumberStickerOrders(
+        TemplateFieldUtils.renumberOutsideTableOrders(enforceOutsideVerticalSingleRows(cleaned)),
+      )
+      : TemplateFieldUtils.renumberStickerOrders(cleaned);
   };
 
   private validateTemplateDrafts = (

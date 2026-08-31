@@ -167,7 +167,7 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
                   disabled={stickerDefaults.stickerType !== "TNR"}
                   onChange={(event) => onStickerDefaultsChange({ ...stickerDefaults, stickerFsc: event.target.checked })}
                 />
-                <span>พิมพ์ FSC</span>
+                <span>พิมพ์ logo FSC</span>
               </label>
             </div>
           </section>

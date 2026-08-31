@@ -122,29 +122,70 @@ export default class TemplateFieldUtils {
     return next;
   }
 
-  static moveField(fields: TemplateField[], fromIndex: number, toIndex: number): TemplateField[] {
-    return this.moveItem(fields, fromIndex, toIndex);
+  static moveField(fields: TemplateField[], fromIndex: number, toIndex: number, tableOrder?: number): TemplateField[] {
+    const targetTable = tableOrder === undefined
+      ? undefined
+      : fields.find((field) => (field.stickerGroupOrder ?? 0) === tableOrder);
+    const movedFields = this.moveItem(fields, fromIndex, toIndex);
+    const regroupedFields = targetTable
+      ? movedFields.map((field, index) => (
+        index === toIndex
+          ? {
+            ...field,
+            stickerGroup: targetTable.stickerGroup,
+            stickerGroupOrder: targetTable.stickerGroupOrder,
+            stickerGroupLayout: targetTable.stickerGroupLayout,
+          }
+          : field
+      ))
+      : movedFields;
+    return this.renumberStickerOrders(regroupedFields);
   }
 
   static moveOutsideTable(fields: TemplateField[], fromOrder: number, toOrder: number): TemplateField[] {
     if (fromOrder === toOrder) return fields;
     const groups: Array<{ order: number; items: TemplateField[] }> = [];
+    const groupsByOrder = new Map<number, { order: number; items: TemplateField[] }>();
     for (const field of fields) {
       const order = field.stickerGroupOrder ?? 0;
-      const lastGroup = groups[groups.length - 1];
-      if (lastGroup && lastGroup.order === order) {
-        lastGroup.items.push(field);
-      } else {
-        groups.push({ order, items: [field] });
+      const group = groupsByOrder.get(order);
+      if (group) {
+        group.items.push(field);
+        continue;
       }
+      const nextGroup = { order, items: [field] };
+      groupsByOrder.set(order, nextGroup);
+      groups.push(nextGroup);
     }
     const fromIndex = groups.findIndex((group) => group.order === fromOrder);
     const toIndex = groups.findIndex((group) => group.order === toOrder);
     if (fromIndex === -1 || toIndex === -1) return fields;
     const [moved] = groups.splice(fromIndex, 1);
     groups.splice(toIndex, 0, moved);
-    return groups.flatMap((group, index) =>
-      group.items.map((field) => ({ ...field, stickerGroupOrder: index })));
+    return this.renumberStickerOrders(groups.flatMap((group, index) =>
+      group.items.map((field) => ({ ...field, stickerGroupOrder: index }))));
+  }
+
+  static renumberStickerOrders(fields: TemplateField[]): TemplateField[] {
+    return fields.map((field, index) => ({
+      ...field,
+      stickerOrder: field.showOnSticker === false ? undefined : index,
+      segments: field.segments?.map((segment, segmentIndex) => ({
+        ...segment,
+        stickerOrder: segment.showOnSticker === false ? undefined : index * 10 + segmentIndex,
+      })),
+    }));
+  }
+
+  static renumberOutsideTableOrders(fields: TemplateField[]): TemplateField[] {
+    const orders = new Map<number, number>();
+    return fields.map((field) => {
+      const currentOrder = field.stickerGroupOrder ?? 0;
+      if (!orders.has(currentOrder)) {
+        orders.set(currentOrder, orders.size);
+      }
+      return { ...field, stickerGroupOrder: orders.get(currentOrder) ?? currentOrder };
+    });
   }
 
   static groupSelectedStickerFields(fields: StickerSelectableField[]) {

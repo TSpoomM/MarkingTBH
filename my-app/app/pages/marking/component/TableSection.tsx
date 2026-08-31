@@ -53,12 +53,6 @@ export default class TableSection extends Component<TableSectionProps> {
                               inputMode={segment.isCounter ? "numeric" : undefined}
                               value={row[segment.key] ?? (segment.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")}
                               onChange={(event) => onChange(rowIndex, segment.key, event.target.value)}
-                              onBlur={segment.isCounter && this.isLotCounter(field, segment) ? (event) => {
-                                const raw = event.target.value;
-                                if (!/^\d+$/.test(raw)) return;
-                                const padded = raw.padStart(StickerFactory.DEFAULT_COUNTER_DIGITS, "0");
-                                if (padded !== raw) onChange(rowIndex, segment.key, padded);
-                              } : undefined}
                               placeholder={segment.isCounter ? "+1" : segment.label}
                             />
                           ))}
@@ -70,12 +64,6 @@ export default class TableSection extends Component<TableSectionProps> {
                           inputMode={field.isCounter ? "numeric" : undefined}
                           value={row[field.key] ?? (field.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")}
                           onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
-                          onBlur={field.isCounter && this.isLotCounter(field) ? (event) => {
-                            const raw = event.target.value;
-                            if (!/^\d+$/.test(raw)) return;
-                            const padded = raw.padStart(StickerFactory.DEFAULT_COUNTER_DIGITS, "0");
-                            if (padded !== raw) onChange(rowIndex, field.key, padded);
-                          } : undefined}
                           disabled={field.locked === true}
                           placeholder={field.placeholder ?? `กรอก ${field.label}`}
                         />

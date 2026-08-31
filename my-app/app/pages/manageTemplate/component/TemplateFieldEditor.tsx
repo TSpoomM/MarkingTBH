@@ -89,12 +89,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
     if (this.dragFieldIndex === null) return;
     event.preventDefault();
     if (this.dragFieldIndex === index) return;
-    const { fields, section } = this.props;
-    if (section === "outside") {
-      const fromOrder = fields[this.dragFieldIndex]?.stickerGroupOrder ?? 0;
-      if (fromOrder !== tableOrder) return;
-    }
-    this.props.onMove(section, this.dragFieldIndex, index);
+    this.props.onMove(this.props.section, this.dragFieldIndex, index, tableOrder);
     this.dragFieldIndex = index;
   }
 

@@ -85,7 +85,7 @@ export interface CreateTemplateFormProps {
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
-  onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
+  onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number, tableOrder?: number) => void;
   onAddTable: (layout: StickerGroupLayout) => void;
   onRenameTable: (tableOrder: number, name: string) => void;
   onChangeTableLayout: (tableOrder: number, layout: StickerGroupLayout) => void;
@@ -117,7 +117,7 @@ export interface EditTemplateFormProps {
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
-  onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
+  onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number, tableOrder?: number) => void;
   onAddTable: (layout: StickerGroupLayout) => void;
   onRenameTable: (tableOrder: number, name: string) => void;
   onChangeTableLayout: (tableOrder: number, layout: StickerGroupLayout) => void;
@@ -151,7 +151,7 @@ export interface TemplateFieldEditorProps {
   onChange: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
   onAdd: (section: "inside" | "outside", tableOrder?: number) => void;
   onRemove: (section: "inside" | "outside", index: number) => void;
-  onMove: (section: "inside" | "outside", fromIndex: number, toIndex: number) => void;
+  onMove: (section: "inside" | "outside", fromIndex: number, toIndex: number, tableOrder?: number) => void;
   onAddTable?: (layout: StickerGroupLayout) => void;
   onRenameTable?: (tableOrder: number, name: string) => void;
   onChangeTableLayout?: (tableOrder: number, layout: StickerGroupLayout) => void;
