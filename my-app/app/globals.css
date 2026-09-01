@@ -5202,6 +5202,45 @@ select {
 		line-height: 1.35;
 	}
 
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments {
+		grid-template-columns: 46px minmax(260px, 1.35fr) repeat(3, minmax(155px, 1fr));
+		row-gap: 14px;
+		column-gap: 14px;
+		align-items: end;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.editor-number {
+		grid-column: 1;
+		grid-row: 1 / span 2;
+		align-self: start;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>label:nth-of-type(1) {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.field-lock-toggle {
+		grid-column: 3;
+		grid-row: 1;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.nett-default-toggle {
+		grid-column: 4;
+		grid-row: 1;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.nett-default-value {
+		grid-column: 2;
+		grid-row: 2;
+		min-width: 180px;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.nett-default-value+.required-toggle {
+		grid-column: 3 / span 2;
+		grid-row: 2;
+	}
+
 	.template-admin .outside-field-wrap .editor-field {
 		grid-template-columns: 46px minmax(240px, 1.6fr) repeat(4, minmax(155px, 1fr));
 		row-gap: 14px;
@@ -5280,6 +5319,40 @@ select {
 }
 
 @media screen and (max-width:1100px) {
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments {
+		grid-template-columns: 46px repeat(2, minmax(0, 1fr));
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.editor-number {
+		grid-column: 1;
+		grid-row: 1 / span 3;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>label:nth-of-type(1) {
+		grid-column: 2 / -1;
+		grid-row: 1;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.field-lock-toggle {
+		grid-column: 2;
+		grid-row: 2;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.nett-default-toggle {
+		grid-column: 3;
+		grid-row: 2;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.nett-default-value {
+		grid-column: 2;
+		grid-row: 3;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.nett-default-value+.required-toggle {
+		grid-column: 3;
+		grid-row: 3;
+	}
+
 	.template-admin .outside-field-wrap .editor-field {
 		grid-template-columns: 46px repeat(2, minmax(0, 1fr));
 	}
@@ -5336,6 +5409,20 @@ select {
 }
 
 @media screen and (max-width:640px) {
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments {
+		grid-template-columns: 1fr;
+	}
+
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.editor-number,
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>label:nth-of-type(1),
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.field-lock-toggle,
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.nett-default-toggle,
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.nett-default-value,
+	.template-admin .editor-field-wrap:not(.outside-field-wrap) .editor-field.no-segments>.nett-default-value+.required-toggle {
+		grid-column: 1;
+		grid-row: auto;
+	}
+
 	.template-admin .outside-field-wrap .editor-field {
 		grid-template-columns: 1fr;
 	}

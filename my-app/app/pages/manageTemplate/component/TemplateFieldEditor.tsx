@@ -290,7 +290,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         })}
                       />
                     </label>
-                    {section === "outside" && !field.segments?.length && (
+                    {!field.segments?.length && (
                       <label className="required-toggle field-lock-toggle">
                         <Input
                           bare
@@ -346,8 +346,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         </span>
                       </label>
                     )}
-                    {section === "outside" && (
-                      <label className="required-toggle">
+                    <label className="required-toggle">
                         <Input
                           bare
                           type="checkbox"
@@ -358,8 +357,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           <strong>ไม่พิมพ์ชื่อ Field</strong>
                           {/* <small>ไม่พิมพ์ชื่อ Field</small> */}
                         </span>
-                      </label>
-                    )}
+                    </label>
                     {section === "outside" && !field.segments?.length && (
                       <Button
                         type="button"

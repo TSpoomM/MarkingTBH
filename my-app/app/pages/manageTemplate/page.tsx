@@ -62,10 +62,10 @@ const normalizeDraftField = (section: "inside" | "outside", field: TemplateField
     counterType: section === "outside" && !field.segments?.length ? field.counterType : undefined,
     showOnSticker: field.showOnSticker ?? true,
     uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
-    defaultValue: section === "outside"
-      ? (field.locked ? field.defaultValue ?? field.label : undefined)
-      : field.defaultValue,
-    locked: section === "outside" && !field.segments?.length ? field.locked : false,
+    defaultValue: !field.segments?.length && field.locked
+      ? field.defaultValue ?? field.label
+      : section === "outside" ? undefined : field.defaultValue,
+    locked: !field.segments?.length ? field.locked : false,
   });
 };
 
@@ -584,10 +584,10 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
         label: field.label.trim().toUpperCase(),
         type: "text",
         displayFormat: hasSegmentAffixes ? undefined : field.displayFormat?.trim() || undefined,
-        defaultValue: section === "outside"
-          ? (field.locked ? field.defaultValue?.trim() || field.label.trim() : undefined)
-          : field.defaultValue?.trim() || undefined,
-        locked: section === "outside" && !field.segments?.length ? field.locked === true : false,
+        defaultValue: !field.segments?.length && field.locked
+          ? field.defaultValue?.trim() || field.label.trim()
+          : section === "outside" ? undefined : field.defaultValue?.trim() || undefined,
+        locked: !field.segments?.length ? field.locked === true : false,
         required: true,
         condition: undefined,
         showOnSticker: field.showOnSticker ?? true,
