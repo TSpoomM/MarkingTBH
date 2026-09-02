@@ -5,6 +5,7 @@ import EmptyState from "./EmptyState";
 import Input from "@/src/components/ui/Input";
 import SectionTitle from "./SectionTitle";
 import StickerFactory from "@/src/core/stickers/stickerFactory";
+import DateFormatter from "@/src/core/dates/dateFormatter";
 import type { TemplateField } from "@/src/core/models/template";
 import type { TableSectionProps } from "@/src/core/models/marking-sticker";
 
@@ -62,8 +63,18 @@ export default class TableSection extends Component<TableSectionProps> {
                           bare
                           type={field.type === "textarea" ? "text" : field.type}
                           inputMode={field.isCounter ? "numeric" : undefined}
-                          value={row[field.key] ?? (field.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")}
-                          onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
+                          value={
+                            field.type === "date"
+                              ? DateFormatter.toDateInputValue(row[field.key], field.dateFormat)
+                              : row[field.key] ?? (field.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")
+                          }
+                          onChange={(event) => onChange(
+                            rowIndex,
+                            field.key,
+                            field.type === "date"
+                              ? DateFormatter.formatDateInputValue(event.target.value, field.dateFormat)
+                              : event.target.value,
+                          )}
                           disabled={field.locked === true}
                           placeholder={field.placeholder ?? `กรอก ${field.label}`}
                         />

@@ -66,9 +66,10 @@ export async function GET(request: Request) {
 
 const segmentSchema = z.object({
   key: z.string().min(1),
-  type: z.enum(["text", "number"]).optional(),
+  type: z.enum(["text", "number", "date"]).optional(),
   prefix: z.string().optional(),
   suffix: z.string().optional(),
+  dateFormat: z.enum(["yyyy-mm-dd", "dd/mm/yyyy", "mm/dd/yyyy", "dd-mm-yyyy", "mm-dd-yyyy"]).optional(),
   isCounter: z.boolean().optional(),
   counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
   label: z.string().trim().min(1, "กรุณาระบุชื่อแต่ละส่วน"),
@@ -101,6 +102,7 @@ const templateFieldSchema = z.object({
   required: z.boolean(),
   placeholder: z.string().optional(),
   defaultValue: z.string().optional(),
+  dateFormat: z.enum(["yyyy-mm-dd", "dd/mm/yyyy", "mm/dd/yyyy", "dd-mm-yyyy", "mm-dd-yyyy"]).optional(),
   locked: z.boolean().optional(),
   displayFormat: z.string().optional(),
   segments: z.array(z.object({
@@ -109,6 +111,7 @@ const templateFieldSchema = z.object({
     type: z.enum(["text", "number", "date", "textarea"]).optional(),
     prefix: z.string().optional(),
     suffix: z.string().optional(),
+    dateFormat: z.enum(["yyyy-mm-dd", "dd/mm/yyyy", "mm/dd/yyyy", "dd-mm-yyyy", "mm-dd-yyyy"]).optional(),
     showOnSticker: z.boolean().optional(),
     stickerOrder: z.number().int().min(0).optional(),
     isCounter: z.boolean().optional(),

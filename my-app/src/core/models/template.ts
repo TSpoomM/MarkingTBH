@@ -1,6 +1,7 @@
 export type FieldType = "text" | "number" | "date" | "textarea";
 export type CounterType = "lot" | "pallet" | "sequence";
 export type FontScale = "normal" | "xlarge";
+export type DateFormat = "yyyy-mm-dd" | "dd/mm/yyyy" | "mm/dd/yyyy" | "dd-mm-yyyy" | "mm-dd-yyyy";
 export type StickerGroupLayout = "2x2" | "8x2";
 export type LegacyStickerGroupLayout = StickerGroupLayout | "4x2";
 
@@ -11,6 +12,7 @@ export interface TemplateField {
   required: boolean;
   placeholder?: string;
   defaultValue?: string;
+  dateFormat?: DateFormat;
   locked?: boolean;
   displayFormat?: string;
   segments?: Array<{
@@ -19,6 +21,7 @@ export interface TemplateField {
     type?: FieldType;
     prefix?: string;
     suffix?: string;
+    dateFormat?: DateFormat;
     showOnSticker?: boolean;
     stickerOrder?: number;
     isCounter?: boolean;

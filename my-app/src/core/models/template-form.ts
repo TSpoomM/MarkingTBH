@@ -34,9 +34,10 @@ export const DEFAULT_STICKER_DEFAULTS: StickerDefaults = {
 export interface SegmentDefinition {
   key: string;
   label: string;
-  type?: "text" | "number";
+  type?: "text" | "number" | "date";
   prefix?: string;
   suffix?: string;
+  dateFormat?: TemplateField["dateFormat"];
   isCounter?: boolean;
   counterType?: CounterType;
 }
@@ -66,6 +67,7 @@ export interface OutsideField {
   system?: boolean;
   uppercase?: boolean;
   defaultValue?: string;
+  dateFormat?: TemplateField["dateFormat"];
   locked?: boolean;
 }
 

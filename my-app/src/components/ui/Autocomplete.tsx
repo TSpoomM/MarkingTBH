@@ -26,13 +26,13 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
     return String(this.props.value ?? "");
   }
 
-  private filteredOptions(options: string[]) {
+  private filteredOptions(options: string[], maxOptions: number) {
     const value = this.value().trim().toLowerCase();
     const uniqueOptions = Array.from(new Set(options.filter(Boolean)));
-    if (!value) return uniqueOptions.slice(0, 8);
+    if (!value) return uniqueOptions.slice(0, maxOptions);
     return uniqueOptions
       .filter((option) => option.toLowerCase().includes(value))
-      .slice(0, 8);
+      .slice(0, maxOptions);
   }
 
   private selectOption(option: string) {
@@ -50,6 +50,7 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
       label,
       hint,
       options,
+      maxOptions = 20,
       bare = false,
       required,
       className = "",
@@ -59,7 +60,7 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
       onKeyDown,
       ...props
     } = this.props;
-    const filteredOptions = this.filteredOptions(options);
+    const filteredOptions = this.filteredOptions(options, maxOptions);
     const hasOptions = filteredOptions.length > 0;
     const listId = `${props.id ?? this.generatedId}-options`;
     const control = (

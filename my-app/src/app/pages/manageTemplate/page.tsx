@@ -58,7 +58,7 @@ class TemplateFormDefaults {
         ...segment,
         label: segment.label.toUpperCase(),
       })),
-      type: "text",
+      type: field.isCounter ? "number" : field.type ?? "text",
       required: true,
       condition: undefined,
       fontScale: section === "outside" && !isVerticalOutside ? field.fontScale : undefined,
@@ -69,6 +69,7 @@ class TemplateFormDefaults {
       defaultValue: !field.segments?.length && field.locked
         ? field.defaultValue ?? field.label
         : section === "outside" ? undefined : field.defaultValue,
+      dateFormat: field.type === "date" ? field.dateFormat ?? "yyyy-mm-dd" : undefined,
       locked: !field.segments?.length ? field.locked : false,
     });
   }
@@ -596,8 +597,9 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
         ...field,
         key: fieldKey,
         label: field.label.trim().toUpperCase(),
-        type: "text",
+        type: field.isCounter ? "number" : field.type ?? "text",
         displayFormat: hasSegmentAffixes ? undefined : field.displayFormat?.trim() || undefined,
+        dateFormat: field.type === "date" ? field.dateFormat ?? "yyyy-mm-dd" : undefined,
         defaultValue: !field.segments?.length && field.locked
           ? field.defaultValue?.trim() || field.label.trim()
           : section === "outside" ? undefined : field.defaultValue?.trim() || undefined,
@@ -614,7 +616,8 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
           ...segment,
           key: TemplateFieldUtils.uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
           label: segment.label.trim().toUpperCase(),
-          type: segment.isCounter ? "number" : "text",
+          type: segment.isCounter ? "number" : segment.type ?? "text",
+          dateFormat: segment.type === "date" ? segment.dateFormat ?? field.dateFormat ?? "yyyy-mm-dd" : undefined,
           prefix: segment.prefix ?? "",
           suffix: segment.suffix ?? "",
           showOnSticker: segment.showOnSticker ?? true,

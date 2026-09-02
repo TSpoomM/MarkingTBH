@@ -2,6 +2,7 @@ import { Component } from "react";
 import Button from "@/src/components/ui/Button";
 import Input from "@/src/components/ui/Input";
 import Select from "@/src/components/ui/Select";
+import TemplateAutocomplete from "@/src/components/templates/TemplateAutocomplete";
 import Toast from "@/src/components/ui/Toast";
 import {
   STICKER_FORMAT_OPTIONS,
@@ -15,10 +16,6 @@ import StickerTemplatePreview from "./StickerTemplatePreview";
 import TemplateFieldEditor from "./TemplateFieldEditor";
 
 export default class EditTemplateForm extends Component<EditTemplateFormProps> {
-  private templateOptionLabel(template: EditTemplateFormProps["templates"][number]) {
-    return template.isActive === false ? `[Inactive] ${template.name}` : template.name;
-  }
-
   render() {
     const {
       templates,
@@ -70,21 +67,15 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
         )}
         <label className="template-name">
           <span>เลือก Template</span>
-          <Select
+          <TemplateAutocomplete
             bare
-            value={selectedTemplateId}
-            onChange={(event) => onSelectTemplate(event.target.value)}
+            includeInactive
+            selectedTemplateId={selectedTemplateId}
+            templates={templates}
+            placeholder={loadingTemplates ? "กำลังโหลดลูกค้า..." : "เลือก Template ที่ต้องการแก้ไข"}
+            onSelectTemplate={onSelectTemplate}
             disabled={loadingTemplates || loadingTemplate}
-          >
-            <option value="">
-              {loadingTemplates ? "กำลังโหลดลูกค้า..." : "เลือก Template ที่ต้องการแก้ไข"}
-            </option>
-            {templates.map((template) => (
-              <option value={template.id} key={template.id}>
-                {this.templateOptionLabel(template)}
-              </option>
-            ))}
-          </Select>
+          />
         </label>
         {!selectedTemplateId && !loadingTemplates && (
           <div className="template-empty-guide">

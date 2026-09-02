@@ -56,6 +56,7 @@ export default class TemplateFieldUtils {
       return {
         ...keyedField,
         type: keyedField.isCounter ? "number" : keyedField.type ?? "text",
+        dateFormat: keyedField.type === "date" ? keyedField.dateFormat ?? "yyyy-mm-dd" : undefined,
         counterType: keyedField.isCounter
           ? keyedField.counterType ?? this.inferCounterType(keyedField)
           : keyedField.counterType,
@@ -66,6 +67,7 @@ export default class TemplateFieldUtils {
       segments: keyedField.segments.map((segment) => ({
         ...segment,
         type: segment.isCounter ? "number" : segment.type ?? "text",
+        dateFormat: segment.type === "date" ? segment.dateFormat ?? keyedField.dateFormat ?? "yyyy-mm-dd" : undefined,
         counterType: segment.isCounter
           ? segment.counterType ?? this.inferCounterType(keyedField)
           : segment.counterType,

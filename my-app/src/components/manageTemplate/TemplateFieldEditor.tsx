@@ -4,6 +4,7 @@ import Input from "@/src/components/ui/Input";
 import Modal from "@/src/components/ui/Modal";
 import Select from "@/src/components/ui/Select";
 import TemplateFieldUtils from "@/src/core/templates/templateFieldUtils";
+import { DATE_FORMAT_OPTIONS } from "@/src/core/dates/dateFormatter";
 import type { CounterType, StickerGroupLayout, TemplateField } from "@/src/core/models/template";
 import type { TemplateFieldEditorProps } from "@/src/core/models/manage-template";
 
@@ -387,6 +388,40 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           <option value="sequence">+1 ไปเรื่อยๆ</option>
                         </Select>
                       </div>
+                    )}
+                    {!field.segments?.length && !field.isCounter && (
+                      <label className="required-toggle field-calendar-toggle">
+                        <Input
+                          bare
+                          type="checkbox"
+                          checked={field.type === "date"}
+                          onChange={(event) => onChange(section, index, {
+                            type: event.target.checked ? "date" : "text",
+                            dateFormat: event.target.checked ? field.dateFormat ?? "yyyy-mm-dd" : undefined,
+                            placeholder: event.target.checked ? undefined : field.placeholder,
+                          })}
+                        />
+                        <span className="toggle-copy">
+                          <strong>ใช้ Calendar</strong>
+                          <small>ให้ผู้กรอกเลือกวันที่ ไม่ต้องพิมพ์เอง</small>
+                        </span>
+                      </label>
+                    )}
+                    {!field.segments?.length && field.type === "date" && (
+                      <label className="calendar-format-control">
+                        <span>รูปแบบวันที่</span>
+                        <Select
+                          bare
+                          value={field.dateFormat ?? "yyyy-mm-dd"}
+                          onChange={(event) => onChange(section, index, {
+                            dateFormat: event.target.value as TemplateField["dateFormat"],
+                          })}
+                        >
+                          {DATE_FORMAT_OPTIONS.map((option) => (
+                            <option value={option.value} key={option.value}>{option.label}</option>
+                          ))}
+                        </Select>
+                      </label>
                     )}
                     {section === "outside" && !isVerticalTable && (
                       <label className="required-toggle field-font-scale">

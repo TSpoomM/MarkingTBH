@@ -33,6 +33,7 @@ export interface AutocompleteProps extends Omit<InputHTMLAttributes<HTMLInputEle
   label?: string;
   hint?: string;
   bare?: boolean;
+  maxOptions?: number;
   options: string[];
 }
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Component } from "react";
 import Input from "@/src/components/ui/Input";
 import Select from "@/src/components/ui/Select";
+import TemplateAutocomplete from "@/src/components/templates/TemplateAutocomplete";
 import Toast from "@/src/components/ui/Toast";
 import {
   STICKER_FORMAT_OPTIONS,
@@ -16,10 +17,6 @@ import TemplateFieldEditor from "./TemplateFieldEditor";
 import Button from "@/src/components/ui/Button";
 
 export default class CreateTemplateForm extends Component<CreateTemplateFormProps> {
-  private templateOptionLabel(template: CreateTemplateFormProps["templates"][number]) {
-    return template.isActive === false ? `[Inactive] ${template.name}` : template.name;
-  }
-
   render() {
     const {
       templates,
@@ -94,21 +91,14 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
             </div>
             <label className="template-name duplicate-template-picker">
               <span>คัดลอก Template จาก</span>
-              <Select
+              <TemplateAutocomplete
                 bare
-                value={duplicateSourceTemplateId}
-                onChange={(event) => onDuplicateSourceChange(event.target.value)}
+                selectedTemplateId={duplicateSourceTemplateId}
+                templates={templates}
+                placeholder={loadingTemplates ? "กำลังโหลดลูกค้า..." : "เริ่มจากว่างเปล่า หรือเลือก Template เดิม"}
+                onSelectTemplate={onDuplicateSourceChange}
                 disabled={loadingTemplates || duplicatingTemplate}
-              >
-                <option value="">
-                  {loadingTemplates ? "กำลังโหลดลูกค้า..." : "เริ่มจากว่างเปล่า หรือเลือก Template เดิม"}
-                </option>
-                {templates.map((template) => (
-                  <option value={template.id} key={template.id} disabled={template.isActive === false}>
-                    {this.templateOptionLabel(template)}
-                  </option>
-                ))}
-              </Select>
+              />
               <small>{duplicatingTemplate ? "กำลังคัดลอก Template..." : "คัดลอก Field และรูปแบบสติ๊กเกอร์ แล้วแก้ไขก่อนสร้าง Template ใหม่"}</small>
             </label>
             <div className="template-default-grid">

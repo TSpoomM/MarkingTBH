@@ -143,7 +143,7 @@ export class TemplateService {
       const parsed: unknown = JSON.parse(trimmedValue);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         const config = parsed as {
-          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; prefix?: string; suffix?: string; isCounter?: boolean; counterType?: CounterType }> }>;
+          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; prefix?: string; suffix?: string; dateFormat?: TemplateField["dateFormat"]; isCounter?: boolean; counterType?: CounterType }> }>;
           fields?: Array<Partial<TemplateField>>;
           tables?: Array<{ name?: string; fields?: Array<Partial<TemplateField>> }>;
         };
@@ -158,8 +158,9 @@ export class TemplateService {
                 : "text",
               required: Boolean(field.required),
               placeholder: field.placeholder,
-              defaultValue: field.defaultValue,
-              locked: field.locked,
+                defaultValue: field.defaultValue,
+                dateFormat: field.dateFormat,
+                locked: field.locked,
               displayFormat: field.displayFormat,
               segments: field.segments?.map((segment, segmentIndex) => ({
                 ...segment,
@@ -193,6 +194,7 @@ export class TemplateService {
                 label: String(field.label ?? `Section ${fieldIndex + 1}`),
                 prefix: field.prefix,
                 suffix: field.suffix,
+                dateFormat: field.dateFormat,
                 showOnSticker: true,
                 stickerOrder: groupIndex * 10 + fieldIndex,
                 type: field.isCounter ? "number" : "text",
@@ -219,6 +221,7 @@ export class TemplateService {
               type: "text" as const,
               required: Boolean(field.required),
               defaultValue: field.defaultValue,
+              dateFormat: field.dateFormat,
               locked: field.locked,
               condition: this.normalizeCondition(field.condition),
               showOnSticker: field.showOnSticker ?? true,
@@ -255,6 +258,7 @@ export class TemplateService {
           required: Boolean(field.required),
           placeholder: field.placeholder,
           defaultValue: field.defaultValue,
+          dateFormat: field.dateFormat,
           locked: field.locked,
           displayFormat: field.displayFormat,
           segments: field.segments?.map((segment, segmentIndex) => ({
@@ -262,6 +266,7 @@ export class TemplateService {
             showOnSticker: segment.showOnSticker ?? field.showOnSticker ?? true,
             stickerOrder: segment.stickerOrder ?? (field.stickerOrder ?? index) * 10 + segmentIndex,
             type: segment.type,
+            dateFormat: segment.dateFormat,
             isCounter: segment.isCounter,
           })),
           condition: this.normalizeCondition(field.condition),
