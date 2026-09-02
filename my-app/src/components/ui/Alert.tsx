@@ -1,0 +1,15 @@
+import { Component } from "react";
+import Button from "./Button";
+import type { AlertProps } from "@/src/core/models/ui";
+
+export default class Alert extends Component<AlertProps> {
+  render() {
+    const { type, message, onClose } = this.props;
+    return (
+      <div className={`notice ${type}`} role={type === "error" ? "alert" : "status"}>
+        <span>{message}</span>
+        {onClose && <Button className="icon-button notice-close" onClick={onClose} aria-label="ปิดข้อความ">×</Button>}
+      </div>
+    );
+  }
+}

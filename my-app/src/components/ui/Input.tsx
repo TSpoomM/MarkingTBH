@@ -1,0 +1,17 @@
+import { Component } from "react";
+import type { InputProps } from "@/src/core/models/ui";
+
+export default class Input extends Component<InputProps> {
+  render() {
+    const { label, hint, bare = false, required, className = "", ...props } = this.props;
+    const control = <input required={required} className={`app-control ${className}`.trim()} {...props} />;
+    if (bare || !label) return control;
+    return (
+      <label className="field">
+        <span>{label}{required && <em>*</em>}</span>
+        {control}
+        <small className="field-hint" aria-hidden={!hint}>{hint || "\u00a0"}</small>
+      </label>
+    );
+  }
+}
