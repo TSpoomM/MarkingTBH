@@ -4,8 +4,8 @@ import Input from "@/src/components/ui/Input";
 import Modal from "@/src/components/ui/Modal";
 import Select from "@/src/components/ui/Select";
 import TemplateFieldUtils from "@/src/core/templates/templateFieldUtils";
-import { DATE_FORMAT_OPTIONS } from "@/src/core/dates/dateFormatter";
-import type { CounterType, StickerGroupLayout, TemplateField } from "@/src/core/models/template";
+import DateFormatter, { DATE_PART_OPTIONS, DATE_SEPARATOR_OPTIONS } from "@/src/core/dates/dateFormatter";
+import type { CounterType, DatePart, DateSeparator, StickerGroupLayout, TemplateField } from "@/src/core/models/template";
 import type { TemplateFieldEditorProps } from "@/src/core/models/manage-template";
 
 const OUTSIDE_TABLE_LAYOUT_OPTIONS: Array<{ value: StickerGroupLayout; label: string; description: string }> = [
@@ -184,6 +184,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
             : index + 1;
           const isVerticalTable = field.stickerGroupLayout === "8x2" || field.stickerGroupLayout === "4x2";
           const isDraggingThis = draggingFieldKey === field.key;
+          const dateFormatConfig = DateFormatter.parseFormat(field.dateFormat);
           let wrapElement: HTMLDivElement | null = null;
           return (
             <div
@@ -397,7 +398,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                           checked={field.type === "date"}
                           onChange={(event) => onChange(section, index, {
                             type: event.target.checked ? "date" : "text",
-                            dateFormat: event.target.checked ? field.dateFormat ?? "yyyy-mm-dd" : undefined,
+                            dateFormat: event.target.checked ? DateFormatter.normalizeFormat(field.dateFormat) : undefined,
                             placeholder: event.target.checked ? undefined : field.placeholder,
                           })}
                         />
@@ -408,20 +409,52 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       </label>
                     )}
                     {!field.segments?.length && field.type === "date" && (
-                      <label className="calendar-format-control">
+                      <div className="calendar-format-control date-format-builder">
                         <span>รูปแบบวันที่</span>
-                        <Select
-                          bare
-                          value={field.dateFormat ?? "yyyy-mm-dd"}
-                          onChange={(event) => onChange(section, index, {
-                            dateFormat: event.target.value as TemplateField["dateFormat"],
-                          })}
-                        >
-                          {DATE_FORMAT_OPTIONS.map((option) => (
-                            <option value={option.value} key={option.value}>{option.label}</option>
+                        <div className="date-format-builder-grid">
+                          {[0, 1, 2].map((slot) => (
+                            <label key={`${field.key}-date-part-${slot}`}>
+                              <span>{`ช่อง ${slot + 1}`}</span>
+                              <Select
+                                bare
+                                value={dateFormatConfig.parts[slot]}
+                                onChange={(event) => {
+                                  const parts = DateFormatter.ensureUniquePart(
+                                    dateFormatConfig.parts,
+                                    slot,
+                                    event.target.value as DatePart,
+                                  );
+                                  onChange(section, index, {
+                                    dateFormat: DateFormatter.buildFormat(parts, dateFormatConfig.separator),
+                                  });
+                                }}
+                              >
+                                {DATE_PART_OPTIONS.map((option) => (
+                                  <option value={option.value} key={option.value}>{option.label}</option>
+                                ))}
+                              </Select>
+                            </label>
                           ))}
-                        </Select>
-                      </label>
+                          <label>
+                            <span>คั่นด้วย</span>
+                            <Select
+                              bare
+                              value={dateFormatConfig.separator}
+                              onChange={(event) => onChange(section, index, {
+                                dateFormat: DateFormatter.buildFormat(
+                                  dateFormatConfig.parts,
+                                  event.target.value as DateSeparator,
+                                ),
+                              })}
+                            >
+                              {DATE_SEPARATOR_OPTIONS.map((option) => (
+                                <option value={option.value} key={option.value}>{option.label}</option>
+                              ))}
+                            </Select>
+                          </label>
+                        </div>
+                        <small>{DateFormatter.formatDateInputValue("2026-09-02", field.dateFormat)}</small>
+                      </div>
                     )}
                     {section === "outside" && !isVerticalTable && (
                       <label className="required-toggle field-font-scale">

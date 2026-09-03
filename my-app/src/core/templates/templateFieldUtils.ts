@@ -1,4 +1,5 @@
 import type { CounterType, TemplateField } from "@/src/core/models/template";
+import DateFormatter from "@/src/core/dates/dateFormatter";
 import type { StickerSelectableField } from "@/src/core/models/manage-template";
 
 export default class TemplateFieldUtils {
@@ -56,7 +57,7 @@ export default class TemplateFieldUtils {
       return {
         ...keyedField,
         type: keyedField.isCounter ? "number" : keyedField.type ?? "text",
-        dateFormat: keyedField.type === "date" ? keyedField.dateFormat ?? "yyyy-mm-dd" : undefined,
+        dateFormat: keyedField.type === "date" ? DateFormatter.normalizeFormat(keyedField.dateFormat) : undefined,
         counterType: keyedField.isCounter
           ? keyedField.counterType ?? this.inferCounterType(keyedField)
           : keyedField.counterType,
@@ -67,7 +68,7 @@ export default class TemplateFieldUtils {
       segments: keyedField.segments.map((segment) => ({
         ...segment,
         type: segment.isCounter ? "number" : segment.type ?? "text",
-        dateFormat: segment.type === "date" ? segment.dateFormat ?? keyedField.dateFormat ?? "yyyy-mm-dd" : undefined,
+        dateFormat: segment.type === "date" ? DateFormatter.normalizeFormat(segment.dateFormat ?? keyedField.dateFormat) : undefined,
         counterType: segment.isCounter
           ? segment.counterType ?? this.inferCounterType(keyedField)
           : segment.counterType,

@@ -1,7 +1,9 @@
 export type FieldType = "text" | "number" | "date" | "textarea";
 export type CounterType = "lot" | "pallet" | "sequence";
 export type FontScale = "normal" | "xlarge";
-export type DateFormat = "yyyy-mm-dd" | "dd/mm/yyyy" | "mm/dd/yyyy" | "dd-mm-yyyy" | "mm-dd-yyyy";
+export type DatePart = "dd" | "mm" | "mmm" | "yyyy";
+export type DateSeparator = "-" | "/" | ".";
+export type DateFormat = string;
 export type StickerGroupLayout = "2x2" | "8x2";
 export type LegacyStickerGroupLayout = StickerGroupLayout | "4x2";
 

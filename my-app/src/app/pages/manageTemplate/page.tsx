@@ -20,6 +20,7 @@ import {
 import CreateTemplateForm from "@/src/components/manageTemplate/CreateTemplateForm";
 import EditTemplateForm from "@/src/components/manageTemplate/EditTemplateForm";
 import TemplateFieldUtils from "@/src/core/templates/templateFieldUtils";
+import DateFormatter from "@/src/core/dates/dateFormatter";
 import Button from "@/src/components/ui/Button";
 
 const REQUIRED_STICKER_FIELDS: TemplateDetail["sticker"]["enabledFields"] = ["side", "format", "type", "other"];
@@ -69,7 +70,7 @@ class TemplateFormDefaults {
       defaultValue: !field.segments?.length && field.locked
         ? field.defaultValue ?? field.label
         : section === "outside" ? undefined : field.defaultValue,
-      dateFormat: field.type === "date" ? field.dateFormat ?? "yyyy-mm-dd" : undefined,
+      dateFormat: field.type === "date" ? DateFormatter.normalizeFormat(field.dateFormat) : undefined,
       locked: !field.segments?.length ? field.locked : false,
     });
   }
@@ -599,7 +600,7 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
         label: field.label.trim().toUpperCase(),
         type: field.isCounter ? "number" : field.type ?? "text",
         displayFormat: hasSegmentAffixes ? undefined : field.displayFormat?.trim() || undefined,
-        dateFormat: field.type === "date" ? field.dateFormat ?? "yyyy-mm-dd" : undefined,
+        dateFormat: field.type === "date" ? DateFormatter.normalizeFormat(field.dateFormat) : undefined,
         defaultValue: !field.segments?.length && field.locked
           ? field.defaultValue?.trim() || field.label.trim()
           : section === "outside" ? undefined : field.defaultValue?.trim() || undefined,
@@ -617,7 +618,7 @@ export default class TemplateForm extends Component<Record<string, never>, Templ
           key: TemplateFieldUtils.uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
           label: segment.label.trim().toUpperCase(),
           type: segment.isCounter ? "number" : segment.type ?? "text",
-          dateFormat: segment.type === "date" ? segment.dateFormat ?? field.dateFormat ?? "yyyy-mm-dd" : undefined,
+          dateFormat: segment.type === "date" ? DateFormatter.normalizeFormat(segment.dateFormat ?? field.dateFormat) : undefined,
           prefix: segment.prefix ?? "",
           suffix: segment.suffix ?? "",
           showOnSticker: segment.showOnSticker ?? true,
