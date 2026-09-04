@@ -1,0 +1,1007 @@
+.print-sheet {
+	position: absolute;
+	top: 0;
+	left: -100000px;
+	visibility: hidden;
+	pointer-events: none;
+	padding: 0;
+	color: #111;
+	background: #fff
+}
+
+.print-sheet .sticker-page {
+	break-after: page;
+	page-break-after: always;
+	margin: 0;
+	display: grid;
+	gap: 4mm
+}
+
+.print-sheet .sticker-page:last-child {
+	break-after: auto;
+	page-break-after: auto
+}
+
+.print-sheet .sticker-page-frame {
+	page: stickerFrame;
+	width: 281mm;
+	height: 194mm;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(2, minmax(0, 1fr))
+}
+
+.print-sheet .sticker-page-template {
+	page: stickerTemplate;
+	width: 194mm;
+	height: 281mm;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(8, minmax(0, 1fr));
+	gap: 1.5mm 3mm
+}
+
+.print-sheet .sticker-page-frame-vertical {
+	page: stickerFrameVertical;
+	width: 194mm;
+	height: 269mm;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(8, minmax(0, 1fr));
+	row-gap: 0;
+	column-gap: 3mm
+}
+
+.print-sheet .sticker-page-frame-vertical .sticker-label {
+	min-height: 0;
+	padding: 1mm 2mm;
+	align-items: center;
+	justify-content: center
+}
+
+.print-sheet .sticker-page-frame-vertical .sticker-details {
+	justify-items: start;
+	justify-content: start;
+	gap: calc(1mm * var(--sticker-fit-scale, 1))
+}
+
+.print-sheet .sticker-label {
+	--sticker-font: 35px;
+	--sticker-label-font: 25px;
+	--sticker-gap: 3mm;
+	--sticker-label-column: 34%;
+	font-family: Arial, sans-serif;
+	font-weight: 700;
+	border: 0;
+	padding: 3mm;
+	overflow: hidden;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: stretch;
+	background: #fff
+}
+
+.print-sheet .sticker-page-fsc {
+	page: stickerFsc;
+	width: 281mm;
+	height: 194mm;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	gap: 2mm
+}
+
+.print-sheet .sticker-label.fscLogo {
+	padding: 1mm;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5mm;
+	text-align: center
+}
+
+.print-sheet .sticker-fsc-logo {
+	width: 45.5mm;
+	height: 68mm;
+	object-fit: contain
+}
+
+.print-sheet .sticker-details {
+	flex: 1;
+	min-height: 0;
+	font-family: Arial;
+	margin: 0;
+	display: grid;
+	grid-auto-rows: minmax(min-content, 1fr);
+	align-items: center;
+	gap: calc(var(--sticker-gap) * var(--sticker-fit-scale, 1));
+	font-size: var(--sticker-font)
+}
+
+.print-sheet .sticker-label.outsideFrame {
+	align-items: center;
+	justify-content: center
+}
+
+.print-sheet .sticker-label.outsideFrame .sticker-details {
+	flex: 0 1 auto;
+	width: max-content;
+	max-width: 100%;
+	grid-auto-rows: min-content;
+	align-items: start;
+	gap: calc(3mm * var(--sticker-fit-scale, 1))
+}
+
+.print-sheet .sticker-detail-row {
+	display: grid;
+	grid-template-columns: minmax(min-content, var(--sticker-label-column)) 3mm minmax(0, 1fr);
+	gap: 1mm;
+	align-items: baseline;
+	font-size: var(--sticker-row-font, var(--sticker-font));
+	white-space: nowrap;
+	break-inside: avoid
+}
+
+.print-sheet .sticker-detail-row.sticker-detail-row-no-label {
+	grid-template-columns: minmax(0, 1fr)
+}
+
+.print-sheet .sticker-label dt {
+	font-family: Arial;
+	font-size: inherit;
+	font-weight: 700;
+	line-height: 1.05;
+	white-space: nowrap;
+	max-width: 100%;
+	overflow: visible;
+	text-overflow: clip
+}
+
+.print-sheet .sticker-label dd {
+	margin: 0
+}
+
+.print-sheet .sticker-detail-colon {
+	font-family: Arial;
+	font-size: inherit;
+	font-weight: 700;
+	text-align: end;
+	line-height: 1.05
+}
+
+.print-sheet .sticker-detail-values {
+	font-family: Arial;
+	min-width: 0;
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 0;
+	font-size: inherit;
+	font-weight: 700;
+	line-height: 1.05;
+	overflow: visible;
+	white-space: nowrap
+}
+
+.print-sheet .sticker-detail-values span {
+	flex: 0 0 auto;
+	min-width: max-content;
+	max-width: none;
+	white-space: nowrap;
+	overflow: visible;
+	text-overflow: clip
+}
+
+.print-sheet .sticker-label.customerName,
+.print-sheet .sticker-label.outsideFrame.sticker-text-only {
+	padding: 1.5mm 3mm;
+	align-items: center;
+	justify-content: center;
+	text-align: center
+}
+
+.print-sheet .sticker-label.customerName header,
+.print-sheet .sticker-label.outsideFrame.sticker-text-only header {
+	display: none
+}
+
+.print-sheet .sticker-label.customerName p,
+.print-sheet .sticker-label.outsideFrame.sticker-text-only p {
+	margin: 0;
+	font-family: Arial, sans-serif;
+	font-weight: 700;
+	line-height: 1.05;
+	max-width: 100%;
+	white-space: nowrap
+}
+
+.pdf-preview {
+	margin-top: 22px;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr));
+	gap: 18px;
+	align-items: start
+}
+
+.pdf-preview .sticker-page {
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+	border: 1px solid #d3ded8;
+	border-radius: var(--radius);
+	background: #f8fbf9;
+	box-shadow: var(--shadow-sm)
+}
+
+.pdf-preview .sticker-page-frame {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	aspect-ratio: 281 / 194
+}
+
+.pdf-preview .sticker-page-template {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(8, minmax(0, 1fr));
+	aspect-ratio: 194 / 281
+}
+
+.pdf-preview .sticker-page.sticker-page-frame-vertical {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(8, minmax(0, 1fr));
+	aspect-ratio: 210 / 297;
+	box-sizing: border-box;
+	padding: 14mm 8mm;
+	row-gap: 0;
+	column-gap: 3mm
+}
+
+.pdf-preview .sticker-page.sticker-page-frame-vertical .sticker-label {
+	aspect-ratio: auto;
+	min-height: 0;
+	padding: 4px 8px;
+	align-items: center;
+	justify-content: center
+}
+
+.pdf-preview .sticker-page.sticker-page-frame-vertical .sticker-details {
+	justify-items: start;
+	justify-content: start;
+	gap: clamp(1px, calc(2px * var(--sticker-fit-scale, 1)), 3px)
+}
+
+.pdf-preview .sticker-label {
+	--sticker-font: 18px;
+	--sticker-label-font: 15px;
+	--sticker-gap: 10px;
+	--sticker-label-column: 34%;
+	font-family: Arial, sans-serif;
+	font-weight: 700;
+	position: relative;
+	min-width: 0;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: stretch;
+	aspect-ratio: 138 / 95;
+	min-height: 220px;
+	border: 0;
+	padding: 20px;
+	background: #fff;
+	overflow: hidden
+}
+
+.pdf-preview .sticker-page-fsc {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	aspect-ratio: 281 / 194;
+	gap: 6px
+}
+
+.pdf-preview .sticker-label.fscLogo {
+	aspect-ratio: auto;
+	min-height: 70px;
+	padding: 4px;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	text-align: center
+}
+
+.pdf-preview .sticker-fsc-logo {
+	width: min(30%, 45.5mm);
+	height: auto;
+	max-height: 68mm;
+	object-fit: contain
+}
+
+.pdf-preview .sticker-label.customerName,
+.pdf-preview .sticker-label.outsideFrame.sticker-text-only {
+	aspect-ratio: auto;
+	min-height: 90px
+}
+
+.pdf-preview .sticker-details {
+	flex: 1;
+	min-height: 0;
+	margin: 0;
+	display: grid;
+	grid-auto-rows: minmax(min-content, 1fr);
+	align-items: center;
+	gap: clamp(5px, calc(var(--sticker-gap) * var(--sticker-fit-scale, 1)), 14px);
+	font-family: Arial, sans-serif
+}
+
+.pdf-preview .sticker-label.outsideFrame {
+	align-items: center;
+	justify-content: center
+}
+
+.pdf-preview .sticker-label.outsideFrame .sticker-details {
+	flex: 0 1 auto;
+	width: max-content;
+	max-width: 100%;
+	grid-auto-rows: min-content;
+	align-items: start;
+	gap: clamp(3px, calc(4px * var(--sticker-fit-scale, 1)), 6px)
+}
+
+.pdf-preview .sticker-detail-row {
+	display: grid;
+	grid-template-columns: minmax(min-content, var(--sticker-label-column)) 14px minmax(0, 1fr);
+	gap: 8px;
+	align-items: baseline;
+	font-size: var(--sticker-row-font, var(--sticker-font));
+	white-space: nowrap
+}
+
+.pdf-preview .sticker-detail-row.sticker-detail-row-no-label {
+	grid-template-columns: minmax(0, 1fr)
+}
+
+.pdf-preview .sticker-label dt,
+.pdf-preview .sticker-detail-colon,
+.pdf-preview .sticker-detail-values {
+	font-family: Arial, sans-serif;
+	font-weight: 700;
+	line-height: 1.05
+}
+
+.pdf-preview .sticker-label dt {
+	font-size: inherit;
+	white-space: nowrap;
+	max-width: 100%;
+	overflow: visible;
+	text-overflow: clip
+}
+
+.pdf-preview .sticker-detail-colon,
+.pdf-preview .sticker-detail-values {
+	font-size: inherit
+}
+
+.pdf-preview .sticker-detail-colon {
+	text-align: center
+}
+
+.pdf-preview .sticker-detail-values {
+	min-width: 0;
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 0;
+	overflow: visible;
+	white-space: nowrap
+}
+
+.pdf-preview .sticker-detail-values span {
+	flex: 0 0 auto;
+	min-width: max-content;
+	max-width: none;
+	white-space: nowrap;
+	overflow: visible;
+	text-overflow: clip
+}
+
+.pdf-preview .sticker-label.customerName,
+.pdf-preview .sticker-label.outsideFrame.sticker-text-only {
+	align-items: center;
+	text-align: center;
+	min-height: 30px;
+	padding: 6px 8px
+}
+
+.pdf-preview .sticker-label.customerName p,
+.pdf-preview .sticker-label.outsideFrame.sticker-text-only p {
+	margin: 0;
+	font-family: Arial, sans-serif;
+	font-weight: 700;
+	line-height: 1.05;
+	max-width: 100%;
+	white-space: nowrap
+}
+
+.sticker-preview-wrap {
+	display: contents
+}
+
+.app-button.sticker-preview-open {
+	position: fixed;
+	right: max(22px, env(safe-area-inset-right));
+	bottom: max(22px, env(safe-area-inset-bottom));
+	z-index: 12;
+	min-height: 64px;
+	min-width: 178px;
+	padding: 0 28px;
+	border: 1px solid #0f5f46;
+	border-radius: 18px;
+	background: #167455;
+	color: #fff;
+	box-shadow: 0 16px 34px #12332638, 0 2px 8px #0d2f2330;
+	font-size: 16px;
+	letter-spacing: 0;
+	cursor: pointer
+}
+
+.app-button.sticker-preview-open:hover {
+	background: #0f5f46;
+	transform: translateY(-2px);
+	box-shadow: 0 20px 42px #12332646, 0 4px 12px #0d2f2338
+}
+
+.app-button.sticker-preview-open:active {
+	transform: translateY(0)
+}
+
+.app-button.marking-preview-open {
+	bottom: max(112px, calc(env(safe-area-inset-bottom) + 112px))
+}
+
+.bottom-action .sticker-preview-wrap {
+	display: block;
+}
+
+.bottom-action .app-button.sticker-preview-open {
+	position: static;
+	min-height: 44px;
+	height: 44px;
+	min-width: 0;
+	padding: 0 16px;
+	border-radius: 8px;
+	border-color: rgba(15, 118, 110, .25);
+	background: #fff;
+	color: var(--primary-dark);
+	box-shadow: none;
+	font-size: 15px;
+}
+
+.bottom-action .app-button.sticker-preview-open:hover {
+	background: #f8faf7;
+	border-color: rgba(15, 118, 110, .45);
+	transform: translateY(-1px);
+	box-shadow: none;
+}
+
+.sticker-template-preview-modal-body .pdf-preview {
+	margin-top: 0
+}
+
+.sticker-preview-section {
+	display: grid;
+	gap: 12px
+}
+
+.sticker-preview-section + .sticker-preview-section {
+	margin-top: 24px;
+	padding-top: 20px;
+	border-top: 1px solid #d6e0d9
+}
+
+.sticker-preview-section > h3 {
+	margin: 0;
+	color: var(--primary-dark);
+	font-size: 15px
+}
+
+.sticker-template-preview-modes {
+	width: 100%;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 6px;
+	padding: 6px;
+	border: 1px solid #b9cbbf;
+	border-radius: 10px;
+	background: #e7eee8
+}
+
+.sticker-template-preview-modes button {
+	min-height: 44px;
+	border: 0;
+	border-radius: 8px;
+	padding: 0 16px;
+	background: transparent;
+	color: #52635a;
+	font-size: 14px;
+	font-weight: 800;
+	white-space: nowrap;
+	cursor: pointer
+}
+
+.sticker-template-preview-modes button.active {
+	background: var(--primary);
+	color: #fff;
+	box-shadow: 0 2px 6px #1f664320
+}
+
+.sticker-template-preview-groups {
+	grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+	border-style: dashed;
+	background: #f2f6f3
+}
+
+.sticker-template-preview-groups button {
+	min-height: 36px;
+	font-size: 13px
+}
+
+.sticker-preview-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px
+}
+
+.sticker-preview-card {
+	min-height: 250px;
+	border: 1px solid #748379;
+	border-radius: 6px;
+	background: #fff;
+	padding: 16px;
+	display: grid;
+	gap: 14px;
+	align-content: start
+}
+
+.sticker-preview-card header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 14px;
+	border-bottom: 1px solid #9ba8a0;
+	padding-bottom: 10px
+}
+
+.sticker-preview-card header strong {
+	font-size: 18px
+}
+
+.sticker-preview-card header span {
+	font-size: 12px;
+	font-weight: 700;
+	text-align: right
+}
+
+.sticker-preview-meta {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px
+}
+
+.sticker-preview-meta b {
+	border: 1px solid #a8b3ac;
+	border-radius: 4px;
+	padding: 8px;
+	text-align: center;
+	font-size: 11px
+}
+
+.sticker-preview-card dl {
+	margin: 0;
+	display: grid;
+	gap: 7px;
+	font-size: 12px
+}
+
+.sticker-preview-card dl > .sticker-preview-select-row {
+	display: grid;
+	grid-template-columns: 130px 1fr;
+	gap: 10px;
+	border-bottom: 1px solid #e0e6e2;
+	padding-bottom: 6px
+}
+
+.sticker-preview-card dt {
+	font-weight: 800
+}
+
+.sticker-preview-card dd {
+	margin: 0;
+	color: #536159
+}
+
+.sticker-preview-section-selects input {
+	flex: 1 1 0;
+	width: 0;
+	min-width: 0;
+	height: 34px;
+	border: 1px solid #b8c5bd;
+	border-radius: 5px;
+	background: #fff;
+	padding: 0 8px;
+	font-size: 12px;
+	outline: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap
+}
+
+.sticker-preview-section-selects {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 8px;
+	overflow: hidden
+}
+
+.sticker-preview-section-selects input:disabled {
+	background: #f8faf8;
+	color: #25352f;
+	opacity: 1;
+	cursor: default
+}
+
+.sticker-preview-segments {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 7px
+}
+
+.sticker-preview-segments span {
+	min-height: 26px;
+	padding: 5px 8px;
+	border: 1px solid #c8d5cb;
+	border-radius: 5px;
+	background: #eef4ef;
+	color: #3b4a42;
+	font-size: 11px;
+	font-weight: 700
+}
+
+@media print {
+	@page {
+		size: A4 landscape;
+		margin: 10mm
+	}
+
+	@page stickerFrame {
+		size: A4 landscape;
+		margin: 8mm
+	}
+
+	@page stickerTemplate {
+		size: A4 portrait;
+		margin: 8mm
+	}
+
+	@page stickerFrameVertical {
+		size: A4 portrait;
+		margin: 14mm 8mm
+	}
+
+	@page stickerFsc {
+		size: A4 landscape;
+		margin: 8mm
+	}
+
+	.header,
+	.container {
+		display: none !important
+	}
+
+	.print-sheet {
+		position: static;
+		left: auto;
+		visibility: visible;
+		pointer-events: auto
+	}
+
+	.pdf-preview {
+		display: none !important
+	}
+
+	.sticker-label header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 5mm;
+		border-bottom: 1px solid #111;
+		padding-bottom: 3mm
+	}
+
+	.sticker-label header strong {
+		font-size: 20px
+	}
+
+	.sticker-label header span {
+		font-size: 13px;
+		text-align: right;
+		font-weight: 700
+	}
+
+	.sticker-meta {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 3mm;
+		margin: 4mm 0
+	}
+
+	.sticker-meta b {
+		border: 1px solid #111;
+		padding: 3mm;
+		text-align: center;
+		font-size: 14px
+	}
+
+	.sticker-production-date {
+		margin: 0 0 3mm;
+		font-size: 11px;
+		font-weight: 700
+	}
+
+	.print-sheet>h1 {
+		font-size: 21px;
+		margin: 0 0 4px
+	}
+
+	.print-sheet>p {
+		font-size: 11px;
+		margin: 0 0 10px;
+		color: #555
+	}
+
+	.print-sheet section:not(.sticker-page) {
+		margin-top: 13px;
+		page-break-inside: avoid
+	}
+
+	.print-sheet h2 {
+		font-size: 12px;
+		margin: 0 0 5px
+	}
+
+	.print-sheet table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 9px
+	}
+
+	.print-sheet th,
+	.print-sheet td {
+		border: 1px solid #333;
+		padding: 6px;
+		text-align: left
+	}
+
+	.print-sheet th {
+		background: #e5ece7
+	}
+}
+
+@media screen {
+
+	.sticker-preview-wrap {
+		border-radius: 8px;
+	}
+}
+
+@media screen {
+
+	.sticker-preview-wrap {
+		background: #fbfcfb;
+		border-color: #dbe4e0;
+	}
+
+	.sticker-preview-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.sticker-preview-card {
+		min-height: 220px;
+		border-color: #cfdad6;
+		border-radius: 8px;
+		box-shadow: 0 8px 22px rgba(23, 35, 31, .05);
+	}
+
+	.sticker-preview-card header strong {
+		color: #1f2d28;
+	}
+
+	.sticker-preview-card header span {
+		color: var(--muted);
+	}
+}
+
+@media screen and (max-width:1050px) {
+
+	.sticker-preview-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media screen {
+
+	.sticker-preview-wrap {
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	.sticker-preview-grid {
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+	}
+}
+
+@media screen {
+
+	.sticker-preview-wrap {
+		border-radius: var(--radius);
+	}
+
+	.sticker-preview-card {
+		box-shadow: var(--shadow-sm);
+	}
+
+	.sticker-preview-card dl > .sticker-preview-select-row {
+		align-items: start;
+	}
+}
+
+@media screen {
+
+	.sticker-preview-wrap {
+		gap: 16px;
+		padding: clamp(16px, 2vw, 22px);
+		background: #f8fbf9;
+	}
+
+	.sticker-preview-grid {
+		gap: 16px;
+	}
+
+	.sticker-preview-card {
+		min-height: 260px;
+		padding: 18px;
+	}
+
+	.sticker-preview-card header strong {
+		font-size: 20px;
+	}
+
+	.sticker-preview-card header span {
+		font-size: 14px;
+	}
+
+	.sticker-preview-card dl {
+		gap: 10px;
+		font-size: 14px;
+	}
+
+	.sticker-preview-card dl > .sticker-preview-select-row {
+		grid-template-columns: minmax(150px, .55fr) minmax(0, 1fr);
+		gap: 14px;
+		padding-bottom: 10px;
+	}
+
+	.sticker-preview-section-selects {
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 10px;
+	}
+
+	.sticker-preview-section-selects input {
+		flex: 1 1 0;
+		width: 0;
+		min-width: 0;
+		height: 42px;
+		font-size: 14px;
+	}
+}
+
+@media screen and (max-width:640px) {
+
+	.sticker-preview-card dl > .sticker-preview-select-row {
+		grid-template-columns: 1fr;
+	}
+
+	.sticker-preview-card {
+		padding: 14px;
+	}
+}
+
+@media screen {
+
+	.pdf-preview .sticker-page {
+		border-color: #d7e2de;
+		border-radius: 8px;
+		background: #fff;
+		box-shadow: var(--shadow-sm);
+	}
+
+	.pdf-preview {
+		margin-top: 0;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+		gap: 20px;
+	}
+
+	.pdf-preview .sticker-page {
+		padding: 16px;
+	}
+
+	.pdf-preview .sticker-label {
+		border-color: #17231f;
+	}
+}
+
+@media print {
+	.navbar-spacer {
+		display: none !important;
+	}
+}
+
+@media screen {
+	.sticker-preview-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.sticker-preview-card dl {
+		gap: 8px;
+	}
+
+	.sticker-preview-card dl > .sticker-preview-select-row {
+		grid-template-columns: minmax(120px, 24%) minmax(0, 1fr);
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+	}
+
+	.sticker-preview-card dt,
+	.sticker-preview-card dd,
+	.sticker-preview-section-selects,
+	.sticker-preview-section-selects input {
+		min-width: 0;
+	}
+
+	.sticker-preview-card dt {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.sticker-preview-section-selects {
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 8px;
+	}
+
+	.sticker-preview-section-selects input {
+		flex: 1 1 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+
+@media screen and (max-width:560px) {
+	.app-button.sticker-preview-open {
+		left: 16px;
+		right: 16px;
+		bottom: max(16px, env(safe-area-inset-bottom));
+		width: auto
+	}
+
+	.app-button.marking-preview-open {
+		bottom: max(104px, calc(env(safe-area-inset-bottom) + 104px))
+	}
+
+	.sticker-preview-card dl > .sticker-preview-select-row {
+		grid-template-columns: minmax(92px, 34%) minmax(0, 1fr);
+		gap: 8px;
+	}
+
+	.sticker-preview-section-selects {
+		gap: 6px;
+	}
+}

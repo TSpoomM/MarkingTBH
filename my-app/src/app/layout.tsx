@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import AppShell from "./appShell";
 import "../styles/globals.css";
+import "../styles/sticker-print.css";
 
 export const metadata: Metadata = {
   title: "MarkingTBH",

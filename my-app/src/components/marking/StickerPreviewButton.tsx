@@ -89,28 +89,28 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
             {previewModes.length > 1 && (
               <div className="sticker-template-preview-modes" aria-label="เลือกโหมด Preview">
                 {previewModes.map((mode) => (
-                  <button
+                  <Button
                     type="button"
                     className={mode === activeMode ? "active" : ""}
                     onClick={() => this.setState({ previewMode: mode, previewGroup: null })}
                     key={mode}
                   >
                     {PREVIEW_MODE_LABELS[mode]}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
             {outsideGroups.length > 0 && (
               <div className="sticker-template-preview-modes sticker-template-preview-groups" aria-label="เลือก Table นอกกรอบ">
                 {outsideGroups.map((group) => (
-                  <button
+                  <Button
                     type="button"
                     className={group.key === activeOutsideGroup?.key ? "active" : ""}
                     onClick={() => this.setState({ previewGroup: group.key })}
                     key={group.key}
                   >
                     {group.name}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}

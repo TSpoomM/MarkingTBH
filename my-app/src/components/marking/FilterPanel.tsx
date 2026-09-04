@@ -3,6 +3,7 @@
 import Toast from "@/src/components/ui/Toast";
 import Card from "@/src/components/ui/Card";
 import Input from "@/src/components/ui/Input";
+import CalendarInput from "@/src/components/ui/CalendarInput";
 import TemplateAutocomplete from "@/src/components/templates/TemplateAutocomplete";
 import MarkingComponent from "./MarkingComponent";
 import SectionTitle from "./SectionTitle";
@@ -34,11 +35,10 @@ export default class FilterPanel extends MarkingComponent {
               onSelectTemplate={(templateId) => void this.actions.selectTemplate(templateId)}
               disabled={this.state.isLoading}
             />
-            <Input
+            <CalendarInput
               label="Production Date *"
-              type="date"
               value={this.state.productionDate}
-              onChange={(event) => this.actions.setProductionDate(event.target.value)}
+              onChange={(value) => this.actions.setProductionDate(value)}
             />
             <Input
               label="จำนวน Lot ที่ต้องการ print *"

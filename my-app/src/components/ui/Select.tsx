@@ -2,11 +2,13 @@ import {
   Children,
   Component,
   isValidElement,
+  useId,
   type ChangeEvent,
   type KeyboardEvent,
   type ReactNode,
 } from "react";
 import type { SelectProps } from "@/src/core/models/ui";
+import Button from "./Button";
 
 interface SelectState {
   open: boolean;
@@ -30,17 +32,9 @@ type SelectOption = {
   key: string;
 };
 
-export default class Select extends Component<SelectProps, SelectState> {
-  private static nextGeneratedId = 0;
+type SelectBaseProps = SelectProps & { generatedId: string };
 
-  private generatedId: string;
-
-  constructor(props: SelectProps) {
-    super(props);
-    Select.nextGeneratedId += 1;
-    this.generatedId = `select-${Select.nextGeneratedId}`;
-  }
-
+class SelectBase extends Component<SelectBaseProps, SelectState> {
   state: SelectState = {
     open: false,
     activeIndex: -1,
@@ -144,12 +138,13 @@ export default class Select extends Component<SelectProps, SelectState> {
       onFocus,
       onKeyDown,
       "aria-label": ariaLabel,
+      generatedId,
     } = this.props;
     const options = this.options();
     const currentValue = this.currentValue(options);
     const selectedOption = options.find((option) => option.value === currentValue);
     const enabledOptions = this.enabledOptions(options);
-    const listId = `${id ?? this.generatedId}-options`;
+    const listId = `${id ?? generatedId}-options`;
     const activeOption = enabledOptions[this.state.activeIndex];
     const control = (
       <div
@@ -175,7 +170,7 @@ export default class Select extends Component<SelectProps, SelectState> {
         >
           {children}
         </select>
-        <button
+        <Button
           id={id}
           type="button"
           className={`app-control app-select app-select-button ${className}`.trim()}
@@ -205,7 +200,7 @@ export default class Select extends Component<SelectProps, SelectState> {
           }}
         >
           <span>{selectedOption?.label || "\u00a0"}</span>
-        </button>
+        </Button>
         {this.state.open && enabledOptions.length > 0 && (
           <div className="autocomplete-list custom-select-list" id={listId} role="listbox">
             {options.filter((option) => !option.hidden).map((option) => {
@@ -213,7 +208,7 @@ export default class Select extends Component<SelectProps, SelectState> {
               const active = enabledIndex === this.state.activeIndex;
               const selected = option.value === currentValue;
               return (
-                <button
+                <Button
                   id={`${listId}-${option.key}`}
                   type="button"
                   className={`${active ? "active" : ""} ${selected ? "selected" : ""}`.trim()}
@@ -230,7 +225,7 @@ export default class Select extends Component<SelectProps, SelectState> {
                   key={option.key}
                 >
                   <span>{option.label}</span>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -246,4 +241,9 @@ export default class Select extends Component<SelectProps, SelectState> {
       </label>
     );
   }
+}
+
+export default function Select(props: SelectProps) {
+  const generatedId = useId();
+  return <SelectBase {...props} generatedId={`select-${generatedId}`} />;
 }

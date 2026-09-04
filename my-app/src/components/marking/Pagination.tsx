@@ -7,6 +7,7 @@ import MarkingComponent from "./MarkingComponent";
 import StickerFactory from "@/src/core/stickers/stickerFactory";
 import StickerPreviewButton from "./StickerPreviewButton";
 import type { PrintSection } from "@/src/core/models/marking";
+import Input from "../ui/Input";
 
 export default class Pagination extends MarkingComponent {
   private previewItems(items: ReturnType<typeof StickerFactory.build>) {
@@ -59,22 +60,22 @@ export default class Pagination extends MarkingComponent {
       description: string;
       outsideGroupKey?: string;
     }> = [
-      ...(availableSections.insideFrame
-        ? [{ key: "insideFrame", section: "insideFrame" as const, title: "ในกรอบ", description: "สติ๊กเกอร์ในกรอบ" }]
-        : []),
-      ...(availableSections.outsideFrame
-        ? outsideGroups.map((group) => ({
-          key: `outside-${StickerFactory.outsideGroupKey(group)}`,
-          section: "outsideFrame" as const,
-          title: group.name,
-          description: "สติ๊กเกอร์นอกกรอบ",
-          outsideGroupKey: StickerFactory.outsideGroupKey(group),
-        }))
-        : []),
-      ...(availableSections.fscLogo
-        ? [{ key: "fscLogo", section: "fscLogo" as const, title: "FSC", description: "โลโก้ FSC" }]
-        : []),
-    ];
+        ...(availableSections.insideFrame
+          ? [{ key: "insideFrame", section: "insideFrame" as const, title: "ในกรอบ", description: "สติ๊กเกอร์ในกรอบ" }]
+          : []),
+        ...(availableSections.outsideFrame
+          ? outsideGroups.map((group) => ({
+            key: `outside-${StickerFactory.outsideGroupKey(group)}`,
+            section: "outsideFrame" as const,
+            title: group.name,
+            description: "สติ๊กเกอร์นอกกรอบ",
+            outsideGroupKey: StickerFactory.outsideGroupKey(group),
+          }))
+          : []),
+        ...(availableSections.fscLogo
+          ? [{ key: "fscLogo", section: "fscLogo" as const, title: "FSC", description: "โลโก้ FSC" }]
+          : []),
+      ];
     const isOptionSelected = (option: (typeof printOptions)[number]) => (
       this.state.printSections[option.section] &&
       (!option.outsideGroupKey || this.state.printOutsideGroups[option.outsideGroupKey] !== false)
@@ -130,7 +131,7 @@ export default class Pagination extends MarkingComponent {
               {printOptions.map((option) => {
                 return (
                   <label className="print-export-option" key={option.key}>
-                    <input
+                    <Input
                       type="checkbox"
                       checked={isOptionSelected(option)}
                       onChange={(event) => option.outsideGroupKey
@@ -147,7 +148,7 @@ export default class Pagination extends MarkingComponent {
               })}
             </div>
           </div>
-        </Modal>
+        </Modal >
       </>
     );
   }

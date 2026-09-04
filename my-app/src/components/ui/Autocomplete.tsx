@@ -1,22 +1,17 @@
-import { Component, type ChangeEvent } from "react";
+import { Component, useId, type ChangeEvent } from "react";
 import type { AutocompleteProps } from "@/src/core/models/ui";
+import Button from "./Button";
+import Input from "./Input";
+
 
 interface AutocompleteState {
   open: boolean;
   activeIndex: number;
 }
 
-export default class Autocomplete extends Component<AutocompleteProps, AutocompleteState> {
-  private static nextGeneratedId = 0;
+type AutocompleteBaseProps = AutocompleteProps & { generatedId: string };
 
-  private generatedId: string;
-
-  constructor(props: AutocompleteProps) {
-    super(props);
-    Autocomplete.nextGeneratedId += 1;
-    this.generatedId = `autocomplete-${Autocomplete.nextGeneratedId}`;
-  }
-
+class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteState> {
   state: AutocompleteState = {
     open: false,
     activeIndex: -1,
@@ -58,14 +53,15 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
       onFocus,
       onBlur,
       onKeyDown,
+      generatedId,
       ...props
     } = this.props;
     const filteredOptions = this.filteredOptions(options, maxOptions);
     const hasOptions = filteredOptions.length > 0;
-    const listId = `${props.id ?? this.generatedId}-options`;
+    const listId = `${props.id ?? generatedId}-options`;
     const control = (
       <div className="autocomplete-shell">
-        <input
+        <Input
           required={required}
           className={`app-control autocomplete-input ${className}`.trim()}
           role="combobox"
@@ -114,7 +110,7 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
         {this.state.open && hasOptions && (
           <div className="autocomplete-list" id={listId} role="listbox">
             {filteredOptions.map((option, index) => (
-              <button
+              <Button
                 type="button"
                 className={index === this.state.activeIndex ? "active" : ""}
                 role="option"
@@ -126,7 +122,7 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
                 key={option}
               >
                 <span>{option}</span>
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -141,4 +137,9 @@ export default class Autocomplete extends Component<AutocompleteProps, Autocompl
       </label>
     );
   }
+}
+
+export default function Autocomplete(props: AutocompleteProps) {
+  const generatedId = useId();
+  return <AutocompleteBase {...props} generatedId={`autocomplete-${generatedId}`} />;
 }

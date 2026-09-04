@@ -128,28 +128,28 @@ export default class StickerTemplatePreview extends Component<
             {previewModes.length > 1 && (
               <div className="sticker-template-preview-modes" aria-label="เลือกโหมด Preview">
                 {previewModes.map((mode) => (
-                  <button
+                  <Button
                     type="button"
                     className={mode === activeMode ? "active" : ""}
                     onClick={() => this.setState({ previewMode: mode, previewGroup: null })}
                     key={mode}
                   >
                     {PREVIEW_MODE_LABELS[mode]}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
             {outsideGroups.length > 1 && (
               <div className="sticker-template-preview-modes sticker-template-preview-groups" aria-label="เลือกนอกกรอบ">
                 {outsideGroups.map((group) => (
-                  <button
+                  <Button
                     type="button"
                     className={group === activeGroup ? "active" : ""}
                     onClick={() => this.setState({ previewGroup: group })}
                     key={group}
                   >
                     {StickerFactory.outsideGroupTitle(group)}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}

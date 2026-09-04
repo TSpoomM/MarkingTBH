@@ -3,6 +3,7 @@
 import { Component, createRef } from "react";
 import DateFormatter, { MONTH_ABBREVIATIONS } from "@/src/core/dates/dateFormatter";
 import type { DateFormat } from "@/src/core/models/template";
+import Button from "./Button";
 
 interface CalendarInputProps {
   value: string;
@@ -10,13 +11,19 @@ interface CalendarInputProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  label?: string;
+  hint?: string;
+  required?: boolean;
 }
 
 interface CalendarInputState {
   open: boolean;
+  openUpward: boolean;
   viewYear: number;
   viewMonth: number;
 }
+
+const POPOVER_HEIGHT_ESTIMATE = 420;
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -28,6 +35,7 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
     const current = this.currentDate();
     this.state = {
       open: false,
+      openUpward: false,
       viewYear: current.year,
       viewMonth: current.month,
     };
@@ -46,6 +54,22 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
     const current = this.currentDate();
     this.setState({ viewYear: current.year, viewMonth: current.month });
   }
+
+  private toggleOpen = () => {
+    if (this.state.open) {
+      this.setState({ open: false });
+      return;
+    }
+    const shell = this.shellRef.current;
+    let openUpward = false;
+    if (shell) {
+      const rect = shell.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      openUpward = spaceBelow < POPOVER_HEIGHT_ESTIMATE && spaceAbove > spaceBelow;
+    }
+    this.setState({ open: true, openUpward });
+  };
 
   private handleDocumentMouseDown = (event: MouseEvent) => {
     if (!this.state.open) return;
@@ -110,7 +134,7 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
       if (!day) return <span className="calendar-day empty" key={`empty-${index}`} />;
       const value = this.isoValue(viewYear, viewMonth, day);
       return (
-        <button
+        <Button
           type="button"
           className={[
             "calendar-day",
@@ -121,32 +145,36 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
           key={value}
         >
           {day}
-        </button>
+        </Button>
       );
     });
   }
 
   render() {
-    const { value, disabled, placeholder } = this.props;
-    return (
+    const { value, disabled, placeholder, label, hint, required } = this.props;
+    const control = (
       <span className={`calendar-input-shell ${disabled ? "disabled" : ""}`} ref={this.shellRef}>
-        <button
+        <Button
           className={`app-control calendar-display-input ${value ? "" : "placeholder"}`.trim()}
           type="button"
           disabled={disabled}
           aria-haspopup="dialog"
           aria-expanded={this.state.open}
-          onClick={() => this.setState((state) => ({ open: !state.open }))}
+          onClick={this.toggleOpen}
         >
           <span>{value || placeholder || "เลือกวันที่"}</span>
-        </button>
+        </Button>
         <span className="calendar-icon" aria-hidden="true" />
         {this.state.open && (
-          <div className="calendar-popover" role="dialog" aria-label={placeholder ?? "เลือกวันที่"}>
+          <div
+            className={`calendar-popover ${this.state.openUpward ? "calendar-popover-up" : ""}`.trim()}
+            role="dialog"
+            aria-label={placeholder ?? "เลือกวันที่"}
+          >
             <div className="calendar-popover-head">
-              <button type="button" onClick={() => this.moveMonth(-1)} aria-label="เดือนก่อนหน้า">‹</button>
+              <Button type="button" onClick={() => this.moveMonth(-1)} aria-label="เดือนก่อนหน้า">‹</Button>
               <strong>{MONTH_ABBREVIATIONS[this.state.viewMonth]} {this.state.viewYear}</strong>
-              <button type="button" onClick={() => this.moveMonth(1)} aria-label="เดือนถัดไป">›</button>
+              <Button type="button" onClick={() => this.moveMonth(1)} aria-label="เดือนถัดไป">›</Button>
             </div>
             <div className="calendar-weekdays">
               {WEEKDAYS.map((day) => <span key={day}>{day}</span>)}
@@ -155,12 +183,20 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
               {this.renderDays()}
             </div>
             <div className="calendar-popover-actions">
-              <button type="button" onClick={() => this.clearDate()}>ล้าง</button>
-              <button type="button" onClick={() => this.selectToday()}>วันนี้</button>
+              <Button type="button" onClick={() => this.clearDate()}>ล้าง</Button>
+              <Button type="button" onClick={() => this.selectToday()}>วันนี้</Button>
             </div>
           </div>
         )}
       </span>
+    );
+    if (!label) return control;
+    return (
+      <label className="field">
+        <span>{label}{required && <em>*</em>}</span>
+        {control}
+        <small className="field-hint" aria-hidden={!hint}>{hint || " "}</small>
+      </label>
     );
   }
 }
