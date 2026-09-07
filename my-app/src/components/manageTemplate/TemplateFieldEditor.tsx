@@ -25,7 +25,8 @@ interface CounterPromptTarget {
 }
 
 interface State {
-  expanded: Record<string, boolean>;
+  editingFieldIndex: number | null;
+  dateFormatPromptIndex: number | null;
   draggingFieldKey: string | null;
   draggingTableOrder: number | null;
   draggingSegmentKey: string | null;
@@ -38,7 +39,8 @@ interface State {
 
 export default class TemplateFieldEditor extends Component<TemplateFieldEditorProps, State> {
   state: State = {
-    expanded: {},
+    editingFieldIndex: null,
+    dateFormatPromptIndex: null,
     draggingFieldKey: null,
     draggingTableOrder: null,
     draggingSegmentKey: null,
@@ -121,10 +123,20 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
   private dragTableOrder: number | null = null;
   private dragSegment: { fieldKey: string; fieldIndex: number; index: number } | null = null;
 
-  private toggleExpanded(key: string) {
-    this.setState((previous) => ({
-      expanded: { ...previous.expanded, [key]: !previous.expanded[key] },
-    }));
+  private openFieldEditor(index: number) {
+    this.setState({ editingFieldIndex: index });
+  }
+
+  private closeFieldEditor() {
+    this.setState({ editingFieldIndex: null });
+  }
+
+  private openDateFormatPrompt(index: number) {
+    this.setState({ dateFormatPromptIndex: index });
+  }
+
+  private closeDateFormatPrompt() {
+    this.setState({ dateFormatPromptIndex: null });
   }
 
   private segmentPreview(field: TemplateField) {
@@ -232,7 +244,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
       onRemoveTable,
     } = this.props;
     const {
-      expanded, draggingFieldKey, draggingTableOrder, draggingSegmentKey,
+      editingFieldIndex, dateFormatPromptIndex, draggingFieldKey, draggingTableOrder, draggingSegmentKey,
       addTableLayoutPromptOpen, pendingTableLayout,
       counterPromptTarget, pendingCounterType, pendingCounterPad4,
     } = this.state;
@@ -252,7 +264,6 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
         </div>
         {!fields.length && <div className="editor-empty">ยังไม่มี Field</div>}
         {fields.map((field, index) => {
-          const isExpanded = expanded[field.key] ?? false;
           const tableOrder = field.stickerGroupOrder ?? 0;
           const isInsideNettField = section === "inside" && field.key === "nett" && !field.segments?.length;
           const previousTableOrder = fields[index - 1]?.stickerGroupOrder ?? 0;
@@ -273,7 +284,6 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                 section === "outside" ? "outside-field-wrap" : "",
                 section === "outside" && !showTableHeader ? "same-table-row" : "",
                 isDraggingThis ? "dragging" : "",
-                isExpanded ? "expanded" : "",
               ].filter(Boolean).join(" ")}
               key={`${section}-${field.key}`}
               ref={(element) => { wrapElement = element; }}
@@ -316,14 +326,14 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
               )}
               <div
                 className="editor-field-summary"
-                onClick={() => this.toggleExpanded(field.key)}
+                onClick={() => this.openFieldEditor(index)}
                 role="button"
                 tabIndex={0}
-                aria-expanded={isExpanded}
+                aria-haspopup="dialog"
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    this.toggleExpanded(field.key);
+                    this.openFieldEditor(index);
                   }
                 }}
               >
@@ -343,7 +353,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                 </span>
                 {field.locked && <span className="field-lock-icon" title="Locked" aria-label="Locked" />}
                 <div className="editor-field-summary-actions">
-                  <span className="editor-field-toggle" aria-hidden="true">{isExpanded ? "ซ่อน" : "แก้ไข"}</span>
+                  <span className="editor-field-toggle" aria-hidden="true">แก้ไข</span>
                   <Button
                     type="button"
                     // className="delete-field summary-delete-field"
@@ -357,8 +367,20 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                   </Button>
                 </div>
               </div>
-              {isExpanded && (
-                <>
+              <Modal
+                open={editingFieldIndex === index}
+                title={field.label.trim() || "แก้ไข Field"}
+                subtitle="ตั้งค่ารายละเอียดของ Field นี้"
+                onClose={() => this.closeFieldEditor()}
+                footer={(
+                  <div className="print-export-actions">
+                    <Button type="button" className="export-button" onClick={() => this.closeFieldEditor()}>
+                      เสร็จสิ้น
+                    </Button>
+                  </div>
+                )}
+              >
+                <div className="template-admin field-editor-modal-scope editor-body">
                   <article className={`editor-field ${!field.segments?.length ? "no-segments" : ""}`}>
                     <div className="editor-number editor-number-spacer" aria-hidden="true" />
                     <label>
@@ -467,52 +489,13 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       </label>
                     )}
                     {!field.segments?.length && field.type === "date" && (
-                      <div className="calendar-format-control date-format-builder">
-                        <span>รูปแบบวันที่</span>
-                        <div className="date-format-builder-grid">
-                          {[0, 1, 2].map((slot) => (
-                            <label key={`${field.key}-date-part-${slot}`}>
-                              <span>{`ช่อง ${slot + 1}`}</span>
-                              <Select
-                                bare
-                                value={dateFormatConfig.parts[slot]}
-                                onChange={(event) => {
-                                  const parts = DateFormatter.ensureUniquePart(
-                                    dateFormatConfig.parts,
-                                    slot,
-                                    event.target.value as DatePart,
-                                  );
-                                  onChange(section, index, {
-                                    dateFormat: DateFormatter.buildFormat(parts, dateFormatConfig.separator),
-                                  });
-                                }}
-                              >
-                                {DATE_PART_OPTIONS.map((option) => (
-                                  <option value={option.value} key={option.value}>{option.label}</option>
-                                ))}
-                              </Select>
-                            </label>
-                          ))}
-                          <label>
-                            <span>คั่นด้วย</span>
-                            <Select
-                              bare
-                              value={dateFormatConfig.separator}
-                              onChange={(event) => onChange(section, index, {
-                                dateFormat: DateFormatter.buildFormat(
-                                  dateFormatConfig.parts,
-                                  event.target.value as DateSeparator,
-                                ),
-                              })}
-                            >
-                              {DATE_SEPARATOR_OPTIONS.map((option) => (
-                                <option value={option.value} key={option.value}>{option.label}</option>
-                              ))}
-                            </Select>
-                          </label>
-                        </div>
-                        <small>{DateFormatter.formatDateInputValue("2026-09-02", field.dateFormat)}</small>
-                      </div>
+                      <Button
+                        type="button"
+                        className="outside-count-button date-format-trigger"
+                        onClick={() => this.openDateFormatPrompt(index)}
+                      >
+                        {`รูปแบบวันที่: ${DateFormatter.formatDateInputValue("2026-09-02", field.dateFormat)}`}
+                      </Button>
                     )}
                     {section === "outside" && !isVerticalTable && (
                       <label className="required-toggle field-font-scale">
@@ -654,8 +637,66 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       </Button>
                     </div>
                   )}
-                </>
-              )}
+                </div>
+              </Modal>
+              <Modal
+                open={dateFormatPromptIndex === index}
+                title="รูปแบบวันที่"
+                subtitle={`ตัวอย่าง: ${DateFormatter.formatDateInputValue("2026-09-02", field.dateFormat)}`}
+                onClose={() => this.closeDateFormatPrompt()}
+                footer={(
+                  <div className="print-export-actions">
+                    <Button type="button" className="export-button" onClick={() => this.closeDateFormatPrompt()}>
+                      เสร็จสิ้น
+                    </Button>
+                  </div>
+                )}
+              >
+                <div className="editor-body date-format-modal-body">
+                  <div className="date-format-builder-grid">
+                    {[0, 1, 2].map((slot) => (
+                      <label key={`${field.key}-date-part-${slot}`}>
+                        <span>{`ช่อง ${slot + 1}`}</span>
+                        <Select
+                          bare
+                          value={dateFormatConfig.parts[slot]}
+                          onChange={(event) => {
+                            const parts = DateFormatter.ensureUniquePart(
+                              dateFormatConfig.parts,
+                              slot,
+                              event.target.value as DatePart,
+                            );
+                            onChange(section, index, {
+                              dateFormat: DateFormatter.buildFormat(parts, dateFormatConfig.separator),
+                            });
+                          }}
+                        >
+                          {DATE_PART_OPTIONS.map((option) => (
+                            <option value={option.value} key={option.value}>{option.label}</option>
+                          ))}
+                        </Select>
+                      </label>
+                    ))}
+                    <label>
+                      <span>คั่นด้วย</span>
+                      <Select
+                        bare
+                        value={dateFormatConfig.separator}
+                        onChange={(event) => onChange(section, index, {
+                          dateFormat: DateFormatter.buildFormat(
+                            dateFormatConfig.parts,
+                            event.target.value as DateSeparator,
+                          ),
+                        })}
+                      >
+                        {DATE_SEPARATOR_OPTIONS.map((option) => (
+                          <option value={option.value} key={option.value}>{option.label}</option>
+                        ))}
+                      </Select>
+                    </label>
+                  </div>
+                </div>
+              </Modal>
               {showTableFooter && !isVerticalTable && (
                 <Button
                   type="button"
@@ -761,8 +802,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                 onChange={(event) => this.setState({ pendingCounterPad4: event.target.checked })}
               />
               <span className="toggle-copy">
-                <strong>เลข 4 หลัก (0001)</strong>
-                <small>เติมเลข 0 นำหน้าให้ครบ 4 หลักเสมอ</small>
+                <strong>Default 4 หลัก (0001)</strong>
               </span>
             </label>
           </div>

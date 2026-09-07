@@ -669,6 +669,71 @@ select {
 	gap: 16px
 }
 
+.template-admin.field-editor-modal-scope {
+	min-height: auto;
+	background: transparent;
+}
+
+/*
+ * The .editor-field grid below relies on a chain of ancestor classes
+ * (.editor-field-wrap, .outside-field-wrap, nth-of-type child placement) to line
+ * columns up correctly. Inside this modal that chain is broken (the modal portals
+ * out of that DOM tree), so instead of fighting that grid we drop it in favor of a
+ * simple, robust wrapping layout scoped to this modal only.
+ */
+.field-editor-modal-scope .editor-field {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	align-items: stretch;
+	gap: 16px;
+	padding: 20px;
+}
+
+.field-editor-modal-scope .editor-field > .editor-number-spacer {
+	display: none;
+}
+
+.field-editor-modal-scope .editor-field > label:not([class]) {
+	grid-column: 1 / -1;
+}
+
+.field-editor-modal-scope .editor-field > label:not([class]) > span {
+	font-size: 14px;
+	font-weight: 800;
+	margin-bottom: 8px;
+}
+
+.field-editor-modal-scope .editor-field > label:not([class]) input,
+.field-editor-modal-scope .editor-field > label:not([class]) .app-control {
+	height: 48px;
+	font-size: 16px;
+	padding: 0 14px;
+}
+
+.field-editor-modal-scope .editor-field > .outside-count-button {
+	min-height: 74px;
+	padding: 0 18px;
+	font-size: 15px;
+}
+
+.field-editor-modal-scope .editor-field .required-toggle .toggle-copy strong {
+	font-size: 15px;
+}
+
+.field-editor-modal-scope .editor-field .required-toggle .toggle-copy small {
+	font-size: 13px;
+}
+
+.date-format-modal-body .date-format-builder-grid label>span {
+	font-size: 13px;
+}
+
+.date-format-modal-body .app-select-button {
+	height: 44px;
+	min-height: 44px;
+	font-size: 14px;
+}
+
 .template-draft-section {
 	display: grid;
 	gap: 11px;
