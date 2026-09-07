@@ -23,8 +23,8 @@ export default class StickerFactory {
     );
   }
 
-  static previewCounterValue(field: TemplateField, lotStart: number) {
-    const value = this.counterValue(field, lotStart || 1, 1, 1, lotStart || 1);
+  static previewCounterValue(field: TemplateField, lotStart: number, segment?: { counterType?: CounterType; counterPad4?: boolean }) {
+    const value = this.counterValue(field, lotStart || 1, 1, 1, lotStart || 1, segment);
     return value;
   }
 
@@ -56,19 +56,26 @@ export default class StickerFactory {
     return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
   }
 
+  private static counterPad4(field: TemplateField, segment?: { counterPad4?: boolean }) {
+    return segment?.counterPad4 ?? field.counterPad4 ?? false;
+  }
+
   private static counterValue(
     field: TemplateField,
     lot: number,
     pallet: number,
     sequence: number,
     lotStart: number,
-    segment?: { counterType?: CounterType },
+    segment?: { counterType?: CounterType; counterPad4?: boolean },
     seed?: number,
   ) {
     const type = this.counterType(field, segment);
-    if (type === "pallet") return String((seed ?? 1) + pallet - 1);
-    if (type === "sequence") return String((seed ?? 1) + sequence - 1);
-    return String((seed ?? lotStart) + lot - lotStart);
+    const value = type === "pallet"
+      ? (seed ?? 1) + pallet - 1
+      : type === "sequence"
+        ? (seed ?? 1) + sequence - 1
+        : (seed ?? lotStart) + lot - lotStart;
+    return this.counterPad4(field, segment) ? String(value).padStart(4, "0") : String(value);
   }
 
   private static counterSeed(row: MarkingContent | undefined, key: string) {
@@ -83,7 +90,7 @@ export default class StickerFactory {
     pallet: number,
     sequence: number,
     lotStart: number,
-    segment: { key: string; counterType?: CounterType },
+    segment: { key: string; counterType?: CounterType; counterPad4?: boolean },
   ) {
     const seed = this.counterSeed(row, segment.key);
     const value = this.counterValue(field, lot, pallet, sequence, lotStart, segment, seed);
@@ -155,6 +162,7 @@ export default class StickerFactory {
         const value = this.counterDisplayValue(field, row, lot, pallet, sequence, lotStart, {
           key: field.key,
           counterType: field.counterType,
+          counterPad4: field.counterPad4,
         });
         return value ? [{ label: field.label, values: [{ value }], order: field.stickerOrder ?? 0, fontScale: field.fontScale, hideLabel: field.hideLabel }] : [];
       }

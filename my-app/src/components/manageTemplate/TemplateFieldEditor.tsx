@@ -13,6 +13,17 @@ const OUTSIDE_TABLE_LAYOUT_OPTIONS: Array<{ value: StickerGroupLayout; label: st
   { value: "8x2", label: "8 x 2 แนวตั้ง", description: "A4 แนวตั้ง 16 ดวง/หน้า สำหรับกระดาษสติ๊กเกอร์แนวตั้ง" },
 ];
 
+const COUNTER_TYPE_OPTIONS: Array<{ value: CounterType; label: string; description: string }> = [
+  { value: "lot", label: "Lot", description: "นับตามเลข Lot ของรอบพิมพ์" },
+  { value: "pallet", label: "Pallet", description: "นับตามลำดับ Pallet ในแต่ละ Lot" },
+  { value: "sequence", label: "+1 ไปเรื่อยๆ", description: "นับต่อเนื่องไปเรื่อยๆ ไม่อิงกับ Lot หรือ Pallet" },
+];
+
+interface CounterPromptTarget {
+  fieldIndex: number;
+  segmentIndex?: number;
+}
+
 interface State {
   expanded: Record<string, boolean>;
   draggingFieldKey: string | null;
@@ -20,6 +31,9 @@ interface State {
   draggingSegmentKey: string | null;
   addTableLayoutPromptOpen: boolean;
   pendingTableLayout: StickerGroupLayout;
+  counterPromptTarget: CounterPromptTarget | null;
+  pendingCounterType: CounterType;
+  pendingCounterPad4: boolean;
 }
 
 export default class TemplateFieldEditor extends Component<TemplateFieldEditorProps, State> {
@@ -30,6 +44,9 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
     draggingSegmentKey: null,
     addTableLayoutPromptOpen: false,
     pendingTableLayout: "2x2",
+    counterPromptTarget: null,
+    pendingCounterType: "lot",
+    pendingCounterPad4: false,
   };
 
   private openAddTablePrompt() {
@@ -43,6 +60,61 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
   private confirmAddTable() {
     this.props.onAddTable?.(this.state.pendingTableLayout);
     this.closeAddTablePrompt();
+  }
+
+  private openCounterPrompt(fieldIndex: number, segmentIndex?: number) {
+    const field = this.props.fields[fieldIndex];
+    const current = segmentIndex === undefined ? field : field.segments?.[segmentIndex];
+    this.setState({
+      counterPromptTarget: { fieldIndex, segmentIndex },
+      pendingCounterType: current?.counterType ?? TemplateFieldUtils.inferCounterType(field),
+      pendingCounterPad4: current?.counterPad4 === true,
+    });
+  }
+
+  private closeCounterPrompt() {
+    this.setState({ counterPromptTarget: null });
+  }
+
+  private confirmCounterPrompt() {
+    const { counterPromptTarget, pendingCounterType, pendingCounterPad4 } = this.state;
+    if (!counterPromptTarget) return;
+    const { fieldIndex, segmentIndex } = counterPromptTarget;
+    const field = this.props.fields[fieldIndex];
+    if (segmentIndex === undefined) {
+      this.props.onChange(this.props.section, fieldIndex, {
+        isCounter: true,
+        type: "number",
+        counterType: pendingCounterType,
+        counterPad4: pendingCounterPad4,
+      });
+    } else {
+      this.props.onChange(this.props.section, fieldIndex, {
+        segments: field.segments?.map((item, itemIndex) => (
+          itemIndex === segmentIndex
+            ? { ...item, isCounter: true, type: "number" as const, counterType: pendingCounterType, counterPad4: pendingCounterPad4 }
+            : item
+        )),
+      });
+    }
+    this.closeCounterPrompt();
+  }
+
+  private stopCounterPrompt() {
+    const { counterPromptTarget } = this.state;
+    if (!counterPromptTarget) return;
+    const { fieldIndex, segmentIndex } = counterPromptTarget;
+    const field = this.props.fields[fieldIndex];
+    if (segmentIndex === undefined) {
+      this.props.onChange(this.props.section, fieldIndex, { isCounter: false, type: "text" });
+    } else {
+      this.props.onChange(this.props.section, fieldIndex, {
+        segments: field.segments?.map((item, itemIndex) => (
+          itemIndex === segmentIndex ? { ...item, isCounter: false, type: "text" as const } : item
+        )),
+      });
+    }
+    this.closeCounterPrompt();
   }
 
   private dragFieldIndex: number | null = null;
@@ -162,7 +234,15 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
     const {
       expanded, draggingFieldKey, draggingTableOrder, draggingSegmentKey,
       addTableLayoutPromptOpen, pendingTableLayout,
+      counterPromptTarget, pendingCounterType, pendingCounterPad4,
     } = this.state;
+    const counterPromptField = counterPromptTarget ? fields[counterPromptTarget.fieldIndex] : undefined;
+    const counterPromptCurrent = counterPromptField && counterPromptTarget
+      ? (counterPromptTarget.segmentIndex === undefined
+        ? counterPromptField
+        : counterPromptField.segments?.[counterPromptTarget.segmentIndex])
+      : undefined;
+    const counterPromptIsCounting = counterPromptCurrent?.isCounter === true;
 
     return (
       <div className="template-editor-panel">
@@ -349,46 +429,25 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       </label>
                     )}
                     <label className="required-toggle">
-                        <Input
-                          bare
-                          type="checkbox"
-                          checked={field.hideLabel === true}
-                          onChange={(event) => onChange(section, index, { hideLabel: event.target.checked })}
-                        />
-                        <span className="toggle-copy">
-                          <strong>ไม่พิมพ์ชื่อ Field</strong>
-                          {/* <small>ไม่พิมพ์ชื่อ Field</small> */}
-                        </span>
+                      <Input
+                        bare
+                        type="checkbox"
+                        checked={field.hideLabel === true}
+                        onChange={(event) => onChange(section, index, { hideLabel: event.target.checked })}
+                      />
+                      <span className="toggle-copy">
+                        <strong>ไม่พิมพ์ชื่อ Field</strong>
+                        {/* <small>ไม่พิมพ์ชื่อ Field</small> */}
+                      </span>
                     </label>
                     {section === "outside" && !field.segments?.length && (
                       <Button
                         type="button"
                         className={field.isCounter ? "outside-count-button active" : "outside-count-button"}
-                        onClick={() => onChange(section, index, {
-                          isCounter: !field.isCounter,
-                          type: !field.isCounter ? "number" : "text",
-                          counterType: !field.isCounter
-                            ? field.counterType ?? TemplateFieldUtils.inferCounterType(field)
-                            : field.counterType,
-                        })}
+                        onClick={() => this.openCounterPrompt(index)}
                       >
-                        นับ
+                        {field.isCounter ? `นับ: ${TemplateFieldUtils.counterTypeLabel(field.counterType ?? TemplateFieldUtils.inferCounterType(field))}` : "นับ"}
                       </Button>
-                    )}
-                    {section === "outside" && !field.segments?.length && field.isCounter && (
-                      <div className="counter-type-control outside-counter-type-control">
-                        <span>นับแบบ</span>
-                        <Select
-                          bare
-                          value={field.counterType ?? TemplateFieldUtils.inferCounterType(field)}
-                          onChange={(event) => onChange(section, index, { counterType: event.target.value as CounterType })}
-                          aria-label="นับแบบ"
-                        >
-                          <option value="lot">Lot</option>
-                          <option value="pallet">Pallet</option>
-                          <option value="sequence">+1 ไปเรื่อยๆ</option>
-                        </Select>
-                      </div>
                     )}
                     {!field.segments?.length && !field.isCounter && (
                       <label className="required-toggle field-calendar-toggle">
@@ -404,7 +463,6 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         />
                         <span className="toggle-copy">
                           <strong>ใช้ Calendar</strong>
-                          <small>ให้ผู้กรอกเลือกวันที่ ไม่ต้องพิมพ์เอง</small>
                         </span>
                       </label>
                     )}
@@ -549,40 +607,10 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                             <Button
                               type="button"
                               className={segment.isCounter ? "count-segment active" : "count-segment"}
-                              onClick={() => onChange(section, index, {
-                                segments: field.segments?.map((item, itemIndex) => ({
-                                  ...item,
-                                  isCounter: itemIndex === segmentIndex ? !item.isCounter : item.isCounter,
-                                  type: itemIndex === segmentIndex && !item.isCounter ? "number" : item.type ?? "text",
-                                  counterType: itemIndex === segmentIndex && !item.isCounter
-                                    ? item.counterType ?? TemplateFieldUtils.inferCounterType(field)
-                                    : item.counterType,
-                                })),
-                              })}
+                              onClick={() => this.openCounterPrompt(index, segmentIndex)}
                             >
-                              นับ
+                              {segment.isCounter ? `นับ: ${TemplateFieldUtils.counterTypeLabel(segment.counterType ?? TemplateFieldUtils.inferCounterType(field))}` : "นับ"}
                             </Button>
-                            {segment.isCounter && (
-                              <label className="counter-type-control">
-                                <span>นับแบบ</span>
-                                <Select
-                                  bare
-                                  value={segment.counterType ?? TemplateFieldUtils.inferCounterType(field)}
-                                  onChange={(event) => onChange(section, index, {
-                                    segments: field.segments?.map((item, itemIndex) =>
-                                      itemIndex === segmentIndex
-                                        ? { ...item, counterType: event.target.value as CounterType }
-                                        : item,
-                                    ),
-                                  })}
-                                  aria-label="นับแบบ"
-                                >
-                                  <option value="lot">Lot</option>
-                                  <option value="pallet">Pallet</option>
-                                  <option value="sequence">+1 ไปเรื่อยๆ</option>
-                                </Select>
-                              </label>
-                            )}
                             <Button
                               type="button"
                               disabled={(field.segments?.length ?? 0) <= 1}
@@ -686,6 +714,59 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
             </div>
           </Modal>
         )}
+        <Modal
+          open={!!counterPromptTarget}
+          title="ตั้งค่าการนับ"
+          subtitle="เลือกรูปแบบการนับเลข และรูปแบบตัวเลขที่จะแสดง"
+          onClose={() => this.closeCounterPrompt()}
+          footer={(
+            <div className="print-export-actions counter-prompt-footer">
+              {counterPromptIsCounting && (
+                <Button type="button" className="print-export-secondary counter-stop-button" onClick={() => this.stopCounterPrompt()}>
+                  เลิกนับ
+                </Button>
+              )}
+              <Button type="button" className="print-export-secondary" onClick={() => this.closeCounterPrompt()}>
+                ยกเลิก
+              </Button>
+              <Button type="button" className="export-button" onClick={() => this.confirmCounterPrompt()}>
+                ยืนยัน
+              </Button>
+            </div>
+          )}
+        >
+          <div className="editor-body counter-prompt-body">
+            <div className="choice-list">
+              {COUNTER_TYPE_OPTIONS.map((option) => (
+                <label
+                  className={`choice ${pendingCounterType === option.value ? "selected" : ""}`}
+                  key={option.value}
+                >
+                  <Input
+                    bare
+                    type="radio"
+                    name="counter-type-prompt"
+                    checked={pendingCounterType === option.value}
+                    onChange={() => this.setState({ pendingCounterType: option.value })}
+                  />
+                  <span><b>{option.label}</b><small>{option.description}</small></span>
+                </label>
+              ))}
+            </div>
+            <label className="required-toggle counter-pad-toggle">
+              <Input
+                bare
+                type="checkbox"
+                checked={pendingCounterPad4}
+                onChange={(event) => this.setState({ pendingCounterPad4: event.target.checked })}
+              />
+              <span className="toggle-copy">
+                <strong>เลข 4 หลัก (0001)</strong>
+                <small>เติมเลข 0 นำหน้าให้ครบ 4 หลักเสมอ</small>
+              </span>
+            </label>
+          </div>
+        </Modal>
       </div>
     );
   }

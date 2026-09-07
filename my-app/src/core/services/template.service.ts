@@ -143,7 +143,7 @@ export class TemplateService {
       const parsed: unknown = JSON.parse(trimmedValue);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         const config = parsed as {
-          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; prefix?: string; suffix?: string; dateFormat?: TemplateField["dateFormat"]; isCounter?: boolean; counterType?: CounterType }> }>;
+          groups?: Array<{ label?: string; segments?: Array<{ key?: string; label?: string; prefix?: string; suffix?: string; dateFormat?: TemplateField["dateFormat"]; isCounter?: boolean; counterType?: CounterType; counterPad4?: boolean }> }>;
           fields?: Array<Partial<TemplateField>>;
           tables?: Array<{ name?: string; fields?: Array<Partial<TemplateField>> }>;
         };
@@ -168,12 +168,14 @@ export class TemplateService {
                 stickerOrder: segment.stickerOrder ?? (field.stickerOrder ?? index) * 10 + segmentIndex,
                 type: segment.type,
                 isCounter: segment.isCounter,
+                counterPad4: segment.counterPad4,
               })),
               condition: this.normalizeCondition(field.condition),
               showOnSticker: field.showOnSticker ?? true,
               stickerOrder: field.stickerOrder ?? index,
               isCounter: field.isCounter,
               counterType: field.counterType,
+              counterPad4: field.counterPad4,
               fontScale: this.normalizeFontScale(field.fontScale),
               hideLabel: field.hideLabel,
             });
@@ -200,6 +202,7 @@ export class TemplateService {
                 type: field.isCounter ? "number" : "text",
                 isCounter: field.isCounter,
                 counterType: field.counterType,
+                counterPad4: field.counterPad4,
               })),
             });
           });
@@ -268,6 +271,7 @@ export class TemplateService {
             type: segment.type,
             dateFormat: segment.dateFormat,
             isCounter: segment.isCounter,
+            counterPad4: segment.counterPad4,
           })),
           condition: this.normalizeCondition(field.condition),
           showOnSticker: field.showOnSticker ?? true,
@@ -278,6 +282,7 @@ export class TemplateService {
           uppercase: section === "Outside" ? field.uppercase ?? true : field.uppercase,
           isCounter: field.isCounter,
           counterType: field.counterType,
+          counterPad4: field.counterPad4,
           fontScale: this.normalizeFontScale(field.fontScale),
           hideLabel: field.hideLabel,
         });

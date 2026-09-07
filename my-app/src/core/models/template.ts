@@ -28,6 +28,7 @@ export interface TemplateField {
     stickerOrder?: number;
     isCounter?: boolean;
     counterType?: CounterType;
+    counterPad4?: boolean;
   }>;
   condition?: {
     stickerType?: "TNR" | "NON TNR";
@@ -41,6 +42,7 @@ export interface TemplateField {
   stickerGroupLayout?: LegacyStickerGroupLayout;
   uppercase?: boolean;
   counterType?: CounterType;
+  counterPad4?: boolean;
   fontScale?: FontScale;
   hideLabel?: boolean;
 }

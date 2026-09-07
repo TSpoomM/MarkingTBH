@@ -52,6 +52,7 @@ export default class TemplateFormDefaults {
       fontScale: section === "outside" && !isVerticalOutside ? field.fontScale : undefined,
       isCounter: section === "outside" && !field.segments?.length ? field.isCounter : undefined,
       counterType: section === "outside" && !field.segments?.length ? field.counterType : undefined,
+      counterPad4: section === "outside" && !field.segments?.length ? field.counterPad4 : undefined,
       showOnSticker: field.showOnSticker ?? true,
       uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
       defaultValue: !field.segments?.length && field.locked

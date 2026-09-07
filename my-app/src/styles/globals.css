@@ -1457,7 +1457,7 @@ select {
 
 .config-heading p { margin:0; color:var(--muted); font-size:12px }
 
-.template-name { display:grid; gap:7px; margin:24px 0 8px; max-width:560px; font-size:13px; font-weight:700 }
+.template-name { display:grid; gap:7px; margin:24px 0 8px; font-size:13px; font-weight:700 }
 
 .template-name input,.template-name .app-select,.inside-box input,.outside-table input { height:42px; border:1px solid #c3d0c6; border-radius:7px; background:#fff; padding-left:12px; outline:none }
 
@@ -1526,6 +1526,22 @@ select {
 .choice { min-height:40px; display:flex; align-items:center; gap:8px; padding:0 14px; border:1px solid #c5d2c8; border-radius:8px; background:#fff; cursor:pointer; font-size:13px; font-weight:700 }
 
 .choice.selected { border-color:var(--primary); background:var(--primary-soft); color:var(--primary-dark) }
+
+.counter-pad-toggle {
+	padding-top: 12px;
+	border-top: 1px solid #e1e8e5;
+}
+
+.counter-prompt-footer .counter-stop-button {
+	margin-right: auto;
+	border-color: #d8b6ba;
+	color: #9d3e43;
+}
+
+.counter-prompt-footer .counter-stop-button:hover {
+	border-color: #c7858b;
+	background: #f1dddd;
+}
 
 @media (max-width: 760px) {
 	.template-name-status-row {
@@ -2223,7 +2239,7 @@ select {
 	.template-workbench-summary {
 		margin-top: 18px;
 		display: grid;
-		grid-template-columns: 1.6fr repeat(2, minmax(130px, .7fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 10px;
 	}
 
@@ -3231,7 +3247,6 @@ select {
 	}
 
 	.template-name {
-		max-width: 720px;
 		gap: 10px;
 		padding: 18px;
 	}
@@ -3699,25 +3714,12 @@ select {
 
 	.template-admin .editor-segment-actions {
 		display: grid;
-		grid-template-columns: minmax(72px, .75fr) minmax(0, 1.55fr) minmax(64px, .7fr);
+		grid-template-columns: 1fr 1fr;
 		gap: 8px;
 		align-items: end;
 		padding: 12px 14px 14px;
 		border-top: 1px solid #c9d8d1;
 		background: #f1f6f3;
-	}
-
-	.template-admin .counter-type-control {
-		display: grid;
-		gap: 5px;
-		min-width: 0;
-	}
-
-	.template-admin .counter-type-control .app-select {
-		width: 100%;
-		min-width: 0;
-		height: 40px;
-		font-size: 14px;
 	}
 
 	.template-admin .editor-segment-actions button {
@@ -3749,26 +3751,8 @@ select {
 		color: #fff;
 	}
 
-	.template-admin .editor-segment-actions .counter-type-control {
-		grid-column: 2;
-		align-self: end;
-	}
-
-	.template-admin .editor-segment-actions .counter-type-control > span {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip: rect(0 0 0 0);
-		white-space: nowrap;
-	}
-
-	.template-admin .editor-segment-actions .counter-type-control .app-select {
-		height: 40px;
-	}
-
 	.template-admin .editor-segment-actions > button:last-child {
-		grid-column: 3;
+		grid-column: 2;
 		border: 1px solid #d8b6ba;
 		background: #fbf2f2;
 		color: #9d3e43;
@@ -3802,10 +3786,6 @@ select {
 		color: #fff;
 	}
 
-	.template-admin .outside-counter-type-control {
-		align-self: stretch;
-	}
-
 	.template-admin .add-segment-button {
 		grid-column: 1 / -1;
 		width: 100%;
@@ -3836,7 +3816,6 @@ select {
 	}
 
 	.template-admin .editor-segment-actions .count-segment,
-	.template-admin .editor-segment-actions .counter-type-control,
 	.template-admin .editor-segment-actions > button:last-child {
 		grid-column: 1;
 	}
@@ -4532,24 +4511,9 @@ select {
 		align-self: stretch;
 	}
 
-	.template-admin .outside-field-wrap .outside-counter-type-control {
-		grid-column: 3 / span 2;
-		grid-row: 2;
-		align-self: stretch;
-	}
-
 	.template-admin .outside-field-wrap .field-font-scale {
-		grid-column: 5;
-		grid-row: 2;
-	}
-
-	.template-admin .outside-field-wrap .editor-field:not(:has(.outside-counter-type-control)) .field-font-scale {
 		grid-column: 3;
-	}
-
-	.template-admin .outside-field-wrap .outside-counter-type-control .app-select {
-		height: 50px;
-		font-size: 14px;
+		grid-row: 2;
 	}
 
 	.template-admin .outside-field-wrap .condition-selector {
@@ -4637,24 +4601,19 @@ select {
 		grid-row: 3;
 	}
 
-	.template-admin .outside-field-wrap .outside-counter-type-control {
+	.template-admin .outside-field-wrap .field-font-scale {
 		grid-column: 2 / -1;
 		grid-row: 4;
 	}
 
-	.template-admin .outside-field-wrap .field-font-scale {
+	.template-admin .outside-field-wrap .condition-selector {
 		grid-column: 2 / -1;
 		grid-row: 5;
 	}
 
-	.template-admin .outside-field-wrap .condition-selector {
-		grid-column: 2 / -1;
-		grid-row: 6;
-	}
-
 	.template-admin .outside-field-wrap .editor-field .delete-field {
 		grid-column: 2 / -1;
-		grid-row: 7;
+		grid-row: 6;
 	}
 }
 
@@ -4683,7 +4642,6 @@ select {
 	.template-admin .outside-field-wrap .editor-field>label:nth-of-type(3),
 	.template-admin .outside-field-wrap .editor-field>label:nth-of-type(4),
 	.template-admin .outside-field-wrap .outside-count-button,
-	.template-admin .outside-field-wrap .outside-counter-type-control,
 	.template-admin .outside-field-wrap .field-font-scale,
 	.template-admin .outside-field-wrap .condition-selector,
 	.template-admin .outside-field-wrap .editor-field .delete-field {
@@ -6182,6 +6140,10 @@ select {
 	box-shadow: 0 1px 0 rgba(15, 118, 110, .12);
 	pointer-events: none;
 	transform: translateY(-50%);
+}
+
+.vertical-fields .calendar-icon {
+	right: 30px;
 }
 
 .calendar-icon::before {

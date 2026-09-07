@@ -73,6 +73,7 @@ const segmentSchema = z.object({
   dateFormat: dateFormatSchema,
   isCounter: z.boolean().optional(),
   counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
+  counterPad4: z.boolean().optional(),
   label: z.string().trim().min(1, "กรุณาระบุชื่อแต่ละส่วน"),
 });
 
@@ -90,6 +91,7 @@ const outsideFieldSchema = z.object({
   uppercase: z.boolean().optional(),
   isCounter: z.boolean().optional(),
   counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
+  counterPad4: z.boolean().optional(),
   defaultValue: z.string().optional(),
   locked: z.boolean().optional(),
   fontScale: z.enum(["normal", "xlarge"]).optional(),
@@ -117,6 +119,7 @@ const templateFieldSchema = z.object({
     stickerOrder: z.number().int().min(0).optional(),
     isCounter: z.boolean().optional(),
     counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
+    counterPad4: z.boolean().optional(),
   })).optional(),
   condition: z.object({
     stickerType: stickerTypeConditionSchema.optional(),
@@ -130,6 +133,7 @@ const templateFieldSchema = z.object({
   uppercase: z.boolean().optional(),
   isCounter: z.boolean().optional(),
   counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
+  counterPad4: z.boolean().optional(),
   fontScale: z.enum(["normal", "xlarge"]).optional(),
   hideLabel: z.boolean().optional(),
 });

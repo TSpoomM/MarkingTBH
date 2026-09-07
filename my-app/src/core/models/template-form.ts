@@ -40,6 +40,7 @@ export interface SegmentDefinition {
   dateFormat?: TemplateField["dateFormat"];
   isCounter?: boolean;
   counterType?: CounterType;
+  counterPad4?: boolean;
 }
 
 export interface InsideGroup {

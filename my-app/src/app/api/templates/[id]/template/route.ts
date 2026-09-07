@@ -60,6 +60,7 @@ const fieldSchema = z.object({
     stickerOrder: z.number().int().min(0).optional(),
     isCounter: z.boolean().optional(),
     counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
+    counterPad4: z.boolean().optional(),
   })).optional(),
   showOnSticker: z.boolean().optional(),
   stickerOrder: z.number().int().min(0).optional(),
@@ -73,6 +74,7 @@ const fieldSchema = z.object({
   uppercase: z.boolean().optional(),
   isCounter: z.boolean().optional(),
   counterType: z.enum(["lot", "pallet", "sequence"]).optional(),
+  counterPad4: z.boolean().optional(),
   fontScale: z.enum(["normal", "xlarge"]).optional(),
   hideLabel: z.boolean().optional(),
 });

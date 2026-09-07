@@ -534,6 +534,7 @@ export class TemplateManageController {
         uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
         isCounter: section === "outside" && !field.segments?.length ? field.isCounter : undefined,
         counterType: section === "outside" && !field.segments?.length ? field.counterType : undefined,
+        counterPad4: section === "outside" && !field.segments?.length ? field.counterPad4 : undefined,
         fontScale: section === "outside" && !isVerticalOutside ? field.fontScale : undefined,
         segments: field.segments?.map((segment, segmentIndex) => ({
           ...segment,

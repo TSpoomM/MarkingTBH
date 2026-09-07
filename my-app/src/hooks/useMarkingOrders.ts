@@ -518,13 +518,14 @@ export class MarkingOrdersController {
   }
 
   private counterDefault(
-    field: Pick<TemplateField, "key" | "label">,
+    field: Pick<TemplateField, "key" | "label" | "counterPad4">,
     lotStart: number,
-    segment?: { counterType?: CounterType },
+    segment?: { counterType?: CounterType; counterPad4?: boolean },
   ) {
     const type = this.counterType(field, segment);
     const value = this.counterSeed(type, lotStart);
-    return String(value);
+    const pad4 = segment?.counterPad4 ?? field.counterPad4 ?? false;
+    return pad4 ? String(value).padStart(4, "0") : String(value);
   }
 
   private fieldDefault(field: TemplateField) {
@@ -536,7 +537,7 @@ export class MarkingOrdersController {
     return Object.fromEntries(fields.flatMap((field) =>
       field.segments?.length
         ? field.segments.map((segment) => [segment.key, segment.isCounter ? this.counterDefault(field, lotStart, segment) : ""])
-        : [[field.key, field.isCounter ? this.counterDefault(field, lotStart, { counterType: field.counterType }) : this.fieldDefault(field)]],
+        : [[field.key, field.isCounter ? this.counterDefault(field, lotStart, { counterType: field.counterType, counterPad4: field.counterPad4 }) : this.fieldDefault(field)]],
     ));
   }
 
@@ -547,10 +548,10 @@ export class MarkingOrdersController {
     previousLotStart: number,
   ) {
     if (!field.isCounter) return;
-    const previousDefault = this.counterDefault(field, previousLotStart, { counterType: field.counterType });
+    const previousDefault = this.counterDefault(field, previousLotStart, { counterType: field.counterType, counterPad4: field.counterPad4 });
     const previousRawDefault = String(this.counterSeed(this.counterType(field, { counterType: field.counterType }), previousLotStart));
     if (!row[field.key] || row[field.key] === previousDefault || row[field.key] === previousRawDefault) {
-      row[field.key] = this.counterDefault(field, lotStart, { counterType: field.counterType });
+      row[field.key] = this.counterDefault(field, lotStart, { counterType: field.counterType, counterPad4: field.counterPad4 });
     }
   }
 

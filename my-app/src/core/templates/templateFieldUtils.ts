@@ -13,6 +13,12 @@ export default class TemplateFieldUtils {
     return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
   }
 
+  static counterTypeLabel(type: CounterType) {
+    if (type === "pallet") return "Pallet";
+    if (type === "sequence") return "+1 ไปเรื่อยๆ";
+    return "Lot";
+  }
+
   static uniqueSegmentKey(
     fieldKey: string,
     segmentKey: string | undefined,

@@ -52,9 +52,9 @@ export default class TableSection extends Component<TableSectionProps> {
                               bare
                               type="text"
                               inputMode={segment.isCounter ? "numeric" : undefined}
-                              value={row[segment.key] ?? (segment.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")}
+                              value={row[segment.key] ?? (segment.isCounter ? StickerFactory.previewCounterValue(field, lotStart, segment) : "")}
                               onChange={(event) => onChange(rowIndex, segment.key, event.target.value)}
-                              placeholder={segment.isCounter ? "+1" : segment.label}
+                              placeholder={segment.isCounter ? `${segment.label} +1` : segment.label}
                             />
                           ))}
                         </div>
@@ -75,7 +75,7 @@ export default class TableSection extends Component<TableSectionProps> {
                             value={row[field.key] ?? (field.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")}
                             onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
                             disabled={field.locked === true}
-                            placeholder={field.placeholder ?? `กรอก ${field.label}`}
+                            placeholder={field.isCounter ? `${field.label} +1` : field.placeholder ?? `กรอก ${field.label}`}
                           />
                         )
                       )}
