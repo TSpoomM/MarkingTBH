@@ -8,7 +8,34 @@ import {
   type ReactNode,
 } from "react";
 import type { SelectProps } from "@/src/core/models/ui";
+import Field from "./Field";
+import cn from "@/src/core/ui/cn";
+import { control as controlClass } from "@/src/core/ui/fields";
+import {
+  LISTBOX, LISTBOX_CHECK, LISTBOX_OPTION, LISTBOX_OPTION_ACTIVE, LISTBOX_OPTION_SELECTED,
+  LISTBOX_OPTION_TEXT,
+} from "@/src/core/ui/listbox";
+import { Check, ChevronDown } from "lucide-react";
 import Button from "./Button";
+
+/**
+ * The divider and arrow of the select are drawn with ::before/::after on the wrapper
+ * (previously .app-select-wrap::before / ::after)
+ */
+const SELECT_WRAP =
+  "group/select app-select-wrap relative block w-full min-w-0 " +
+  "before:pointer-events-none before:absolute before:top-1/2 before:right-9 before:z-[1] " +
+  "before:h-[min(28px,calc(100%-16px))] before:w-px before:-translate-y-1/2 before:bg-[#d7e4de] " +
+  "before:transition-colors before:content-[''] " +
+  "hover:before:bg-[#9bc4b4] focus-within:before:bg-[#9bc4b4] " +
+  "has-[.app-select:disabled]:before:opacity-45";
+
+/** The select arrow uses ChevronDown from lucide */
+const SELECT_CHEVRON =
+  "pointer-events-none absolute top-1/2 right-3 z-[1] -translate-y-1/2 text-primary " +
+  "transition-[color,transform] duration-150 " +
+  "group-hover/select:text-primary-dark group-focus-within/select:text-primary-dark " +
+  "group-has-[.app-select:disabled]/select:opacity-45";
 
 interface SelectState {
   open: boolean;
@@ -129,6 +156,7 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
       hint,
       children,
       bare = false,
+      size = "md",
       required,
       className = "",
       id,
@@ -148,7 +176,7 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
     const activeOption = enabledOptions[this.state.activeIndex];
     const control = (
       <div
-        className="app-select-wrap custom-select"
+        className={SELECT_WRAP}
         onBlur={(event) => {
           const wrapper = event.currentTarget;
           window.setTimeout(() => {
@@ -160,7 +188,7 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
       >
         <select
           aria-hidden="true"
-          className="custom-select-native"
+          className="pointer-events-none absolute inset-0 size-full opacity-0"
           disabled={disabled}
           name={name}
           required={required}
@@ -171,9 +199,15 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
           {children}
         </select>
         <Button
+          variant="ghost"
           id={id}
           type="button"
-          className={`app-control app-select app-select-button ${className}`.trim()}
+          className={cn(
+            controlClass(size),
+            "app-select flex w-full min-w-0 cursor-pointer appearance-none items-center justify-start pr-[46px] text-left",
+            "disabled:cursor-not-allowed",
+            className,
+          )}
           disabled={disabled}
           role="combobox"
           aria-label={ariaLabel}
@@ -199,19 +233,25 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
             this.handleKeyDown(event, options, currentValue);
           }}
         >
-          <span>{selectedOption?.label || "\u00a0"}</span>
+          <span className={LISTBOX_OPTION_TEXT}>{selectedOption?.label || "\u00a0"}</span>
         </Button>
+        <ChevronDown className={SELECT_CHEVRON} size={18} aria-hidden="true" />
         {this.state.open && enabledOptions.length > 0 && (
-          <div className="autocomplete-list custom-select-list" id={listId} role="listbox">
+          <div className={cn(LISTBOX, "[scrollbar-color:#9bc4b4_#f4faf7] [scrollbar-width:thin]")} id={listId} role="listbox">
             {options.filter((option) => !option.hidden).map((option) => {
               const enabledIndex = enabledOptions.findIndex((enabledOption) => enabledOption.key === option.key);
               const active = enabledIndex === this.state.activeIndex;
               const selected = option.value === currentValue;
               return (
                 <Button
+                  variant="ghost"
                   id={`${listId}-${option.key}`}
                   type="button"
-                  className={`${active ? "active" : ""} ${selected ? "selected" : ""}`.trim()}
+                  className={cn(
+                    LISTBOX_OPTION,
+                    active && LISTBOX_OPTION_ACTIVE,
+                    selected && LISTBOX_OPTION_SELECTED,
+                  )}
                   disabled={option.disabled}
                   role="option"
                   aria-selected={selected}
@@ -224,7 +264,8 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
                   }}
                   key={option.key}
                 >
-                  <span>{option.label}</span>
+                  <span className={LISTBOX_OPTION_TEXT}>{option.label}</span>
+                  {selected && <Check className={LISTBOX_CHECK} size={16} strokeWidth={3} />}
                 </Button>
               );
             })}
@@ -232,14 +273,8 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
         )}
       </div>
     );
-    if (bare || !label) return control;
-    return (
-      <label className="field">
-        <span>{label}{required && <em>*</em>}</span>
-        {control}
-        <small className="field-hint" aria-hidden={!hint}>{hint || "\u00a0"}</small>
-      </label>
-    );
+    if (bare) return control;
+    return <Field label={label} hint={hint} required={required} size={size}>{control}</Field>;
   }
 }
 

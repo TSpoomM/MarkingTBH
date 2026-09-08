@@ -44,14 +44,11 @@ export const INITIAL_MARKING_STATE: MarkingState = {
   productionDate: "",
   insideRows: [],
   outsideRows: [],
-  insideDraft: [],
-  outsideDraft: [],
   isAdmin: false,
   isLoading: true,
   isSaving: false,
   isExportModalOpen: false,
   isPrintSheetActive: false,
-  isTemplateEditorOpen: false,
   notice: null,
 };
 
@@ -60,7 +57,4 @@ export const MESSAGES = {
   enterLot: "กรุณากรอกจำนวน Lot ให้ถูดต้อง",
   loadFailed: "โหลดข้อมูลไม่สำเร็จ",
   saveFailed: "บันทึกไม่สำเร็จ",
-  templateSaved: "อัปเดต Outside Template เรียบร้อยแล้ว",
-  fieldLabelRequired: "กรุณากรอกชื่อ Field ให้ครบ",
-  duplicateKey: "Key ของแต่ละ Field ต้องไม่ซ้ำกัน",
 } as const;

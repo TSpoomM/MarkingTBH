@@ -2,15 +2,11 @@
 
 import { Component } from "react";
 import HistoryFormatter from "@/src/core/history/historyFormatter";
-import type { MarkingContent, MarkingHistoryFieldMeta } from "@/src/core/models/marking";
+import type { HistoryTemplateSectionProps } from "@/src/core/models/history";
+import { HISTORY_BOX_TITLE, HISTORY_TEMPLATE_CARD, HISTORY_TEMPLATE_GRID } from "@/src/core/ui/history";
+import cn from "@/src/core/ui/cn";
 
-type Props = Readonly<{
-  title: string;
-  rows: MarkingContent[];
-  fieldMeta?: Record<string, MarkingHistoryFieldMeta>;
-}>;
-
-export default class HistoryTemplateSection extends Component<Props> {
+export default class HistoryTemplateSection extends Component<HistoryTemplateSectionProps> {
   render() {
     const { title, rows, fieldMeta = {} } = this.props;
     const filledRows = rows
@@ -18,14 +14,14 @@ export default class HistoryTemplateSection extends Component<Props> {
       .filter((row) => row.entries.length > 0);
 
     return (
-      <section className="history-template-section">
+      <section className={cn("grid gap-3", HISTORY_BOX_TITLE)}>
         <h3>{title}</h3>
         {filledRows.length === 0 ? (
           <p>ไม่มีข้อมูลที่กรอก</p>
         ) : (
-          <div className="history-template-grid">
+          <div className={HISTORY_TEMPLATE_GRID}>
             {filledRows.map((row) => (
-              <article className="history-template-card" key={`${title}-${row.index}`}>
+              <article className={HISTORY_TEMPLATE_CARD} key={`${title}-${row.index}`}>
                 <header>
                   <strong>ชุดที่ {row.index + 1}</strong>
                   <span>{row.entries.length} Field</span>

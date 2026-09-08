@@ -1,21 +1,16 @@
 import { Component } from "react";
+import { MODAL_BODY } from "@/src/core/ui/fieldEditor";
+import { CONTAINER, PREVIEW_FAB } from "@/src/core/ui/surfaces";
+import cn from "@/src/core/ui/cn";
 import Button from "@/src/components/ui/Button";
 import Modal from "@/src/components/ui/Modal";
 import StickerFactory from "@/src/core/stickers/stickerFactory";
+import StickerPreview, { PREVIEW_MODE_LABELS } from "@/src/core/stickers/stickerPreview";
 import StickerPreviewPages from "@/src/components/marking/StickerPreviewPages";
 import type { TemplateField } from "@/src/core/models/template";
 import type { MarkingContent } from "@/src/core/models/marking";
 import type { StickerKind } from "@/src/core/models/marking-sticker";
 import type { StickerTemplatePreviewProps } from "@/src/core/models/manage-template";
-
-const PREVIEW_MODE_LABELS: Record<StickerKind, string> = {
-  insideFrame: "ในกรอบ",
-  outsideFrame: "นอกกรอบ",
-  customerName: "ชื่อ Template",
-  fscLogo: "โลโก้ FSC",
-};
-
-const PREVIEW_MODE_ORDER: StickerKind[] = ["insideFrame", "outsideFrame", "customerName", "fscLogo"];
 
 export default class StickerTemplatePreview extends Component<
   StickerTemplatePreviewProps,
@@ -43,48 +38,13 @@ export default class StickerTemplatePreview extends Component<
     }, {});
   }
 
-  private previewItems(items: ReturnType<typeof StickerFactory.build>) {
-    const seen = new Set<string>();
-    return items.filter((item) => {
-      const signature = [
-        item.kind,
-        item.group ?? "",
-        item.details.map((detail) => (
-          `${detail.label}:${detail.values.map((value) => value.label ?? "").join("|")}`
-        )).join(";"),
-      ].join("|");
-      if (seen.has(signature)) return false;
-      seen.add(signature);
-      return true;
-    });
-  }
-
-  private previewModes(items: ReturnType<typeof StickerFactory.build>) {
-    const kinds = new Set(items.map((item) => item.kind));
-    return PREVIEW_MODE_ORDER.filter((kind) => kinds.has(kind));
-  }
-
-  private firstPreviewMode(items: ReturnType<typeof StickerFactory.build>) {
-    return this.previewModes(items)[0] ?? "insideFrame";
-  }
-
-  private outsideGroups(items: ReturnType<typeof StickerFactory.build>) {
-    const groups: string[] = [];
-    items.forEach((item) => {
-      const name = item.group ?? "";
-      if (!name || groups.includes(name)) return;
-      groups.push(name);
-    });
-    return groups;
-  }
-
   render() {
     const { customerName, insideFields, outsideFields, layouts, defaults } = this.props;
     const activeOutsideFields = outsideFields.filter((field) =>
       StickerFactory.matchesCondition(field, defaults.stickerType, defaults.stickerOther),
     );
     const { previewOpen, previewMode, previewGroup } = this.state;
-    const previewItems = this.previewItems(StickerFactory.build({
+    const previewItems = StickerPreview.unique(StickerFactory.build({
       customerName,
       format: defaults.format,
       sideCount: defaults.sideCount,
@@ -99,10 +59,10 @@ export default class StickerTemplatePreview extends Component<
       insideRow: this.mockRow(insideFields),
       outsideRow: this.mockRow(activeOutsideFields),
     }));
-    const previewModes = this.previewModes(previewItems);
-    const activeMode = previewModes.includes(previewMode) ? previewMode : this.firstPreviewMode(previewItems);
+    const previewModes = StickerPreview.modes(previewItems);
+    const activeMode = previewModes.includes(previewMode) ? previewMode : StickerPreview.firstMode(previewItems);
     const modePreviewItems = previewItems.filter((item) => item.kind === activeMode);
-    const outsideGroups = activeMode === "outsideFrame" ? this.outsideGroups(modePreviewItems) : [];
+    const outsideGroups = activeMode === "outsideFrame" ? StickerPreview.outsideGroupNames(modePreviewItems) : [];
     const activeGroup = outsideGroups.includes(previewGroup ?? "") ? previewGroup : (outsideGroups[0] ?? null);
     const activePreviewItems = activeGroup
       ? modePreviewItems.filter((item) => item.group === activeGroup)
@@ -111,9 +71,9 @@ export default class StickerTemplatePreview extends Component<
     return (
       <div>
         <Button
-          className="sticker-preview-open"
+          className={PREVIEW_FAB}
           disabled={previewItems.length === 0}
-          onClick={() => this.setState({ previewOpen: true, previewMode: this.firstPreviewMode(previewItems), previewGroup: null })}
+          onClick={() => this.setState({ previewOpen: true, previewMode: StickerPreview.firstMode(previewItems), previewGroup: null })}
           title={previewItems.length === 0 ? "ยังไม่ได้เลือกรูปแบบสติกเกอร์" : "ดู Preview Sticker"}
         >
           ดู Preview Sticker
@@ -124,7 +84,7 @@ export default class StickerTemplatePreview extends Component<
           subtitle="ตัวอย่างจากข้อมูลจำลอง: string = xxx, number = 0"
           onClose={() => this.setState({ previewOpen: false })}
         >
-          <div className="editor-body sticker-template-preview-modal-body">
+          <div className={cn(MODAL_BODY, "sticker-template-preview-modal-body")}>
             {previewModes.length > 1 && (
               <div className="sticker-template-preview-modes" aria-label="เลือกโหมด Preview">
                 {previewModes.map((mode) => (
@@ -153,7 +113,7 @@ export default class StickerTemplatePreview extends Component<
                 ))}
               </div>
             )}
-            <div className="container pdf-preview sticker-template-real-preview">
+            <div className={cn(CONTAINER, "pdf-preview sticker-template-real-preview")}>
               <StickerPreviewPages items={activePreviewItems} mode={activeMode} />
             </div>
           </div>

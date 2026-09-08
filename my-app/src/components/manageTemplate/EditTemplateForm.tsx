@@ -1,4 +1,11 @@
 import { Component } from "react";
+import cn from "@/src/core/ui/cn";
+import {
+  CONFIG_CARD, DEFAULT_CHECK, DEFAULT_GRID, EMPTY_GUIDE, NAME_STATUS_ROW, OUTSIDE_EMPTY,
+  OUTSIDE_TITLE, STATUS_CAPTION, STATUS_FIELD, STATUS_OPTION, STATUS_TOGGLE, STATUS_TOGGLE_ACTIVE,
+  STATUS_TOGGLE_INACTIVE, TEMPLATE_MANAGER_GRID, TEMPLATE_NAME_BOX,
+} from "@/src/core/ui/template";
+import { ACTION_BAR, ACTION_BAR_BUTTONS } from "@/src/core/ui/surfaces";
 import Button from "@/src/components/ui/Button";
 import Input from "@/src/components/ui/Input";
 import Select from "@/src/components/ui/Select";
@@ -50,8 +57,8 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
     } = this.props;
 
     return (
-      <section className="config-card template-editor-card">
-        <div className="outside-title">
+      <section className={CONFIG_CARD}>
+        <div className={OUTSIDE_TITLE}>
           <SectionHeading
             number="1"
             title="แก้ไข Sticker Template"
@@ -65,7 +72,7 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
             onClose={onDismissNotice}
           />
         )}
-        <label className="template-name">
+        <label className={TEMPLATE_NAME_BOX}>
           <span>เลือก Template</span>
           <TemplateAutocomplete
             bare
@@ -78,16 +85,16 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
           />
         </label>
         {!selectedTemplateId && !loadingTemplates && (
-          <div className="template-empty-guide">
+          <div className={EMPTY_GUIDE}>
             <strong>เริ่มจากเลือก Template ที่ต้องการแก้ไข</strong>
             <span>หลังเลือกแล้ว ระบบจะแสดง Preview ด้านบน และ Field editor สำหรับในกรอบ/นอกกรอบด้านล่าง</span>
           </div>
         )}
-        {loadingTemplate && <div className="outside-empty"><strong>กำลังโหลด Template...</strong></div>}
+        {loadingTemplate && <div className={OUTSIDE_EMPTY}><strong>กำลังโหลด Template...</strong></div>}
         {selectedTemplateId && !loadingTemplate && (
           <>
-            <div className="template-name-status-row">
-              <label className="template-name">
+            <div className={NAME_STATUS_ROW}>
+              <label className={TEMPLATE_NAME_BOX}>
                 <span>ชื่อ Template *</span>
                 <Input
                   bare
@@ -96,31 +103,22 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
                   placeholder="ABC Rubber Co., Ltd."
                 />
               </label>
-              <div className="template-status-field">
-                <span className="template-status-caption">Status</span>
-                <button
+              <div className={STATUS_FIELD}>
+                <span className={STATUS_CAPTION}>Status</span>
+                <Button
                   type="button"
-                  className={`template-status-toggle ${isActive ? "active" : "inactive"}`}
+                  variant="ghost"
+                  wrapContent={false}
+                  className={cn(STATUS_TOGGLE, isActive ? STATUS_TOGGLE_ACTIVE : STATUS_TOGGLE_INACTIVE)}
                   onClick={() => onActiveChange(!isActive)}
                   aria-pressed={isActive}
                 >
-                  <span className="template-status-option">Inactive</span>
-                  <i aria-hidden="true" />
-                  <span className="template-status-option">Active</span>
-                </button>
+                  <span className={STATUS_OPTION}>Inactive</span>
+                  <span className={STATUS_OPTION}>Active</span>
+                </Button>
               </div>
             </div>
-            <div className="template-workbench-summary">
-              <div>
-                <span>ในกรอบ</span>
-                <strong>{insideDraft.length} fields</strong>
-              </div>
-              <div>
-                <span>นอกกรอบ</span>
-                <strong>{outsideDraft.length} fields</strong>
-              </div>
-            </div>
-            <div className="template-default-grid">
+            <div className={DEFAULT_GRID}>
               <label>
                 <span>จำนวนด้าน Sticker / 1 ลัง *</span>
                 <Select
@@ -168,7 +166,7 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
                   {STICKER_OTHER_OPTIONS.map((other) => <option value={other} key={other}>{other}</option>)}
                 </Select>
               </label>
-              <label className="template-default-check">
+              <label className={DEFAULT_CHECK}>
                 <Input
                   bare
                   type="checkbox"
@@ -179,7 +177,7 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
                 <span>พิมพ์ logo FSC</span>
               </label>
             </div>
-            <div className="template-manager-grid">
+            <div className={TEMPLATE_MANAGER_GRID}>
               <TemplateFieldEditor
                 title="Sticker ในกรอบ"
                 section="inside"
@@ -204,8 +202,8 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
                 onMoveTable={onMoveTable}
               />
             </div>
-            <div className="container bottom-action">
-              <div className="bottom-action-buttons">
+            <div className={ACTION_BAR}>
+              <div className={ACTION_BAR_BUTTONS}>
                 <StickerTemplatePreview
                   customerName={name.trim() || "Template"}
                   insideFields={insideDraft}
@@ -216,7 +214,8 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
                 />
                 <Button
                   type="button"
-                  className="template-cancel-button"
+                  variant="secondary"
+                  size="lg"
                   onClick={onCancel}
                   disabled={!selectedTemplateId || loadingTemplate || savingTemplate}
                 >
@@ -224,7 +223,7 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
                 </Button>
                 <Button
                   type="button"
-                  className="export-button"
+                  variant="primary"
                   onClick={onSave}
                   disabled={!selectedTemplateId || loadingTemplate}
                   loading={savingTemplate}

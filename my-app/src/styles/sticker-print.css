@@ -420,63 +420,6 @@
 	display: contents
 }
 
-.app-button.sticker-preview-open {
-	position: fixed;
-	right: max(22px, env(safe-area-inset-right));
-	bottom: max(22px, env(safe-area-inset-bottom));
-	z-index: 12;
-	min-height: 64px;
-	min-width: 178px;
-	padding: 0 28px;
-	border: 1px solid #0f5f46;
-	border-radius: 18px;
-	background: #167455;
-	color: #fff;
-	box-shadow: 0 16px 34px #12332638, 0 2px 8px #0d2f2330;
-	font-size: 16px;
-	letter-spacing: 0;
-	cursor: pointer
-}
-
-.app-button.sticker-preview-open:hover {
-	background: #0f5f46;
-	transform: translateY(-2px);
-	box-shadow: 0 20px 42px #12332646, 0 4px 12px #0d2f2338
-}
-
-.app-button.sticker-preview-open:active {
-	transform: translateY(0)
-}
-
-.app-button.marking-preview-open {
-	bottom: max(112px, calc(env(safe-area-inset-bottom) + 112px))
-}
-
-.bottom-action .sticker-preview-wrap {
-	display: block;
-}
-
-.bottom-action .app-button.sticker-preview-open {
-	position: static;
-	min-height: 44px;
-	height: 44px;
-	min-width: 0;
-	padding: 0 16px;
-	border-radius: 8px;
-	border-color: rgba(15, 118, 110, .25);
-	background: #fff;
-	color: var(--primary-dark);
-	box-shadow: none;
-	font-size: 15px;
-}
-
-.bottom-action .app-button.sticker-preview-open:hover {
-	background: #f8faf7;
-	border-color: rgba(15, 118, 110, .45);
-	transform: translateY(-1px);
-	box-shadow: none;
-}
-
 .sticker-template-preview-modal-body .pdf-preview {
 	margin-top: 0
 }
@@ -688,7 +631,8 @@
 	}
 
 	.header,
-	.container {
+	.container,
+	.screen-only {
 		display: none !important
 	}
 
@@ -985,16 +929,6 @@
 }
 
 @media screen and (max-width:560px) {
-	.app-button.sticker-preview-open {
-		left: 16px;
-		right: 16px;
-		bottom: max(16px, env(safe-area-inset-bottom));
-		width: auto
-	}
-
-	.app-button.marking-preview-open {
-		bottom: max(104px, calc(env(safe-area-inset-bottom) + 104px))
-	}
 
 	.sticker-preview-card dl > .sticker-preview-select-row {
 		grid-template-columns: minmax(92px, 34%) minmax(0, 1fr);

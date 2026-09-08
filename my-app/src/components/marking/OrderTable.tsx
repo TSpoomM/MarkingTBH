@@ -1,64 +1,27 @@
 "use client";
 
-import MarkingComponent from "./MarkingComponent";
-import StickerFactory from "@/src/core/stickers/stickerFactory";
+import { Component } from "react";
+import { LayersPlus } from "lucide-react";
+import { CONTAINER } from "@/src/core/ui/surfaces";
+import cn from "@/src/core/ui/cn";
+import { PRINT_EMPTY, TABLE_COLUMN, TABLE_COLUMN_LABEL } from "@/src/core/ui/table";
 import StickerPage from "./StickerPage";
 import TableSection from "./TableSection";
-import { LayersPlus } from 'lucide-react';
+import type { OrderTableProps } from "@/src/core/models/marking-sticker";
 
-
-export default class OrderTable extends MarkingComponent {
+export default class OrderTable extends Component<OrderTableProps> {
   render() {
-    const outsideFields = (this.state.template?.outside ?? []).filter((field) =>
-      StickerFactory.matchesCondition(field, this.state.stickerType, this.state.stickerOther),
-    );
-    const outsideGroups = StickerFactory.outsideGroups(outsideFields);
-    const stickerItems = this.state.isPrintSheetActive ? StickerFactory.build({
-      customerName: "",
-      format: this.state.stickerFormat,
-      sideCount: Number(this.state.stickerSides || 0),
-      lotCount: Number(this.state.lotCount || 1),
-      lotStart: this.state.lotStart,
-      productionDate: this.state.productionDate,
-      stickerType: this.state.stickerType,
-      stickerFsc: this.state.stickerFsc,
-      layouts: this.state.template?.sticker.layouts,
-      insideFields: this.state.template?.inside ?? [],
-      outsideFields,
-      insideRow: this.state.insideRows[0],
-      outsideRow: this.state.outsideRows[0],
-    }) : [];
-    const insideFramePages = StickerFactory.chunk(
-      stickerItems.filter((item) => item.kind === "insideFrame"),
-      4,
-    ).map((items) => ({ items, layout: "frame" as const }));
-    const outsideFramePages = outsideGroups.flatMap((group) => {
-      const groupKey = StickerFactory.outsideGroupKey(group);
-      if (this.state.printOutsideGroups[groupKey] === false) return [];
-      const groupItems = stickerItems.filter((item) =>
-        item.kind === "outsideFrame" && item.group === group.name && item.groupOrder === group.order,
-      );
-      const isVertical = StickerFactory.isVerticalGroupLayout(group.layout);
-      const layout = isVertical ? "frameVertical" as const : "frame" as const;
-      return StickerFactory.chunk(groupItems, isVertical ? 16 : 4).map((items) => ({ items, layout }));
-    });
-    const framePages = [
-      ...(this.state.printSections.insideFrame ? insideFramePages : []),
-      ...(this.state.printSections.outsideFrame ? outsideFramePages : []),
-    ];
-    const customerNameStickerPages = StickerFactory.chunk(
-      stickerItems.filter((item) => item.kind === "customerName"),
-      16,
-    );
-    const fscLogoStickerPages = this.state.printSections.fscLogo
-      ? StickerFactory.chunk(stickerItems.filter((item) => item.kind === "fscLogo"), 4)
-      : [];
+    const {
+      template, insideRows, outsideRows, outsideGroups, lotStart, isAdmin,
+      framePages, customerNamePages, fscLogoPages, onChangeRow,
+    } = this.props;
+
     return (
       <>
-        {this.state.template ? (
-          <div className="container table-layout">
-            <div className="table-column table-column-inside">
-              <div className="table-column-label">
+        {template ? (
+          <div className={cn(CONTAINER, "mb-[118px] grid grid-cols-[minmax(0,1fr)] items-start gap-7 max-bp700:mb-[190px]")}>
+            <div className={cn(TABLE_COLUMN, "border-t-primary")}>
+              <div className={TABLE_COLUMN_LABEL}>
                 <span>สติ๊กเกอร์</span>
                 <strong>ในกรอบ</strong>
               </div>
@@ -66,14 +29,14 @@ export default class OrderTable extends MarkingComponent {
                 number="2"
                 title="ในกรอบ"
                 subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์ในกรอบ"
-                fields={this.state.template.inside}
-                rows={this.state.insideRows}
-                lotStart={this.state.lotStart}
-                onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
+                fields={template.inside}
+                rows={insideRows}
+                lotStart={lotStart}
+                onChange={(row, key, value) => onChangeRow("inside", row, key, value)}
               />
             </div>
-            <div className="table-column table-column-outside">
-              <div className="table-column-label">
+            <div className={cn(TABLE_COLUMN, "border-t-[#b45309]")}>
+              <div className={TABLE_COLUMN_LABEL}>
                 <span>สติ๊กเกอร์</span>
                 <strong>นอกกรอบ</strong>
               </div>
@@ -84,30 +47,27 @@ export default class OrderTable extends MarkingComponent {
                   title={group.name}
                   subtitle={`กรอกข้อมูลสำหรับ ${group.name}`}
                   fields={group.fields}
-                  rows={this.state.outsideRows}
-                  lotStart={this.state.lotStart}
-                  onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
+                  rows={outsideRows}
+                  lotStart={lotStart}
+                  onChange={(row, key, value) => onChangeRow("outside", row, key, value)}
                 />
               ))}
-              {outsideGroups.length === 0 && this.state.isAdmin && (
+              {outsideGroups.length === 0 && isAdmin && (
                 <TableSection
                   number="3"
                   title="ข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
                   subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
                   fields={[]}
                   rows={[]}
-                  lotStart={this.state.lotStart}
-                  onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
+                  lotStart={lotStart}
+                  onChange={(row, key, value) => onChangeRow("outside", row, key, value)}
                   emptyText="ลูกค้ารายนี้ยังไม่ได้ตั้งค่าสติ๊กเกอร์นอกกรอบ"
                 />
               )}
             </div>
           </div>
         ) : (
-          <div className="container template-print-empty">
-            {/* <div className="template-print-empty-mark" aria-hidden="true">
-              <span>TBH</span>
-            </div> */}
+          <div className={cn(CONTAINER, PRINT_EMPTY)}>
             <LayersPlus className="item-center justify-center" strokeWidth={"1px"} size={"100px"} />
             <strong>โปรดเลือก template ก่อนสั่งพิมพ์</strong>
           </div>
@@ -117,10 +77,10 @@ export default class OrderTable extends MarkingComponent {
           {framePages.map((page, index) => (
             <StickerPage items={page.items} key={`frame-${index}`} layout={page.layout} />
           ))}
-          {customerNameStickerPages.map((page, index) => (
+          {customerNamePages.map((page, index) => (
             <StickerPage items={page} key={`template-${index}`} layout="customerName" />
           ))}
-          {fscLogoStickerPages.map((page, index) => (
+          {fscLogoPages.map((page, index) => (
             <StickerPage items={page} key={`fsc-${index}`} layout="fsc" />
           ))}
         </div>

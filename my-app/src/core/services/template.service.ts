@@ -119,7 +119,7 @@ export class TemplateService {
         };
       }
     } catch {
-      // Template รุ่นเก่าไม่มี sticker configuration
+      // Older templates have no sticker configuration
     }
     return {
       enabledFields: this.requiredStickerFields(),

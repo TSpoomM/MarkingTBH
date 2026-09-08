@@ -1,12 +1,5 @@
 import type { Template, StickerDefaults, StickerGroupLayout, TemplateField } from "@/src/core/models/template";
-import type {
-  FixedInsideField,
-  InsideGroup,
-  OutsideTable,
-  StickerField,
-  StickerLayouts,
-} from "@/src/core/models/template-form";
-import type { FormEvent, ReactNode } from "react";
+import type { InsideGroup, StickerLayouts } from "@/src/core/models/template-form";
 
 export type TemplateFormNotice = { kind: "error" | "success"; text: string };
 export type TemplateManageMode = "edit" | "create";
@@ -35,14 +28,10 @@ export interface TemplateFormState {
   name: string;
   isActive: boolean;
   templateIsActive: boolean;
-  stickerFields: StickerField[];
-  templateStickerFields: StickerField[];
   stickerLayouts: StickerLayouts;
   templateStickerLayouts: StickerLayouts;
   stickerDefaults: StickerDefaults;
   templateStickerDefaults: StickerDefaults;
-  groups: InsideGroup[];
-  tables: OutsideTable[];
   notice: TemplateFormNotice | undefined;
   templateNotice: TemplateFormNotice | undefined;
   duplicateNamePrompt: { templateId: string; name: string } | undefined;
@@ -62,9 +51,6 @@ export interface CreateTemplateFormProps {
   duplicateSourceTemplateId: string;
   stickerLayouts: StickerLayouts;
   stickerDefaults: StickerDefaults;
-  groups: InsideGroup[];
-  tables: OutsideTable[];
-  fixedInsideFields: readonly FixedInsideField[];
   insideDraft: TemplateField[];
   outsideDraft: TemplateField[];
   notice: TemplateFormNotice | undefined;
@@ -72,15 +58,11 @@ export interface CreateTemplateFormProps {
   duplicatingTemplate: boolean;
   saving: boolean;
   onDismissNotice: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: () => void;
   onNameChange: (name: string) => void;
   onActiveChange: (isActive: boolean) => void;
   onDuplicateSourceChange: (templateId: string) => void;
   onStickerDefaultsChange: (defaults: StickerDefaults) => void;
-  onSegmentCountChange: (groupKey: InsideGroup["key"], count: number) => void;
-  onGroupSegmentChange: (groupKey: InsideGroup["key"], segmentIndex: number, label: string) => void;
-  onTablesChange: (updater: (tables: OutsideTable[]) => OutsideTable[]) => void;
-  onTableUpdate: (tableId: string, update: (table: OutsideTable) => OutsideTable) => void;
   onSelectPreviewSlot: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
   onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
@@ -131,19 +113,6 @@ export interface SectionHeadingProps {
   subtitle: string;
 }
 
-export interface OptionGroupProps {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}
-
-export interface ChoiceProps {
-  label: string;
-  description?: string;
-  checked: boolean;
-  onChange: () => void;
-}
-
 export interface TemplateFieldEditorProps {
   title: string;
   section: "inside" | "outside";
@@ -165,14 +134,6 @@ export interface StickerTemplatePreviewProps {
   outsideFields: TemplateField[];
   layouts: StickerLayouts;
   defaults: StickerDefaults;
-  onSelect: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
-}
-
-export interface PreviewStickerProps {
-  title: string;
-  section: "inside" | "outside";
-  customerName: string;
-  fields: TemplateField[];
   onSelect: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
 }
 

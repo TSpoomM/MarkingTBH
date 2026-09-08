@@ -3,7 +3,18 @@
 import { Component, createRef } from "react";
 import DateFormatter, { MONTH_ABBREVIATIONS } from "@/src/core/dates/dateFormatter";
 import type { DateFormat } from "@/src/core/models/template";
+import type { ControlSize } from "@/src/core/ui/fields";
+import Field from "./Field";
+import cn from "@/src/core/ui/cn";
+import {
+  CAL_ACTION, CAL_ACTIONS, CAL_BTN, CAL_DAY, CAL_DAYS, CAL_DAY_EMPTY, CAL_DAY_SELECTED, CAL_DAY_TODAY,
+  CAL_DISPLAY, CAL_DISPLAY_DISABLED, CAL_DISPLAY_PLACEHOLDER, CAL_DISPLAY_SIZE, CAL_GRID, CAL_HEAD,
+  CAL_ICON, CAL_NAV,
+  CAL_POPOVER, CAL_POPOVER_UP, CAL_SHELL, CAL_WEEKDAY, CAL_WEEKDAYS,
+} from "@/src/core/ui/calendar";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "./Button";
+
 
 interface CalendarInputProps {
   value: string;
@@ -14,6 +25,9 @@ interface CalendarInputProps {
   label?: string;
   hint?: string;
   required?: boolean;
+  size?: ControlSize;
+  /** Applied to the wrapper, for context-specific spacing such as the vertical table on the marking page */
+  className?: string;
 }
 
 interface CalendarInputState {
@@ -128,19 +142,24 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
     const selectedValue = this.selectedIsoValue();
     const today = new Date();
     const todayValue = this.isoValue(today.getFullYear(), today.getMonth(), today.getDate());
-    const cells = Array.from({ length: firstDay + days }, (_, index) => index < firstDay ? 0 : index - firstDay + 1);
+    const cells = Array.from({ length: 42 }, (_, index) => {
+      const day = index - firstDay + 1;
+      return day > 0 && day <= days ? day : 0;
+    });
 
     return cells.map((day, index) => {
-      if (!day) return <span className="calendar-day empty" key={`empty-${index}`} />;
+      if (!day) return <span className={cn(CAL_BTN, CAL_DAY, CAL_DAY_EMPTY)} key={`empty-${index}`} />;
       const value = this.isoValue(viewYear, viewMonth, day);
       return (
         <Button
+          variant="ghost"
           type="button"
-          className={[
-            "calendar-day",
-            value === selectedValue ? "selected" : "",
-            value === todayValue ? "today" : "",
-          ].filter(Boolean).join(" ")}
+          className={cn(
+            CAL_BTN,
+            CAL_DAY,
+            value === todayValue && CAL_DAY_TODAY,
+            value === selectedValue && CAL_DAY_SELECTED,
+          )}
           onClick={() => this.selectDate(day)}
           key={value}
         >
@@ -151,11 +170,12 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
   }
 
   render() {
-    const { value, disabled, placeholder, label, hint, required } = this.props;
+    const { value, disabled, placeholder, label, hint, required, size = "md", className = "" } = this.props;
     const control = (
-      <span className={`calendar-input-shell ${disabled ? "disabled" : ""}`} ref={this.shellRef}>
+      <span className={cn("group/cal", CAL_SHELL, className)} ref={this.shellRef}>
         <Button
-          className={`app-control calendar-display-input ${value ? "" : "placeholder"}`.trim()}
+          variant="ghost"
+          className={cn(CAL_DISPLAY, CAL_DISPLAY_SIZE[size], !value && CAL_DISPLAY_PLACEHOLDER, disabled && CAL_DISPLAY_DISABLED)}
           type="button"
           disabled={disabled}
           aria-haspopup="dialog"
@@ -164,39 +184,32 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
         >
           <span>{value || placeholder || "เลือกวันที่"}</span>
         </Button>
-        <span className="calendar-icon" aria-hidden="true" />
+        <CalendarDays className={CAL_ICON} size={20} aria-hidden="true" />
         {this.state.open && (
           <div
-            className={`calendar-popover ${this.state.openUpward ? "calendar-popover-up" : ""}`.trim()}
+            className={cn(CAL_POPOVER, this.state.openUpward && CAL_POPOVER_UP)}
             role="dialog"
             aria-label={placeholder ?? "เลือกวันที่"}
           >
-            <div className="calendar-popover-head">
-              <Button type="button" onClick={() => this.moveMonth(-1)} aria-label="เดือนก่อนหน้า">‹</Button>
-              <strong>{MONTH_ABBREVIATIONS[this.state.viewMonth]} {this.state.viewYear}</strong>
-              <Button type="button" onClick={() => this.moveMonth(1)} aria-label="เดือนถัดไป">›</Button>
+            <div className={CAL_HEAD}>
+              <Button type="button" variant="ghost" wrapContent={false} className={cn(CAL_BTN, CAL_NAV)} onClick={() => this.moveMonth(-1)} aria-label="เดือนก่อนหน้า"><ChevronLeft size={20} /></Button>
+              <strong className="text-center">{MONTH_ABBREVIATIONS[this.state.viewMonth]} {this.state.viewYear}</strong>
+              <Button type="button" variant="ghost" wrapContent={false} className={cn(CAL_BTN, CAL_NAV)} onClick={() => this.moveMonth(1)} aria-label="เดือนถัดไป"><ChevronRight size={20} /></Button>
             </div>
-            <div className="calendar-weekdays">
-              {WEEKDAYS.map((day) => <span key={day}>{day}</span>)}
+            <div className={cn(CAL_GRID, CAL_WEEKDAYS)}>
+              {WEEKDAYS.map((day) => <span className={CAL_WEEKDAY} key={day}>{day}</span>)}
             </div>
-            <div className="calendar-days">
+            <div className={cn(CAL_GRID, CAL_DAYS)}>
               {this.renderDays()}
             </div>
-            <div className="calendar-popover-actions">
-              <Button type="button" onClick={() => this.clearDate()}>ล้าง</Button>
-              <Button type="button" onClick={() => this.selectToday()}>วันนี้</Button>
+            <div className={CAL_ACTIONS}>
+              <Button type="button" variant="ghost" className={cn(CAL_BTN, CAL_ACTION)} onClick={() => this.clearDate()}>ล้าง</Button>
+              <Button type="button" variant="ghost" className={cn(CAL_BTN, CAL_ACTION)} onClick={() => this.selectToday()}>วันนี้</Button>
             </div>
           </div>
         )}
       </span>
     );
-    if (!label) return control;
-    return (
-      <label className="field">
-        <span>{label}{required && <em>*</em>}</span>
-        {control}
-        <small className="field-hint" aria-hidden={!hint}>{hint || " "}</small>
-      </label>
-    );
+    return <Field label={label} hint={hint} required={required} size={size}>{control}</Field>;
   }
 }

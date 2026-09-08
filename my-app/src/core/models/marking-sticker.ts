@@ -1,5 +1,6 @@
 import type { FontScale, LegacyStickerGroupLayout, StickerGroupLayout, TemplateField, StickerLayouts } from "@/src/core/models/template";
-import type { MarkingContent } from "@/src/core/models/marking";
+import type { MarkingContent, MarkingState } from "@/src/core/models/marking";
+import type { FramePage, PrintOption } from "@/src/core/stickers/markingStickerPlan";
 
 export type StickerKind = "insideFrame" | "outsideFrame" | "customerName" | "fscLogo";
 
@@ -58,4 +59,33 @@ export interface TableSectionProps {
   lotStart: number;
   onChange: (row: number, key: string, value: string) => void;
   emptyText?: string;
+}
+
+export interface OrderTableProps {
+  template: MarkingState["template"];
+  insideRows: MarkingContent[];
+  outsideRows: MarkingContent[];
+  outsideGroups: OutsideStickerGroup[];
+  lotStart: number;
+  isAdmin: boolean;
+  framePages: FramePage[];
+  customerNamePages: StickerItem[][];
+  fscLogoPages: StickerItem[][];
+  onChangeRow: (section: "inside" | "outside", row: number, key: string, value: string) => void;
+}
+
+export interface SelectablePrintOption extends PrintOption {
+  selected: boolean;
+}
+
+export interface PaginationProps {
+  previewItems: StickerItem[];
+  printOptions: SelectablePrintOption[];
+  canExport: boolean;
+  isSaving: boolean;
+  isExportModalOpen: boolean;
+  onOpenExportModal: () => void;
+  onCloseExportModal: () => void;
+  onToggleOption: (option: SelectablePrintOption, enabled: boolean) => void;
+  onExport: () => void;
 }

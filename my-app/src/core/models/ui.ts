@@ -1,3 +1,5 @@
+import type { ButtonSize, ButtonVariant } from "@/src/core/ui/variants";
+import type { ControlSize } from "@/src/core/ui/fields";
 import type {
   ButtonHTMLAttributes,
   HTMLAttributes,
@@ -17,22 +19,28 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   loading?: boolean;
   loadingText?: string;
+  wrapContent?: boolean;
+  /** Button shape, see BUTTON_VARIANTS - the "secondary" default has a border and the system mid contrast */
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 }
 
 export interface CardProps extends HTMLAttributes<HTMLElement> {
   children: ReactNode;
 }
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   label?: string;
   hint?: string;
   bare?: boolean;
+  size?: ControlSize;
 }
 
-export interface AutocompleteProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "list"> {
+export interface AutocompleteProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "list" | "size"> {
   label?: string;
   hint?: string;
   bare?: boolean;
+  size?: ControlSize;
   maxOptions?: number;
   options: string[];
 }
@@ -55,15 +63,18 @@ export interface NavbarProps {
   activeNav?: "marking" | "history" | "templates";
 }
 
-export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> {
   label?: string;
   hint?: string;
   children: ReactNode;
   bare?: boolean;
+  size?: ControlSize;
 }
 
 export interface SectionTitleProps {
-  number: string;
+  number: ReactNode;
   title: string;
-  subtitle: string;
+  subtitle?: string;
+  /** Variant used in table heading bars: badge sized to its content, description hidden on small screens */
+  compact?: boolean;
 }

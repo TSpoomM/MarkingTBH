@@ -1,4 +1,9 @@
 import Link from "next/link";
+import cn from "@/src/core/ui/cn";
+import {
+  BACK_LINK, CONFIG_CARD, DEFAULT_CHECK, DEFAULT_GRID, NAME_STATUS_ROW, STATUS_CAPTION, STATUS_FIELD, STATUS_OPTION, STATUS_TOGGLE, STATUS_TOGGLE_ACTIVE,
+  STATUS_TOGGLE_INACTIVE, TEMPLATE_MANAGER_GRID, TEMPLATE_NAME_BOX, } from "@/src/core/ui/template";
+import { ACTION_BAR, ACTION_BAR_BUTTONS } from "@/src/core/ui/surfaces";
 import { Component } from "react";
 import Input from "@/src/components/ui/Input";
 import Select from "@/src/components/ui/Select";
@@ -58,15 +63,15 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
             onClose={onDismissNotice}
           />
         )}
-        <form onSubmit={onSubmit}>
-          <section className="config-card template-basics-card">
+        <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
+          <section className={cn(CONFIG_CARD, "relative z-20 overflow-visible")}>
             <SectionHeading
               number="1"
               title="เพิ่ม Template"
               subtitle="กรอกชื่อลูกค้าและตั้งค่าสติ๊กเกอร์ให้ครบ แล้วบันทึกในขั้นตอนเดียว"
             />
-            <div className="template-name-status-row">
-              <label className="template-name">
+            <div className={NAME_STATUS_ROW}>
+              <label className={TEMPLATE_NAME_BOX}>
                 <span>ชื่อ Template *</span>
                 <Input
                   bare
@@ -75,21 +80,22 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
                   placeholder="ABC Rubber Co., Ltd."
                 />
               </label>
-              <div className="template-status-field">
-                <span className="template-status-caption">Status</span>
-                <button
+              <div className={STATUS_FIELD}>
+                <span className={STATUS_CAPTION}>Status</span>
+                <Button
                   type="button"
-                  className={`template-status-toggle ${isActive ? "active" : "inactive"}`}
+                  variant="ghost"
+                  wrapContent={false}
+                  className={cn(STATUS_TOGGLE, isActive ? STATUS_TOGGLE_ACTIVE : STATUS_TOGGLE_INACTIVE)}
                   onClick={() => onActiveChange(!isActive)}
                   aria-pressed={isActive}
                 >
-                  <span className="template-status-option">Inactive</span>
-                  <i aria-hidden="true" />
-                  <span className="template-status-option">Active</span>
-                </button>
+                  <span className={STATUS_OPTION}>Inactive</span>
+                  <span className={STATUS_OPTION}>Active</span>
+                </Button>
               </div>
             </div>
-            <label className="template-name duplicate-template-picker">
+            <label className={cn(TEMPLATE_NAME_BOX, "mt-3.5")}>
               <span>คัดลอก Template จาก</span>
               <TemplateAutocomplete
                 bare
@@ -101,7 +107,7 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
               />
               <small>{duplicatingTemplate ? "กำลังคัดลอก Template..." : "คัดลอก Field และรูปแบบสติ๊กเกอร์ แล้วแก้ไขก่อนสร้าง Template ใหม่"}</small>
             </label>
-            <div className="template-default-grid">
+            <div className={DEFAULT_GRID}>
               <label>
                 <span>จำนวนด้าน Sticker / 1 ลัง *</span>
                 <Select
@@ -149,7 +155,7 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
                   {STICKER_OTHER_OPTIONS.map((other) => <option value={other} key={other}>{other}</option>)}
                 </Select>
               </label>
-              <label className="template-default-check">
+              <label className={DEFAULT_CHECK}>
                 <Input
                   bare
                   type="checkbox"
@@ -162,13 +168,13 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
             </div>
           </section>
 
-          <section className="config-card template-editor-card">
+          <section className={CONFIG_CARD}>
             <SectionHeading
               number="2"
               title="ตั้งค่า Sticker Template"
               subtitle="กำหนด Field, เงื่อนไขบังคับ, Segment ตัวนับ และดู Preview ก่อนสร้าง Template"
             />
-            <div className="template-manager-grid">
+            <div className={TEMPLATE_MANAGER_GRID}>
               <TemplateFieldEditor
                 title="Sticker ในกรอบ"
                 section="inside"
@@ -195,8 +201,8 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
             </div>
           </section>
 
-          <div className="container bottom-action">
-            <div className="bottom-action-buttons">
+          <div className={ACTION_BAR}>
+            <div className={ACTION_BAR_BUTTONS}>
               <StickerTemplatePreview
                 customerName={name.trim() || "Template"}
                 insideFields={insideDraft}
@@ -205,8 +211,8 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
                 defaults={stickerDefaults}
                 onSelect={onSelectPreviewSlot}
               />
-              <Link className="back-link" href="/">ยกเลิก</Link>
-              <Button type="submit" className="export-button" disabled={saving}>
+              <Link className={BACK_LINK} href="/">ยกเลิก</Link>
+              <Button type="submit" variant="primary" disabled={saving}>
                 {saving ? "กำลังบันทึก..." : "สร้าง Template"}
               </Button>
             </div>

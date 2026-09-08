@@ -1,48 +1,37 @@
 "use client";
 
+import { Component } from "react";
 import Button from "@/src/components/ui/Button";
-import HistoryComponent from "./HistoryComponent";
+import cn from "@/src/core/ui/cn";
+import { PANEL } from "@/src/core/ui/surfaces";
+import HistoryPanelHeading from "./HistoryPanelHeading";
+import {
+  HISTORY_EMPTY, HISTORY_ROW, HISTORY_TABLE, HISTORY_TABLE_WRAP,
+  HISTORY_TOGGLE, historyBadge,
+} from "@/src/core/ui/history";
 import HistoryFormatter from "@/src/core/history/historyFormatter";
+import type { HistoryLogsPanelProps } from "@/src/core/models/history";
 
-export default class HistoryLogsPanel extends HistoryComponent {
+export default class HistoryLogsPanel extends Component<HistoryLogsPanelProps> {
   render() {
-    if (this.state.mode !== "logs") return null;
-    const filteredItems = HistoryFormatter.filteredItems(
-      this.state.items,
-      this.state.templateQuery,
-      this.state.employeeQuery,
-      this.state.action,
-      this.state.date,
-    );
-    const visibleCount = filteredItems.length;
-    const totalCount = this.state.items.length;
+    const { items, totalCount, isLoading, onOpenDetail } = this.props;
 
     return (
-      <section className="panel history-panel">
-        <div className="table-heading history-heading-with-total">
-          <div className="section-title">
-            <div>
-              <span>{visibleCount}</span>
-              <div>
-                <h2>ประวัติ Marking</h2>
-                <p>รายการล่าสุด</p>
-              </div>
-            </div>
-          </div>
-          <div className="history-total-inline">
-            <span>รายการทั้งหมด</span>
-            <strong>{visibleCount}</strong>
-            <small>จากทั้งหมด {totalCount} รายการ</small>
-          </div>
-        </div>
+      <section className={cn(PANEL, "overflow-hidden")}>
+        <HistoryPanelHeading
+          title="ประวัติ Marking"
+          subtitle="รายการล่าสุด"
+          visibleCount={items.length}
+          totalCount={totalCount}
+        />
 
-        {this.state.isLoading ? (
-          <div className="history-empty">กำลังโหลด...</div>
-        ) : filteredItems.length === 0 ? (
-          <div className="history-empty">ไม่พบรายการ</div>
+        {isLoading ? (
+          <div className={HISTORY_EMPTY}>กำลังโหลด...</div>
+        ) : items.length === 0 ? (
+          <div className={HISTORY_EMPTY}>ไม่พบรายการ</div>
         ) : (
-          <div className="history-table-wrap">
-            <table className="history-table">
+          <div className={HISTORY_TABLE_WRAP}>
+            <table className={HISTORY_TABLE}>
               <thead>
                 <tr>
                   <th>เวลา</th>
@@ -55,16 +44,16 @@ export default class HistoryLogsPanel extends HistoryComponent {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => (
-                  <tr className="history-row" key={item.id}>
+                {items.map((item) => (
+                  <tr className={HISTORY_ROW} key={item.id}>
                     <td>{HistoryFormatter.formatDateTime(item.createdDate)}</td>
                     <td>{item.employeeName || "-"}</td>
                     <td>{item.employeeLocation || "-"}</td>
                     <td>{item.customerName || `Template #${item.templateId}`}</td>
-                    <td><span className={`history-badge ${item.actionType}`}>{HistoryFormatter.actionLabel(item.actionType)}</span></td>
+                    <td><span className={historyBadge(item.actionType)}>{HistoryFormatter.actionLabel(item.actionType)}</span></td>
                     <td>{HistoryFormatter.detailText(item)}</td>
                     <td>
-                      <Button className="history-toggle" onClick={() => this.actions.openDetail(item.id)}>
+                      <Button className={HISTORY_TOGGLE} onClick={() => onOpenDetail(item.id)}>
                         ดู
                       </Button>
                     </td>

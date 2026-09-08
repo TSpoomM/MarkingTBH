@@ -1,26 +1,29 @@
 "use client";
 
+import { Component } from "react";
 import Modal from "@/src/components/ui/Modal";
-import HistoryComponent from "./HistoryComponent";
 import HistoryFormatter from "@/src/core/history/historyFormatter";
 import HistoryTemplateSection from "./HistoryTemplateSection";
+import cn from "@/src/core/ui/cn";
+import {
+  HISTORY_BOX, HISTORY_BOX_TITLE, HISTORY_MODAL_BODY, HISTORY_SPEC_LIST, HISTORY_SUMMARY,
+} from "@/src/core/ui/history";
+import type { HistoryDetailModalProps } from "@/src/core/models/history";
 
-export default class HistoryDetailModal extends HistoryComponent {
+export default class HistoryDetailModal extends Component<HistoryDetailModalProps> {
   render() {
-    const item = this.state.openId
-      ? this.state.items.find((entry) => entry.id === this.state.openId)
-      : undefined;
+    const { item, onClose } = this.props;
 
     return (
       <Modal
         open={!!item}
         title={item?.customerName || "รายละเอียดประวัติ"}
         subtitle={item ? `${HistoryFormatter.actionLabel(item.actionType)} · ${HistoryFormatter.formatDateTime(item.createdDate)}` : undefined}
-        onClose={() => this.actions.closeDetail()}
+        onClose={onClose}
       >
         {item && (
-          <div className="editor-body history-template-modal">
-            <section className="history-template-summary">
+          <div className={HISTORY_MODAL_BODY}>
+            <section className={HISTORY_SUMMARY}>
               <div>
                 <span>ผู้บันทึก</span>
                 <strong>{item.employeeName || "-"}</strong>
@@ -30,9 +33,9 @@ export default class HistoryDetailModal extends HistoryComponent {
                 <strong>{item.employeeLocation || "-"}</strong>
               </div>
             </section>
-            <section className="history-sticker-details">
+            <section className={cn(HISTORY_BOX, HISTORY_BOX_TITLE, "bg-white")}>
               <h3>รายละเอียดสติ๊กเกอร์</h3>
-              <dl>
+              <dl className={HISTORY_SPEC_LIST}>
                 <div>
                   <dt>Production</dt>
                   <dd>{item.productionDate || "-"}</dd>
@@ -67,7 +70,7 @@ export default class HistoryDetailModal extends HistoryComponent {
                 </div>
               </dl>
             </section>
-            <section className="history-sticker-content">
+            <section className={cn(HISTORY_BOX, HISTORY_BOX_TITLE, "bg-[#fdfefe]")}>
               <h3>ข้อมูลในสติ๊กเกอร์</h3>
               <HistoryTemplateSection title="ในกรอบ" rows={item.inside} fieldMeta={item.fieldMeta?.inside} />
               <HistoryTemplateSection title="นอกกรอบ" rows={item.outside} fieldMeta={item.fieldMeta?.outside} />

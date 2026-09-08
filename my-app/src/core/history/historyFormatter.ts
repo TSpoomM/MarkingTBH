@@ -1,5 +1,5 @@
 import type { MarkingContent, MarkingHistoryFieldMeta, MarkingHistoryItem } from "@/src/core/models/marking";
-import type { TemplateHistoryItem } from "@/src/core/models/history";
+import type { HistoryPageState, TemplateHistoryItem } from "@/src/core/models/history";
 
 export default class HistoryFormatter {
   static filteredItems(
@@ -27,6 +27,17 @@ export default class HistoryFormatter {
       const matchesDate = !date || item.createdAt.startsWith(date) || item.updatedAt.startsWith(date);
       return matchesTemplate && matchesDate;
     });
+  }
+
+  /** How many filters are currently narrowing the list - drives the "clear" button. */
+  static activeFilterCount(state: HistoryPageState) {
+    const isTemplateMode = state.mode === "templates";
+    return [
+      state.templateQuery,
+      isTemplateMode ? "" : state.employeeQuery,
+      !isTemplateMode && state.action !== "all" ? state.action : "",
+      state.date,
+    ].filter(Boolean).length;
   }
 
   static uniqueValues(items: MarkingHistoryItem[], pick: (item: MarkingHistoryItem) => string) {

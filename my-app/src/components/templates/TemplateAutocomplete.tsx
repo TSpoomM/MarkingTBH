@@ -3,6 +3,7 @@
 import { Component, type ChangeEvent } from "react";
 import Autocomplete from "@/src/components/ui/Autocomplete";
 import type { Template } from "@/src/core/models/template";
+import type { ControlSize } from "@/src/core/ui/fields";
 
 export interface TemplateAutocompleteProps {
   templates: Template[];
@@ -11,6 +12,7 @@ export interface TemplateAutocompleteProps {
   hint?: string;
   placeholder: string;
   bare?: boolean;
+  size?: ControlSize;
   disabled?: boolean;
   includeInactive?: boolean;
   maxOptions?: number;
@@ -86,6 +88,7 @@ export default class TemplateAutocomplete extends Component<TemplateAutocomplete
     return (
       <Autocomplete
         bare={this.props.bare}
+        size={this.props.size}
         disabled={this.props.disabled}
         hint={this.props.hint}
         label={this.props.label}

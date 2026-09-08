@@ -1,51 +1,56 @@
 "use client";
 
-import type { ChangeEvent } from "react";
+import { Component, type ChangeEvent } from "react";
 import Autocomplete from "@/src/components/ui/Autocomplete";
 import Button from "@/src/components/ui/Button";
 import CalendarInput from "@/src/components/ui/CalendarInput";
 import Select from "@/src/components/ui/Select";
-import HistoryComponent from "./HistoryComponent";
-import HistoryFormatter from "@/src/core/history/historyFormatter";
-import type { HistoryPageState } from "@/src/core/models/history";
+import cn from "@/src/core/ui/cn";
+import { PANEL } from "@/src/core/ui/surfaces";
+import type { HistoryFilterPanelProps, HistoryPageState } from "@/src/core/models/history";
 
-export default class HistoryFilterPanel extends HistoryComponent {
+const FILTER_GRID =
+  "relative z-[4] grid items-end gap-3.5 p-[18px] " +
+  "grid-cols-[minmax(180px,.75fr)_minmax(220px,1.1fr)_minmax(220px,1.1fr)_minmax(150px,.7fr)_minmax(160px,.7fr)_auto] " +
+  "max-bp1100:grid-cols-2 max-bp700:grid-cols-1";
+
+export default class HistoryFilterPanel extends Component<HistoryFilterPanelProps> {
   render() {
-    const isTemplateMode = this.state.mode === "templates";
-    const activeFilters = [
-      this.state.templateQuery,
-      isTemplateMode ? "" : this.state.employeeQuery,
-      !isTemplateMode && this.state.action !== "all" ? this.state.action : "",
-      this.state.date,
-    ].filter(Boolean).length;
+    const {
+      templateOptions, employeeOptions, templateQuery, employeeQuery, action, date, activeFilterCount,
+      onTemplateQueryChange, onEmployeeQueryChange, onActionChange, onDateChange, onClearFilters,
+    } = this.props;
 
     return (
-      <section className={`panel history-filter ${isTemplateMode ? "template-history-filter" : ""}`}>
-        <div className="history-filter-title">
-          <strong>ค้นหารายการ</strong>
-          <span>กรองจากTemplate ผู้บันทึก การทำรายการ หรือวันที่</span>
+      <section className={cn(PANEL, FILTER_GRID)}>
+        <div className="grid min-h-[76px] content-center gap-[5px] self-center pr-2 max-bp1100:col-span-full max-bp1100:min-h-0">
+          <strong className="text-lg font-extrabold leading-tight text-[#10231d]">ค้นหารายการ</strong>
+          <span className="text-[14px] font-semibold leading-[1.35] text-[#61736b]">
+            กรองจากTemplate ผู้บันทึก การทำรายการ หรือวันที่
+          </span>
         </div>
         <Autocomplete
+          size="lg"
           label="Template"
-          options={isTemplateMode
-            ? HistoryFormatter.uniqueTemplateValues(this.state.templateItems)
-            : HistoryFormatter.uniqueValues(this.state.items, (item) => item.customerName)}
-          value={this.state.templateQuery}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => this.actions.setTemplateQuery(event.target.value)}
+          options={templateOptions}
+          value={templateQuery}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => onTemplateQueryChange(event.target.value)}
           placeholder="พิมพ์เพื่อเลือกTemplate"
         />
         <Autocomplete
+          size="lg"
           label="ผู้บันทึก"
-          options={HistoryFormatter.uniqueValues(this.state.items, (item) => item.employeeName)}
-          value={this.state.employeeQuery}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => this.actions.setEmployeeQuery(event.target.value)}
+          options={employeeOptions}
+          value={employeeQuery}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => onEmployeeQueryChange(event.target.value)}
           placeholder="พิมพ์เพื่อเลือกผู้บันทึก"
         />
         <Select
+          size="lg"
           label="การทำรายการ"
-          value={this.state.action}
+          value={action}
           onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-            this.actions.setAction(event.target.value as HistoryPageState["action"])}
+            onActionChange(event.target.value as HistoryPageState["action"])}
         >
           <option value="all">ทั้งหมด</option>
           <option value="print">พิมพ์/PDF</option>
@@ -53,16 +58,17 @@ export default class HistoryFilterPanel extends HistoryComponent {
           <option value="unknown">ข้อมูลเก่า</option>
         </Select>
         <CalendarInput
+          size="lg"
           label="วันที่"
-          value={this.state.date}
-          onChange={(value) => this.actions.setDate(value)}
+          value={date}
+          onChange={onDateChange}
         />
-        <div className="history-filter-actions">
+        <div className="grid grid-rows-[auto_52px_minmax(17px,auto)] self-stretch max-bp1100:col-span-full max-bp1100:justify-end max-bp700:justify-stretch">
           <Button
             type="button"
-            className="history-clear"
-            onClick={() => this.actions.clearFilters()}
-            disabled={activeFilters === 0}
+            className="row-start-2 h-[52px] min-h-[52px] rounded-lg border border-[#c5d6cf] bg-[#f7faf8] px-4 text-sm whitespace-nowrap text-[#315446] max-bp700:w-full"
+            onClick={onClearFilters}
+            disabled={activeFilterCount === 0}
           >
             ล้าง Filter
           </Button>

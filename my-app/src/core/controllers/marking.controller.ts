@@ -1,74 +1,27 @@
-"use client";
-
-import { useEffect, useSyncExternalStore } from "react";
+import Store from "@/src/core/store/store";
 import { INITIAL_MARKING_STATE, MESSAGES } from "@/src/core/models/constants";
-import {
-  markingApiService,
-  MarkingApiService,
-} from "@/src/core/services/marking-api.service";
-import TemplateFieldUtils from "@/src/core/templates/templateFieldUtils";
+import { markingApiService, MarkingApiService } from "@/src/core/services/marking-api.service";
+import { sessionApiService, SessionApiService } from "@/src/core/services/session-api.service";
+import { printService, PrintService } from "@/src/core/services/print.service";
+import StickerFactory from "@/src/core/stickers/stickerFactory";
+import StickerDebugReporter from "@/src/core/stickers/stickerDebugReporter";
 import type {
   MarkingContent,
-  PrintSection,
   MarkingState,
+  PrintSection,
   SaveMarkingPayload,
 } from "@/src/core/models/marking";
 import type { CounterType, TemplateField } from "@/src/core/models/template";
 
-class MarkingOrderFieldNormalizer {
-  private static uniqueSegmentKey(
-    fieldKey: string,
-    segmentKey: string | undefined,
-    segmentIndex: number,
-    usedKeys: Set<string>,
+type Section = "inside" | "outside";
+
+export class MarkingController extends Store<MarkingState> {
+  constructor(
+    private readonly service: MarkingApiService,
+    private readonly session: SessionApiService,
+    private readonly printer: PrintService,
   ) {
-    const fallback = `${fieldKey}_${segmentIndex + 1}`;
-    const baseKey = (segmentKey ?? "").trim() || fallback;
-    if (!usedKeys.has(baseKey)) {
-      usedKeys.add(baseKey);
-      return baseKey;
-    }
-
-    let suffix = segmentIndex + 1;
-    let nextKey = `${fieldKey}_${baseKey}_${suffix}`;
-    while (usedKeys.has(nextKey)) {
-      suffix += 1;
-      nextKey = `${fieldKey}_${baseKey}_${suffix}`;
-    }
-    usedKeys.add(nextKey);
-    return nextKey;
-  }
-
-  static normalizeSegmentKeys(field: TemplateField): TemplateField {
-    if (!field.segments?.length) return field;
-    const usedKeys = new Set<string>();
-    return {
-      ...field,
-      segments: field.segments.map((segment, index) => ({
-        ...segment,
-        key: this.uniqueSegmentKey(field.key, segment.key, index, usedKeys),
-      })),
-    };
-  }
-}
-
-export class MarkingOrdersController {
-  private state: MarkingState = { ...INITIAL_MARKING_STATE };
-  private listeners = new Set<() => void>();
-  private initialized = false;
-
-  constructor(private readonly service: MarkingApiService) {}
-
-  subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
-
-  getSnapshot = () => this.state;
-
-  private setState(patch: Partial<MarkingState>) {
-    this.state = { ...this.state, ...patch };
-    this.listeners.forEach((listener) => listener());
+    super({ ...INITIAL_MARKING_STATE });
   }
 
   private sortedTemplates(templates: MarkingState["templates"]) {
@@ -79,15 +32,13 @@ export class MarkingOrdersController {
       );
   }
 
-  async initialize() {
-    if (this.initialized) return;
-    this.initialized = true;
-    const [session, templates] = await Promise.allSettled([
-      this.service.getSession(),
+  protected async load() {
+    const [isAdmin, templates] = await Promise.allSettled([
+      this.session.isAdmin(),
       this.service.getTemplates(),
     ]);
     this.setState({
-      isAdmin: session.status === "fulfilled" && session.value.user?.role === "admin",
+      isAdmin: isAdmin.status === "fulfilled" && isAdmin.value,
       templates: templates.status === "fulfilled" ? this.sortedTemplates(templates.value) : [],
       isLoading: false,
       notice:
@@ -97,7 +48,7 @@ export class MarkingOrdersController {
     });
   }
 
-  async selectTemplate(templateId: string) {
+  selectTemplate = async (templateId: string) => {
     const selectedTemplate = this.state.templates.find((template) => String(template.id) === templateId);
     if (selectedTemplate?.isActive === false) {
       this.setState({ notice: { type: "error", text: "Template นี้ Inactive อยู่" } });
@@ -133,55 +84,44 @@ export class MarkingOrdersController {
     } finally {
       this.setState({ isLoading: false });
     }
-  }
+  };
 
-  settotalLot(totalLot: string) { this.setState({ totalLot }); }
-  setStickerSides(stickerSides: string) { this.setState({ stickerSides }); }
-  setStickerFormat(stickerFormat: string) { this.setState({ stickerFormat }); }
-  setStickerType(stickerType: string) { this.setState({ stickerType, stickerFsc: stickerType === "TNR" ? this.state.stickerFsc : false }); }
-  setStickerFsc(stickerFsc: boolean) { this.setState({ stickerFsc }); }
-  setStickerOther(stickerOther: string) { this.setState({ stickerOther }); }
   private digitsOnly(value: string) {
     return value.replace(/\D/g, "");
   }
 
-  setLotCount(lotCount: string) { this.setState({ lotCount: this.digitsOnly(lotCount) }); }
-  setProductionDate(productionDate: string) {
+  setLotCount = (lotCount: string) => this.setState({ lotCount: this.digitsOnly(lotCount) });
+
+  setProductionDate = (productionDate: string) => {
     this.setState({ productionDate });
     if (this.state.templateId && productionDate) {
       void this.refreshLotStart(this.state.templateId, productionDate);
     }
-  }
-  dismissNotice() { this.setState({ notice: null }); }
-  closeTemplateEditor() { this.setState({ isTemplateEditorOpen: false }); }
-  closeExportModal() { this.setState({ isExportModalOpen: false }); }
+  };
 
-  setPrintSection(section: PrintSection, enabled: boolean) {
+  dismissNotice = () => this.setState({ notice: null });
+  closeExportModal = () => this.setState({ isExportModalOpen: false });
+
+  setPrintSection = (section: PrintSection, enabled: boolean) => {
     this.setState({
-      printSections: {
-        ...this.state.printSections,
-        [section]: enabled,
-      },
+      printSections: { ...this.state.printSections, [section]: enabled },
     });
-  }
+  };
 
-  setPrintOutsideGroup(groupKey: string, enabled: boolean) {
+  setPrintOutsideGroup = (groupKey: string, enabled: boolean) => {
     this.setState({
-      printOutsideGroups: {
-        ...this.state.printOutsideGroups,
-        [groupKey]: enabled,
-      },
+      printOutsideGroups: { ...this.state.printOutsideGroups, [groupKey]: enabled },
     });
-  }
+  };
 
-  openExportModal() {
+  openExportModal = () => {
     const validationError = this.validate();
     if (validationError) {
       this.setState({ notice: { type: "error", text: validationError } });
       return;
     }
     this.setState({ isExportModalOpen: true, notice: null });
-  }
+  };
 
   private async loadLotStart(templateId: string, productionDate: string) {
     try {
@@ -228,13 +168,10 @@ export class MarkingOrdersController {
   }
 
   private matchesCondition(field: TemplateField) {
-    return (
-      (!field.condition?.stickerType || field.condition.stickerType === this.state.stickerType) &&
-      (!field.condition?.stickerOther || field.condition.stickerOther === this.state.stickerOther)
-    );
+    return StickerFactory.matchesCondition(field, this.state.stickerType, this.state.stickerOther);
   }
 
-  private shouldUppercase(section: "inside" | "outside", key: string) {
+  private shouldUppercase(section: Section, key: string) {
     if (section === "inside") return true;
     const fields = this.state.template?.outside ?? [];
     const field = fields.find((item) =>
@@ -243,17 +180,19 @@ export class MarkingOrdersController {
     return field?.uppercase ?? true;
   }
 
-  private lockedValue(section: "inside" | "outside", key: string) {
-    const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
-    const field = fields?.find((item) => item.key === key);
+  private sectionFields(section: Section) {
+    return section === "inside" ? this.state.template?.inside : this.state.template?.outside;
+  }
+
+  private lockedValue(section: Section, key: string) {
+    const field = this.sectionFields(section)?.find((item) => item.key === key);
     if (!field?.locked) return undefined;
     const value = String(field.defaultValue ?? field.label);
     return field.uppercase === false ? value : value.toUpperCase();
   }
 
-  private withLockedDefaults(section: "inside" | "outside", rows: MarkingContent[]) {
-    const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
-    const lockedFields = fields?.filter((field) => field.locked && !field.segments?.length) ?? [];
+  private withLockedDefaults(section: Section, rows: MarkingContent[]) {
+    const lockedFields = this.sectionFields(section)?.filter((field) => field.locked && !field.segments?.length) ?? [];
     if (!lockedFields.length) return rows;
     return rows.map((row) => ({
       ...row,
@@ -261,9 +200,8 @@ export class MarkingOrdersController {
     }));
   }
 
-  private isLotCounterKey(section: "inside" | "outside", key: string) {
-    const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
-    return fields?.some((field) =>
+  private isLotCounterKey(section: Section, key: string) {
+    return this.sectionFields(section)?.some((field) =>
       field.key === key
         ? field.isCounter && this.counterType(field, { counterType: field.counterType }) === "lot"
         : field.segments?.some((segment) =>
@@ -274,16 +212,15 @@ export class MarkingOrdersController {
     ) ?? key.toLowerCase().includes("lot");
   }
 
-  private isCounterKey(section: "inside" | "outside", key: string) {
-    const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
-    return fields?.some((field) =>
+  private isCounterKey(section: Section, key: string) {
+    return this.sectionFields(section)?.some((field) =>
       field.key === key
         ? field.isCounter
         : field.segments?.some((segment) => segment.key === key && segment.isCounter),
     ) ?? false;
   }
 
-  updateRow(section: "inside" | "outside", rowIndex: number, key: string, value: string) {
+  updateRow = (section: Section, rowIndex: number, key: string, value: string) => {
     const stateKey = section === "inside" ? "insideRows" : "outsideRows";
     const lockedValue = this.lockedValue(section, key);
     const inputValue = this.isCounterKey(section, key) ? this.digitsOnly(value) : value;
@@ -297,55 +234,7 @@ export class MarkingOrdersController {
         ? { lotStart: Number(normalizedValue) }
         : {}),
     });
-  }
-
-  openTemplateEditor() {
-    if (!this.state.isAdmin) {
-      this.setState({ notice: { type: "error", text: "เฉพาะ Admin เท่านั้น" } });
-      return;
-    }
-    if (!this.state.template) {
-      this.setState({ notice: { type: "error", text: "กรุณาเลือกลูกค้าก่อนแก้ไข Template" } });
-      return;
-    }
-    this.setState({
-      insideDraft: this.state.template?.inside.map((field) => MarkingOrderFieldNormalizer.normalizeSegmentKeys({ ...field })) ?? [],
-      outsideDraft: this.state.template?.outside.map((field) => MarkingOrderFieldNormalizer.normalizeSegmentKeys({ ...field })) ?? [],
-      isTemplateEditorOpen: true,
-    });
-  }
-
-  updateDraft(section: "inside" | "outside", index: number, patch: Partial<TemplateField>) {
-    const draftKey = section === "inside" ? "insideDraft" : "outsideDraft";
-    this.setState({
-      [draftKey]: this.state[draftKey].map((field, fieldIndex) =>
-        fieldIndex === index ? MarkingOrderFieldNormalizer.normalizeSegmentKeys({ ...field, ...patch }) : field,
-      ),
-    });
-  }
-
-  addDraftField(section: "inside" | "outside") {
-    const draftKey = section === "inside" ? "insideDraft" : "outsideDraft";
-    this.setState({
-      [draftKey]: [
-        ...this.state[draftKey],
-        {
-          key: `${section}_field_${this.state[draftKey].length + 1}`,
-          label: "",
-          type: "text",
-          required: false,
-          uppercase: section === "outside" ? true : undefined,
-        },
-      ],
-    });
-  }
-
-  removeDraftField(section: "inside" | "outside", index: number) {
-    const draftKey = section === "inside" ? "insideDraft" : "outsideDraft";
-    this.setState({
-      [draftKey]: this.state[draftKey].filter((_, fieldIndex) => fieldIndex !== index),
-    });
-  }
+  };
 
   private validate(): string {
     const { templateId, template, insideRows, outsideRows } = this.state;
@@ -355,8 +244,8 @@ export class MarkingOrdersController {
     if (!Number.isInteger(Number(this.state.lotCount)) || Number(this.state.lotCount) < 1) return "กรุณากรอกจำนวน Lot";
     if (!this.state.stickerSides) return "กรุณาเลือก Side";
     if (!this.state.stickerFormat) return "กรุณาเลือก Format";
-    if ((stickerFields.includes("type") || (template?.outside ?? []).some((field) => !!field.condition?.stickerType)) && !this.state.stickerType) return "กรุณาเลือกเกรด";
-    if ((stickerFields.includes("other") || (template?.outside ?? []).some((field) => !!field.condition?.stickerOther)) && !this.state.stickerOther) return "กรุณาเลือก Other";
+    if ((stickerFields.includes("type") || StickerFactory.needsStickerType(template?.outside ?? [])) && !this.state.stickerType) return "กรุณาเลือกเกรด";
+    if ((stickerFields.includes("other") || StickerFactory.needsStickerOther(template?.outside ?? [])) && !this.state.stickerOther) return "กรุณาเลือก Other";
     for (const [index, row] of insideRows.entries()) {
       const missing = template?.inside.find((field) =>
         field.required &&
@@ -378,57 +267,6 @@ export class MarkingOrdersController {
     return "";
   }
 
-  private debugSave(label: string, payload: SaveMarkingPayload, result?: { id: number }) {
-    if (process.env.NODE_ENV === "production") return;
-    console.debug(`[Marking] ${label}`, { payload, result });
-  }
-
-  private debugStickerFontMetrics(label: string) {
-    if (process.env.NODE_ENV === "production" || typeof document === "undefined") return;
-    const stickers = Array.from(document.querySelectorAll<HTMLElement>(".print-sheet .sticker-label"));
-    if (!stickers.length) {
-      console.debug(`[Marking] ${label}: no print-sheet stickers found`);
-      return;
-    }
-
-    console.groupCollapsed(`[Marking] ${label}: sticker font metrics`);
-    console.table(stickers.slice(0, 8).map((sticker, index) => {
-      const style = getComputedStyle(sticker);
-      const details = sticker.querySelector<HTMLElement>(".sticker-details");
-      const detailsStyle = details ? getComputedStyle(details) : null;
-      return {
-        index,
-        kind: Array.from(sticker.classList).filter((className) => className !== "sticker-label").join(" "),
-        stickerFontVar: style.getPropertyValue("--sticker-font").trim(),
-        stickerLabelFontVar: style.getPropertyValue("--sticker-label-font").trim(),
-        stickerGapVar: style.getPropertyValue("--sticker-gap").trim(),
-        stickerLabelColumnVar: style.getPropertyValue("--sticker-label-column").trim(),
-        fitScale: detailsStyle?.getPropertyValue("--sticker-fit-scale").trim() || "",
-        computedFontSize: style.fontSize,
-        detailsFontSize: detailsStyle?.fontSize || "",
-        padding: style.padding,
-        width: `${Math.round(sticker.getBoundingClientRect().width)}px`,
-        height: `${Math.round(sticker.getBoundingClientRect().height)}px`,
-      };
-    }));
-
-    console.table(stickers.slice(0, 3).flatMap((sticker, stickerIndex) =>
-      Array.from(sticker.querySelectorAll<HTMLElement>(".sticker-detail-row")).map((row, rowIndex) => {
-        const style = getComputedStyle(row);
-        return {
-          stickerIndex,
-          rowIndex,
-          label: row.querySelector("dt")?.textContent?.trim() ?? "",
-          rowFontVar: style.getPropertyValue("--sticker-row-font").trim(),
-          computedFontSize: style.fontSize,
-          width: `${Math.round(row.getBoundingClientRect().width)}px`,
-          scrollWidth: `${row.scrollWidth}px`,
-        };
-      }),
-    ));
-    console.groupEnd();
-  }
-
   async save(actionType: SaveMarkingPayload["actionType"] = "save") {
     const validationError = this.validate();
     if (validationError) {
@@ -438,10 +276,10 @@ export class MarkingOrdersController {
     this.setState({ isSaving: true });
     try {
       const payload = this.buildSavePayload(actionType);
-      this.debugSave("save:start", payload);
-      this.debugStickerFontMetrics("save:start");
+      StickerDebugReporter.log("save:start", { payload });
+      StickerDebugReporter.logFontMetrics("save:start");
       const result = await this.service.saveMarking(payload);
-      this.debugSave("save:done", payload, result);
+      StickerDebugReporter.log("save:done", { payload, result });
       this.setState({
         notice: { type: "success", text: `บันทึกรายการ #${result.id} แล้ว` },
       });
@@ -454,7 +292,7 @@ export class MarkingOrdersController {
     }
   }
 
-  async saveAndExport() {
+  saveAndExport = async () => {
     if (!Object.values(this.state.printSections).some(Boolean)) {
       this.setState({ notice: { type: "error", text: "กรุณาเลือกสติ๊กเกอร์ที่ต้องการปริ้นอย่างน้อย 1 แบบ" } });
       return;
@@ -462,64 +300,9 @@ export class MarkingOrdersController {
     const result = await this.save("print");
     if (!result) return;
     this.setState({ isExportModalOpen: false, isPrintSheetActive: true });
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("[Marking] export:print");
-    }
-    const deactivatePrintSheet = () => this.setState({ isPrintSheetActive: false });
-    window.addEventListener("afterprint", deactivatePrintSheet, { once: true });
-    window.setTimeout(() => {
-      window.print();
-      window.setTimeout(deactivatePrintSheet, 60000);
-    }, 120);
-  }
-
-  async saveTemplate() {
-    if (!this.state.templateId) return;
-    const cleanFields = (section: "inside" | "outside", fields: TemplateField[]) => fields.map((field, index) => {
-      const fieldKey = field.key.trim() || `${section}_field_${index + 1}`;
-      const usedSegmentKeys = new Set<string>();
-      return {
-        ...field,
-        key: fieldKey,
-        label: field.label.trim(),
-        uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
-        segments: field.segments?.map((segment, segmentIndex) => ({
-          ...segment,
-          key: TemplateFieldUtils.uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
-          label: segment.label.trim(),
-        })),
-      };
-    });
-    const inside = cleanFields("inside", this.state.insideDraft);
-    const outside = cleanFields("outside", this.state.outsideDraft);
-    const cleaned = [...inside, ...outside];
-    if (cleaned.some((field) => !field.label)) {
-      this.setState({ notice: { type: "error", text: MESSAGES.fieldLabelRequired } });
-      return;
-    }
-    if (
-      new Set(inside.map((field) => field.key)).size !== inside.length ||
-      new Set(outside.map((field) => field.key)).size !== outside.length
-    ) {
-      this.setState({ notice: { type: "error", text: MESSAGES.duplicateKey } });
-      return;
-    }
-    this.setState({ isSaving: true });
-    try {
-      const template = await this.service.saveTemplate(Number(this.state.templateId), inside, outside);
-      this.setState({
-        template,
-        insideRows: template.inside.length ? [this.emptyRow(template.inside, this.state.lotStart)] : [],
-        outsideRows: template.outside.length ? [this.emptyRow(template.outside, this.state.lotStart)] : [],
-        isTemplateEditorOpen: false,
-        notice: { type: "success", text: MESSAGES.templateSaved },
-      });
-    } catch (error) {
-      this.setState({ notice: { type: "error", text: this.errorMessage(error, MESSAGES.saveFailed) } });
-    } finally {
-      this.setState({ isSaving: false });
-    }
-  }
+    StickerDebugReporter.log("export:print", {});
+    this.printer.print(() => this.setState({ isPrintSheetActive: false }));
+  };
 
   private errorMessage(error: unknown, fallback: string) {
     return error instanceof Error ? error.message : fallback;
@@ -605,14 +388,4 @@ export class MarkingOrdersController {
   }
 }
 
-export const markingOrders = new MarkingOrdersController(markingApiService);
-
-export function useMarkingOrders() {
-  const state = useSyncExternalStore(
-    markingOrders.subscribe,
-    markingOrders.getSnapshot,
-    markingOrders.getSnapshot,
-  );
-  useEffect(() => { void markingOrders.initialize(); }, []);
-  return { state, actions: markingOrders };
-}
+export const markingStore = new MarkingController(markingApiService, sessionApiService, printService);

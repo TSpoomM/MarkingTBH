@@ -1,4 +1,4 @@
-import { Template, TemplateDetail, TemplateField } from "./template";
+import { Template, TemplateDetail } from "./template";
 
 export type MarkingContent = Record<string, string>;
 export type Notice = { type: "error" | "success"; text: string };
@@ -23,14 +23,11 @@ export interface MarkingState {
   productionDate: string;
   insideRows: MarkingContent[];
   outsideRows: MarkingContent[];
-  insideDraft: TemplateField[];
-  outsideDraft: TemplateField[];
   isAdmin: boolean;
   isLoading: boolean;
   isSaving: boolean;
   isExportModalOpen: boolean;
   isPrintSheetActive: boolean;
-  isTemplateEditorOpen: boolean;
   notice: Notice | null;
 }
 
@@ -91,4 +88,19 @@ export interface MarkingHistoryFieldMeta {
   parentKey: string;
   parentLabel: string;
   order: number;
+}
+
+export interface MarkingFilterPanelProps {
+  notice: Notice | null;
+  templates: Template[];
+  templateId: string;
+  template: TemplateDetail | null;
+  productionDate: string;
+  lotCount: string;
+  lotStart: number;
+  isLoading: boolean;
+  onDismissNotice: () => void;
+  onSelectTemplate: (templateId: string) => void;
+  onProductionDateChange: (value: string) => void;
+  onLotCountChange: (value: string) => void;
 }

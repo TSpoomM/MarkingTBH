@@ -1,11 +1,13 @@
 "use client";
 
+import { Component } from "react";
 import Toast from "@/src/components/ui/Toast";
-import HistoryComponent from "./HistoryComponent";
+import type { HistoryNoticeProps } from "@/src/core/models/history";
 
-export default class HistoryNotice extends HistoryComponent {
+export default class HistoryNotice extends Component<HistoryNoticeProps> {
   render() {
-    if (!this.state.notice) return null;
-    return <Toast type="error" message={this.state.notice} onClose={() => this.actions.dismissNotice()} />;
+    const { notice, onDismiss } = this.props;
+    if (!notice) return null;
+    return <Toast type="error" message={notice} onClose={onDismiss} />;
   }
 }

@@ -1,45 +1,35 @@
 "use client";
 
-import HistoryComponent from "./HistoryComponent";
+import { Component } from "react";
+import cn from "@/src/core/ui/cn";
+import { PANEL } from "@/src/core/ui/surfaces";
+import HistoryPanelHeading from "./HistoryPanelHeading";
+import {
+  HISTORY_EMPTY, HISTORY_FIELD_COUNT, HISTORY_ROW, HISTORY_TABLE, HISTORY_TABLE_WRAP,
+} from "@/src/core/ui/history";
 import HistoryFormatter from "@/src/core/history/historyFormatter";
+import type { HistoryTemplatesPanelProps } from "@/src/core/models/history";
 
-export default class HistoryTemplatesPanel extends HistoryComponent {
+export default class HistoryTemplatesPanel extends Component<HistoryTemplatesPanelProps> {
   render() {
-    if (this.state.mode !== "templates") return null;
-    const filteredTemplateItems = HistoryFormatter.filteredTemplateItems(
-      this.state.templateItems,
-      this.state.templateQuery,
-      this.state.date,
-    );
-    const visibleCount = filteredTemplateItems.length;
-    const totalCount = this.state.templateItems.length;
+    const { items, totalCount, isLoading } = this.props;
 
     return (
-      <section className="panel history-panel">
-        <div className="table-heading history-heading-with-total">
-          <div className="section-title">
-            <div>
-              <span>{visibleCount}</span>
-              <div>
-                <h2>ประวัติ Marking</h2>
-                <p>รายการล่าสุด</p>
-              </div>
-            </div>
-          </div>
-          <div className="history-total-inline">
-            <span>รายการทั้งหมด</span>
-            <strong>{visibleCount}</strong>
-            <small>จากทั้งหมด {totalCount} รายการ</small>
-          </div>
-        </div>
+      <section className={cn(PANEL, "overflow-hidden")}>
+        <HistoryPanelHeading
+          title="ประวัติ Marking"
+          subtitle="รายการล่าสุด"
+          visibleCount={items.length}
+          totalCount={totalCount}
+        />
 
-        {this.state.isTemplateLoading ? (
-          <div className="history-empty">กำลังโหลด...</div>
-        ) : filteredTemplateItems.length === 0 ? (
-          <div className="history-empty">ไม่พบรายการ</div>
+        {isLoading ? (
+          <div className={HISTORY_EMPTY}>กำลังโหลด...</div>
+        ) : items.length === 0 ? (
+          <div className={HISTORY_EMPTY}>ไม่พบรายการ</div>
         ) : (
-          <div className="history-table-wrap">
-            <table className="history-table history-template-list">
+          <div className={HISTORY_TABLE_WRAP}>
+            <table className={HISTORY_TABLE}>
               <thead>
                 <tr>
                   <th>Template</th>
@@ -50,14 +40,14 @@ export default class HistoryTemplatesPanel extends HistoryComponent {
                 </tr>
               </thead>
               <tbody>
-                {filteredTemplateItems.map((item) => (
-                  <tr className="history-row" key={item.id}>
+                {items.map((item) => (
+                  <tr className={HISTORY_ROW} key={item.id}>
                     <td>{item.name || `Template #${item.id}`}</td>
                     <td>{HistoryFormatter.formatDateTime(item.createdAt)}</td>
                     <td>{HistoryFormatter.formatDateTime(item.updatedAt)}</td>
                     <td>{item.updatedBy || "-"}</td>
                     <td>
-                      <span className="history-field-count">
+                      <span className={HISTORY_FIELD_COUNT}>
                         ในกรอบ {item.insideFieldCount} / นอกกรอบ {item.outsideFieldCount}
                       </span>
                     </td>

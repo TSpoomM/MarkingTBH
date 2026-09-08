@@ -1,4 +1,18 @@
 import { Component, type DragEvent } from "react";
+import { GripVertical, Lock } from "lucide-react";
+import cn from "@/src/core/ui/cn";
+import { LOCK_ICON } from "@/src/core/ui/table";
+import { CHOICE, CHOICE_LIST, CHOICE_SELECTED } from "@/src/core/ui/template";
+import {
+  ADD_FIELD_BUTTON, ADD_ROW_BUTTON, ADD_SEGMENT, COUNTER_PAD_TOGGLE, COUNTER_STOP_BUTTON,
+  COUNT_BUTTON, COUNT_BUTTON_ACTIVE, COUNT_SEGMENT, COUNT_SEGMENT_ACTIVE, DATE_FORMAT_GRID,
+  DRAFT_HEADING, DRAG_HANDLE, DRAG_HANDLE_SEGMENT, EDITOR_EMPTY, EDITOR_FIELD, EDITOR_NUMBER,
+  EDITOR_PANEL, FIELD_SUMMARY, FIELD_WRAP, FIELD_WRAP_DRAGGING, FORMAT_PREVIEW, MODAL_ACTIONS,
+  MODAL_BODY, SEGMENTS_ROW, SEGMENTS_TITLE, SEGMENT_ACTIONS, SEGMENT_AFFIXES, SEGMENT_CARD,
+  SEGMENT_CARD_DRAGGING, SEGMENT_HEAD, SEGMENT_HEAD_LEFT, SEGMENT_NAME, SUMMARY_ACTIONS,
+  SUMMARY_DELETE, SUMMARY_LABEL, SUMMARY_LABEL_EMPTY, SUMMARY_TOGGLE, TABLE_HEAD, TOGGLE_BOX,
+  TOGGLE_COPY,
+} from "@/src/core/ui/fieldEditor";
 import Button from "@/src/components/ui/Button";
 import Input from "@/src/components/ui/Input";
 import Modal from "@/src/components/ui/Modal";
@@ -257,12 +271,12 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
     const counterPromptIsCounting = counterPromptCurrent?.isCounter === true;
 
     return (
-      <div className="template-editor-panel">
-        <div className="template-draft-heading">
+      <div className={EDITOR_PANEL}>
+        <div className={DRAFT_HEADING}>
           <h3>{title}</h3>
           <span>{fields.length} Field</span>
         </div>
-        {!fields.length && <div className="editor-empty">ยังไม่มี Field</div>}
+        {!fields.length && <div className={EDITOR_EMPTY}>ยังไม่มี Field</div>}
         {fields.map((field, index) => {
           const tableOrder = field.stickerGroupOrder ?? 0;
           const isInsideNettField = section === "inside" && field.key === "nett" && !field.segments?.length;
@@ -279,12 +293,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           let wrapElement: HTMLDivElement | null = null;
           return (
             <div
-              className={[
-                "editor-field-wrap",
-                section === "outside" ? "outside-field-wrap" : "",
-                section === "outside" && !showTableHeader ? "same-table-row" : "",
-                isDraggingThis ? "dragging" : "",
-              ].filter(Boolean).join(" ")}
+              className={cn(FIELD_WRAP, isDraggingThis && FIELD_WRAP_DRAGGING)}
               key={`${section}-${field.key}`}
               ref={(element) => { wrapElement = element; }}
               onDragOver={(event) => this.handleFieldDragOver(event, index, tableOrder)}
@@ -292,18 +301,19 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
             >
               {showTableHeader && (
                 <div
-                  className={`outside-editor-table-head ${draggingTableOrder === tableOrder ? "dragging" : ""}`}
+                  data-table-head
+                  className={cn(TABLE_HEAD, draggingTableOrder === tableOrder && FIELD_WRAP_DRAGGING)}
                   onDragOver={(event) => this.handleTableDragOver(event, tableOrder)}
                   onDrop={(event) => event.preventDefault()}
                 >
                   <span
-                    className="table-drag-handle"
+                    className={DRAG_HANDLE}
                     draggable
-                    onDragStart={(event) => this.handleTableDragStart(event, tableOrder, event.currentTarget.closest(".outside-editor-table-head"))}
+                    onDragStart={(event) => this.handleTableDragStart(event, tableOrder, event.currentTarget.closest("[data-table-head]"))}
                     onDragEnd={() => this.handleTableDragEnd()}
                     title="ลากเพื่อย้าย Table"
                   >
-                    ⠿
+                    <GripVertical size={16} />
                   </span>
                   <Input
                     bare
@@ -325,7 +335,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                 </div>
               )}
               <div
-                className="editor-field-summary"
+                className={FIELD_SUMMARY}
                 onClick={() => this.openFieldEditor(index)}
                 role="button"
                 tabIndex={0}
@@ -338,26 +348,34 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                 }}
               >
                 <span
-                  className="field-drag-handle"
+                  className={DRAG_HANDLE}
                   draggable
                   onClick={(event) => event.stopPropagation()}
                   onDragStart={(event) => this.handleFieldDragStart(event, index, wrapElement, field)}
                   onDragEnd={() => this.handleFieldDragEnd()}
                   title="ลากเพื่อย้ายตำแหน่ง Field"
                 >
-                  ⠿
+                  <GripVertical size={16} />
                 </span>
-                <div className="editor-number">{fieldNumber}</div>
-                <span className={`editor-field-summary-label ${field.label.trim() ? "" : "is-empty"}`}>
+                <div className={EDITOR_NUMBER}>{fieldNumber}</div>
+                <span className={cn(SUMMARY_LABEL, !field.label.trim() && SUMMARY_LABEL_EMPTY)}>
                   {field.label.trim() || "(ยังไม่ตั้งชื่อ Field)"}
                 </span>
-                {field.locked && <span className="field-lock-icon" title="Locked" aria-label="Locked" />}
-                <div className="editor-field-summary-actions">
-                  <span className="editor-field-toggle" aria-hidden="true">แก้ไข</span>
+                {field.locked && <Lock className={LOCK_ICON} size={15} aria-label="Locked" />}
+                <div className={SUMMARY_ACTIONS}>
                   <Button
                     type="button"
-                    // className="delete-field summary-delete-field"
-                    className="delete-field summary-delete-field"
+                    className={SUMMARY_TOGGLE}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      this.openFieldEditor(index);
+                    }}
+                  >
+                    แก้ไข
+                  </Button>
+                  <Button
+                    type="button"
+                    className={SUMMARY_DELETE}
                     onClick={(event) => {
                       event.stopPropagation();
                       onRemove(section, index);
@@ -373,16 +391,16 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                 subtitle="ตั้งค่ารายละเอียดของ Field นี้"
                 onClose={() => this.closeFieldEditor()}
                 footer={(
-                  <div className="print-export-actions">
-                    <Button type="button" className="export-button" onClick={() => this.closeFieldEditor()}>
+                  <div className={MODAL_ACTIONS}>
+                    <Button type="button" variant="primary" onClick={() => this.closeFieldEditor()}>
                       เสร็จสิ้น
                     </Button>
                   </div>
                 )}
               >
-                <div className="template-admin field-editor-modal-scope editor-body">
-                  <article className={`editor-field ${!field.segments?.length ? "no-segments" : ""}`}>
-                    <div className="editor-number editor-number-spacer" aria-hidden="true" />
+                <div className={MODAL_BODY}>
+                  <article className={EDITOR_FIELD}>
+                    
                     <label>
                       <span>ชื่อ Field</span>
                       <Input
@@ -395,7 +413,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       />
                     </label>
                     {!field.segments?.length && (
-                      <label className="required-toggle field-lock-toggle">
+                      <label className={TOGGLE_BOX}>
                         <Input
                           bare
                           type="checkbox"
@@ -405,28 +423,27 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                             defaultValue: event.target.checked ? field.label : undefined,
                           })}
                         />
-                        <span className="toggle-copy">
+                        <span className={TOGGLE_COPY}>
                           <strong>ล็อกค่าชื่อ field</strong>
-                          {/* <small>FSC / ชื่อลูกค้า</small> */}
                         </span>
                       </label>
                     )}
                     {isInsideNettField && (
-                      <label className="required-toggle nett-default-toggle">
+                      <label className={TOGGLE_BOX}>
                         <Input
                           bare
                           type="checkbox"
                           checked={field.defaultValue !== undefined}
                           onChange={(event) => onChange(section, index, { defaultValue: event.target.checked ? field.defaultValue ?? "1260" : undefined })}
                         />
-                        <span className="toggle-copy">
+                        <span className={TOGGLE_COPY}>
                           <strong>ใช้ค่าเริ่มต้น</strong>
                           <small>กรอกค่าให้อัตโนมัติ</small>
                         </span>
                       </label>
                     )}
                     {isInsideNettField && field.defaultValue !== undefined && (
-                      <label className="nett-default-value">
+                      <label className="grid content-start gap-2 [&>span]:text-sm [&>span]:font-extrabold">
                         <span>ค่า default</span>
                         <Input
                           bare
@@ -437,42 +454,40 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       </label>
                     )}
                     {section === "outside" && (
-                      <label className="required-toggle">
+                      <label className={TOGGLE_BOX}>
                         <Input
                           bare
                           type="checkbox"
                           checked={field.uppercase ?? true}
                           onChange={(event) => onChange(section, index, { uppercase: event.target.checked })}
                         />
-                        <span className="toggle-copy">
+                        <span className={TOGGLE_COPY}>
                           <strong>ตัวพิมพ์ใหญ่</strong>
-                          {/* <small>แปลงข้อความอัตโนมัติ</small> */}
                         </span>
                       </label>
                     )}
-                    <label className="required-toggle">
+                    <label className={TOGGLE_BOX}>
                       <Input
                         bare
                         type="checkbox"
                         checked={field.hideLabel === true}
                         onChange={(event) => onChange(section, index, { hideLabel: event.target.checked })}
                       />
-                      <span className="toggle-copy">
+                      <span className={TOGGLE_COPY}>
                         <strong>ไม่พิมพ์ชื่อ Field</strong>
-                        {/* <small>ไม่พิมพ์ชื่อ Field</small> */}
                       </span>
                     </label>
                     {section === "outside" && !field.segments?.length && (
                       <Button
                         type="button"
-                        className={field.isCounter ? "outside-count-button active" : "outside-count-button"}
+                        className={cn(COUNT_BUTTON, field.isCounter && COUNT_BUTTON_ACTIVE)}
                         onClick={() => this.openCounterPrompt(index)}
                       >
                         {field.isCounter ? `นับ: ${TemplateFieldUtils.counterTypeLabel(field.counterType ?? TemplateFieldUtils.inferCounterType(field))}` : "นับ"}
                       </Button>
                     )}
                     {!field.segments?.length && !field.isCounter && (
-                      <label className="required-toggle field-calendar-toggle">
+                      <label className={TOGGLE_BOX}>
                         <Input
                           bare
                           type="checkbox"
@@ -483,7 +498,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                             placeholder: event.target.checked ? undefined : field.placeholder,
                           })}
                         />
-                        <span className="toggle-copy">
+                        <span className={TOGGLE_COPY}>
                           <strong>ใช้ Calendar</strong>
                         </span>
                       </label>
@@ -491,60 +506,60 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                     {!field.segments?.length && field.type === "date" && (
                       <Button
                         type="button"
-                        className="outside-count-button date-format-trigger"
+                        className={COUNT_BUTTON}
                         onClick={() => this.openDateFormatPrompt(index)}
                       >
                         {`รูปแบบวันที่: ${DateFormatter.formatDateInputValue("2026-09-02", field.dateFormat)}`}
                       </Button>
                     )}
                     {section === "outside" && !isVerticalTable && (
-                      <label className="required-toggle field-font-scale">
+                      <label className={TOGGLE_BOX}>
                         <Input
                           bare
                           type="checkbox"
                           checked={field.fontScale === "xlarge"}
                           onChange={(event) => onChange(section, index, { fontScale: event.target.checked ? "xlarge" : "normal" })}
                         />
-                        <span className="toggle-copy">
+                        <span className={TOGGLE_COPY}>
                           <strong>ขนาดใหญ่พิเศษ</strong>
-                          {/* <small>ขยายข้อความบนสติ๊กเกอร์</small> */}
                         </span>
                       </label>
                     )}
                   </article>
                   {!!field.segments?.length && (
-                    <div className="editor-segments-row">
-                      <div className="editor-segments-title">Section</div>
-                      <div className="editor-format-preview">
+                    <div className={SEGMENTS_ROW}>
+                      <div className={SEGMENTS_TITLE}>Section</div>
+                      <div className={FORMAT_PREVIEW}>
                         <span>ตัวอย่างบนสติ๊กเกอร์</span>
                         <strong>{this.segmentPreview(field)}</strong>
                       </div>
                       {field.segments.map((segment, segmentIndex) => (
                         <div
-                          className={`editor-segment-card ${draggingSegmentKey === `${field.key}:${segment.key}` ? "dragging" : ""}`}
+                          data-segment-card
+                          className={cn(SEGMENT_CARD, draggingSegmentKey === `${field.key}:${segment.key}` && SEGMENT_CARD_DRAGGING)}
                           key={`${field.key}-${segment.key}`}
                           onDragOver={(event) => this.handleSegmentDragOver(event, field, segmentIndex)}
                           onDrop={(event) => event.preventDefault()}
                         >
-                          <div className="editor-segment-head">
-                            <div className="editor-segment-head-left">
+                          <div className={SEGMENT_HEAD}>
+                            <div className={SEGMENT_HEAD_LEFT}>
                               <span
-                                className="segment-drag-handle"
+                                className={cn(DRAG_HANDLE, DRAG_HANDLE_SEGMENT)}
                                 draggable
                                 onDragStart={(event) => this.handleSegmentDragStart(
                                   event, field, index, segmentIndex, segment.key,
-                                  event.currentTarget.closest(".editor-segment-card"),
+                                  event.currentTarget.closest("[data-segment-card]"),
                                 )}
                                 onDragEnd={() => this.handleSegmentDragEnd()}
                                 title="ลากเพื่อย้าย Section"
                               >
-                                ⠿
+                                <GripVertical size={16} />
                               </span>
                               <strong>Section {segmentIndex + 1}</strong>
                             </div>
                             {segment.isCounter && <span>นับ</span>}
                           </div>
-                          <label className="editor-segment-name">
+                          <label className={SEGMENT_NAME}>
                             <span>ชื่อ Section</span>
                             <Input
                               bare
@@ -556,7 +571,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                               })}
                             />
                           </label>
-                          <div className="editor-segment-affixes">
+                          <div className={SEGMENT_AFFIXES}>
                             <label>
                               <span>ก่อน Section</span>
                               <Input
@@ -586,10 +601,10 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                               />
                             </label>
                           </div>
-                          <div className="editor-segment-actions" aria-label={`ตั้งค่า Section ${segmentIndex + 1}`}>
+                          <div className={SEGMENT_ACTIONS} aria-label={`ตั้งค่า Section ${segmentIndex + 1}`}>
                             <Button
                               type="button"
-                              className={segment.isCounter ? "count-segment active" : "count-segment"}
+                              className={cn(COUNT_SEGMENT, segment.isCounter && COUNT_SEGMENT_ACTIVE)}
                               onClick={() => this.openCounterPrompt(index, segmentIndex)}
                             >
                               {segment.isCounter ? `นับ: ${TemplateFieldUtils.counterTypeLabel(segment.counterType ?? TemplateFieldUtils.inferCounterType(field))}` : "นับ"}
@@ -617,7 +632,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                       ))}
                       <Button
                         type="button"
-                        className="add-segment-button"
+                        className={ADD_SEGMENT}
                         onClick={() => onChange(section, index, {
                           segments: [
                             ...(field.segments ?? []),
@@ -641,20 +656,20 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
               </Modal>
               <Modal
                 open={dateFormatPromptIndex === index}
-                className="date-format-modal"
+                className="w-[min(1050px,100%)] overflow-visible"
                 title="รูปแบบวันที่"
                 subtitle={`ตัวอย่าง: ${DateFormatter.formatDateInputValue("2026-09-02", field.dateFormat)}`}
                 onClose={() => this.closeDateFormatPrompt()}
                 footer={(
-                  <div className="print-export-actions">
-                    <Button type="button" className="export-button" onClick={() => this.closeDateFormatPrompt()}>
+                  <div className={MODAL_ACTIONS}>
+                    <Button type="button" variant="primary" onClick={() => this.closeDateFormatPrompt()}>
                       เสร็จสิ้น
                     </Button>
                   </div>
                 )}
               >
-                <div className="editor-body date-format-modal-body">
-                  <div className="date-format-builder-grid">
+                <div className={cn(MODAL_BODY, "content-start overflow-visible pb-10")}>
+                  <div className={DATE_FORMAT_GRID}>
                     {[0, 1, 2].map((slot) => (
                       <label key={`${field.key}-date-part-${slot}`}>
                         <span>{`ช่อง ${slot + 1}`}</span>
@@ -701,7 +716,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
               {showTableFooter && !isVerticalTable && (
                 <Button
                   type="button"
-                  className="outside-add-row-button"
+                  className={ADD_ROW_BUTTON}
                   onClick={() => onAdd(section, tableOrder)}
                 >
                   เพิ่มแถว
@@ -711,12 +726,12 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           );
         })}
         {section === "outside" && (
-          <Button className="add-field-button" onClick={() => this.openAddTablePrompt()}>
+          <Button size="md" className={ADD_FIELD_BUTTON} onClick={() => this.openAddTablePrompt()}>
             เพิ่ม Table
           </Button>
         )}
         {section !== "outside" && (
-          <Button className="add-field-button" onClick={() => onAdd(section)}>
+          <Button size="md" className={ADD_FIELD_BUTTON} onClick={() => onAdd(section)}>
             เพิ่ม Field
           </Button>
         )}
@@ -727,20 +742,20 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
             subtitle="เลือกรูปแบบเริ่มต้นของ Table (สามารถเปลี่ยนภายหลังได้)"
             onClose={() => this.closeAddTablePrompt()}
             footer={(
-              <div className="print-export-actions">
-                <Button type="button" className="print-export-secondary" onClick={() => this.closeAddTablePrompt()}>
+              <div className={MODAL_ACTIONS}>
+                <Button type="button" variant="secondary" size="lg" onClick={() => this.closeAddTablePrompt()}>
                   ยกเลิก
                 </Button>
-                <Button type="button" className="export-button" onClick={() => this.confirmAddTable()}>
+                <Button type="button" variant="primary" onClick={() => this.confirmAddTable()}>
                   เพิ่ม Table
                 </Button>
               </div>
             )}
           >
-            <div className="editor-body choice-list outside-table-layout-choices">
+            <div className={cn(MODAL_BODY, CHOICE_LIST)}>
               {OUTSIDE_TABLE_LAYOUT_OPTIONS.map((option) => (
                 <label
-                  className={`choice ${pendingTableLayout === option.value ? "selected" : ""}`}
+                  className={cn(CHOICE, pendingTableLayout === option.value && CHOICE_SELECTED)}
                   key={option.value}
                 >
                   <Input
@@ -762,26 +777,26 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           subtitle="เลือกรูปแบบการนับเลข และรูปแบบตัวเลขที่จะแสดง"
           onClose={() => this.closeCounterPrompt()}
           footer={(
-            <div className="print-export-actions counter-prompt-footer">
+            <div className={MODAL_ACTIONS}>
               {counterPromptIsCounting && (
-                <Button type="button" className="print-export-secondary counter-stop-button" onClick={() => this.stopCounterPrompt()}>
+                <Button type="button" variant="secondary" size="lg" className={COUNTER_STOP_BUTTON} onClick={() => this.stopCounterPrompt()}>
                   เลิกนับ
                 </Button>
               )}
-              <Button type="button" className="print-export-secondary" onClick={() => this.closeCounterPrompt()}>
+              <Button type="button" variant="secondary" size="lg" onClick={() => this.closeCounterPrompt()}>
                 ยกเลิก
               </Button>
-              <Button type="button" className="export-button" onClick={() => this.confirmCounterPrompt()}>
+              <Button type="button" variant="primary" onClick={() => this.confirmCounterPrompt()}>
                 ยืนยัน
               </Button>
             </div>
           )}
         >
-          <div className="editor-body counter-prompt-body">
-            <div className="choice-list">
+          <div className={MODAL_BODY}>
+            <div className={CHOICE_LIST}>
               {COUNTER_TYPE_OPTIONS.map((option) => (
                 <label
-                  className={`choice ${pendingCounterType === option.value ? "selected" : ""}`}
+                  className={cn(CHOICE, pendingCounterType === option.value && CHOICE_SELECTED)}
                   key={option.value}
                 >
                   <Input
@@ -795,14 +810,14 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                 </label>
               ))}
             </div>
-            <label className="required-toggle counter-pad-toggle">
+            <label className={cn(TOGGLE_BOX, COUNTER_PAD_TOGGLE)}>
               <Input
                 bare
                 type="checkbox"
                 checked={pendingCounterPad4}
                 onChange={(event) => this.setState({ pendingCounterPad4: event.target.checked })}
               />
-              <span className="toggle-copy">
+              <span className={TOGGLE_COPY}>
                 <strong>Default 4 หลัก (0001)</strong>
               </span>
             </label>

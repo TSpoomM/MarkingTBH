@@ -1,7 +1,10 @@
 import { Component, useId, type ChangeEvent } from "react";
 import type { AutocompleteProps } from "@/src/core/models/ui";
 import Button from "./Button";
+import Field from "./Field";
 import Input from "./Input";
+import cn from "@/src/core/ui/cn";
+import { LISTBOX, LISTBOX_OPTION, LISTBOX_OPTION_ACTIVE, LISTBOX_OPTION_TEXT } from "@/src/core/ui/listbox";
 
 
 interface AutocompleteState {
@@ -47,6 +50,7 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
       options,
       maxOptions = 20,
       bare = false,
+      size = "md",
       required,
       className = "",
       onChange,
@@ -60,10 +64,12 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
     const hasOptions = filteredOptions.length > 0;
     const listId = `${props.id ?? generatedId}-options`;
     const control = (
-      <div className="autocomplete-shell">
+      <div className="relative w-full min-w-0">
         <Input
+          bare
+          size={size}
           required={required}
-          className={`app-control autocomplete-input ${className}`.trim()}
+          className={className}
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={this.state.open && hasOptions}
@@ -108,11 +114,11 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
           {...props}
         />
         {this.state.open && hasOptions && (
-          <div className="autocomplete-list" id={listId} role="listbox">
+          <div className={LISTBOX} id={listId} role="listbox">
             {filteredOptions.map((option, index) => (
               <Button
                 type="button"
-                className={index === this.state.activeIndex ? "active" : ""}
+                className={cn(LISTBOX_OPTION, index === this.state.activeIndex && LISTBOX_OPTION_ACTIVE)}
                 role="option"
                 aria-selected={index === this.state.activeIndex}
                 onMouseDown={(event) => {
@@ -121,21 +127,15 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
                 }}
                 key={option}
               >
-                <span>{option}</span>
+                <span className={LISTBOX_OPTION_TEXT}>{option}</span>
               </Button>
             ))}
           </div>
         )}
       </div>
     );
-    if (bare || !label) return control;
-    return (
-      <label className="field">
-        <span>{label}{required && <em>*</em>}</span>
-        {control}
-        <small className="field-hint" aria-hidden={!hint}>{hint || " "}</small>
-      </label>
-    );
+    if (bare) return control;
+    return <Field label={label} hint={hint} required={required} size={size}>{control}</Field>;
   }
 }
 

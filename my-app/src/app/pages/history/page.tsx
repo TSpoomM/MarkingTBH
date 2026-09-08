@@ -1,27 +1,78 @@
 "use client";
 
-import { Component } from "react";
+import StoreContainer from "@/src/components/StoreContainer";
+import { historyStore } from "@/src/core/controllers/history.controller";
+import HistoryFormatter from "@/src/core/history/historyFormatter";
+import { HISTORY_WRAP } from "@/src/core/ui/history";
 import HistoryNotice from "@/src/components/history/HistoryNotice";
 import HistoryModeSwitch from "@/src/components/history/HistoryModeSwitch";
-import HistoryOverview from "@/src/components/history/HistoryOverview";
 import HistoryFilterPanel from "@/src/components/history/HistoryFilterPanel";
 import HistoryLogsPanel from "@/src/components/history/HistoryLogsPanel";
 import HistoryTemplatesPanel from "@/src/components/history/HistoryTemplatesPanel";
 import HistoryDetailModal from "@/src/components/history/HistoryDetailModal";
+import type { HistoryPageState } from "@/src/core/models/history";
 
-export default class HistoryPage extends Component {
+/**
+ * Composition root for the history page: the only subscriber to the history store.
+ * Every panel below is presentational and driven purely by the props handed down here.
+ */
+export default class HistoryPage extends StoreContainer<HistoryPageState> {
+  constructor(props: Record<string, never>) {
+    super(props, historyStore);
+  }
+
   render() {
+    const state = this.state;
+    const isTemplateMode = state.mode === "templates";
+    const filteredItems = HistoryFormatter.filteredItems(
+      state.items, state.templateQuery, state.employeeQuery, state.action, state.date,
+    );
+    const filteredTemplateItems = HistoryFormatter.filteredTemplateItems(
+      state.templateItems, state.templateQuery, state.date,
+    );
+    const openItem = state.openId
+      ? state.items.find((entry) => entry.id === state.openId)
+      : undefined;
+
     return (
       <>
-        <main className="history-wrap">
-          <HistoryNotice />
-          <HistoryModeSwitch />
-          <HistoryOverview />
-          <HistoryFilterPanel />
-          <HistoryLogsPanel />
-          <HistoryTemplatesPanel />
+        <main className={HISTORY_WRAP}>
+          <HistoryNotice notice={state.notice} onDismiss={historyStore.dismissNotice} />
+          <HistoryModeSwitch mode={state.mode} onChangeMode={historyStore.setMode} />
+          <HistoryFilterPanel
+            mode={state.mode}
+            templateOptions={isTemplateMode
+              ? HistoryFormatter.uniqueTemplateValues(state.templateItems)
+              : HistoryFormatter.uniqueValues(state.items, (item) => item.customerName)}
+            employeeOptions={HistoryFormatter.uniqueValues(state.items, (item) => item.employeeName)}
+            templateQuery={state.templateQuery}
+            employeeQuery={state.employeeQuery}
+            action={state.action}
+            date={state.date}
+            activeFilterCount={HistoryFormatter.activeFilterCount(state)}
+            onTemplateQueryChange={historyStore.setTemplateQuery}
+            onEmployeeQueryChange={historyStore.setEmployeeQuery}
+            onActionChange={historyStore.setAction}
+            onDateChange={historyStore.setDate}
+            onClearFilters={historyStore.clearFilters}
+          />
+          {!isTemplateMode && (
+            <HistoryLogsPanel
+              items={filteredItems}
+              totalCount={state.items.length}
+              isLoading={state.isLoading}
+              onOpenDetail={historyStore.openDetail}
+            />
+          )}
+          {isTemplateMode && (
+            <HistoryTemplatesPanel
+              items={filteredTemplateItems}
+              totalCount={state.templateItems.length}
+              isLoading={state.isTemplateLoading}
+            />
+          )}
         </main>
-        <HistoryDetailModal />
+        <HistoryDetailModal item={openItem} onClose={historyStore.closeDetail} />
       </>
     );
   }

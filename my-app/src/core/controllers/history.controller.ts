@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useSyncExternalStore } from "react";
+import Store from "@/src/core/store/store";
 import { historyApiService, HistoryApiService } from "@/src/core/services/history-api.service";
 import type { HistoryPageState } from "@/src/core/models/history";
 
@@ -18,28 +16,12 @@ const INITIAL_HISTORY_STATE: HistoryPageState = {
   openId: null,
 };
 
-export class HistoryOrdersController {
-  private state: HistoryPageState = { ...INITIAL_HISTORY_STATE };
-  private listeners = new Set<() => void>();
-  private initialized = false;
-
-  constructor(private readonly service: HistoryApiService) {}
-
-  subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
-
-  getSnapshot = () => this.state;
-
-  private setState(patch: Partial<HistoryPageState>) {
-    this.state = { ...this.state, ...patch };
-    this.listeners.forEach((listener) => listener());
+export class HistoryController extends Store<HistoryPageState> {
+  constructor(private readonly service: HistoryApiService) {
+    super({ ...INITIAL_HISTORY_STATE });
   }
 
-  async initialize() {
-    if (this.initialized) return;
-    this.initialized = true;
+  protected async load() {
     await this.loadHistory();
   }
 
@@ -67,19 +49,19 @@ export class HistoryOrdersController {
     }
   }
 
-  setMode(mode: HistoryPageState["mode"]) {
+  setMode = (mode: HistoryPageState["mode"]) => {
     this.setState({ mode, openId: null });
     if (mode === "templates" && !this.state.templateItems.length && !this.state.isTemplateLoading) {
       void this.loadTemplateHistory();
     }
-  }
+  };
 
-  setTemplateQuery(templateQuery: string) { this.setState({ templateQuery }); }
-  setEmployeeQuery(employeeQuery: string) { this.setState({ employeeQuery }); }
-  setAction(action: HistoryPageState["action"]) { this.setState({ action }); }
-  setDate(date: string) { this.setState({ date }); }
+  setTemplateQuery = (templateQuery: string) => this.setState({ templateQuery });
+  setEmployeeQuery = (employeeQuery: string) => this.setState({ employeeQuery });
+  setAction = (action: HistoryPageState["action"]) => this.setState({ action });
+  setDate = (date: string) => this.setState({ date });
 
-  clearFilters() {
+  clearFilters = () => {
     this.setState({
       templateQuery: "",
       employeeQuery: "",
@@ -87,21 +69,11 @@ export class HistoryOrdersController {
       date: "",
       openId: null,
     });
-  }
+  };
 
-  openDetail(id: string | number) { this.setState({ openId: id }); }
-  closeDetail() { this.setState({ openId: null }); }
-  dismissNotice() { this.setState({ notice: "" }); }
+  openDetail = (id: string | number) => this.setState({ openId: id });
+  closeDetail = () => this.setState({ openId: null });
+  dismissNotice = () => this.setState({ notice: "" });
 }
 
-export const historyOrders = new HistoryOrdersController(historyApiService);
-
-export function useHistoryOrders() {
-  const state = useSyncExternalStore(
-    historyOrders.subscribe,
-    historyOrders.getSnapshot,
-    historyOrders.getSnapshot,
-  );
-  useEffect(() => { void historyOrders.initialize(); }, []);
-  return { state, actions: historyOrders };
-}
+export const historyStore = new HistoryController(historyApiService);

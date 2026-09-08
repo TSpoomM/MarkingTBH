@@ -1,19 +1,14 @@
 "use client";
 
 import { Component } from "react";
+import { MODAL_BODY } from "@/src/core/ui/fieldEditor";
+import { CONTAINER } from "@/src/core/ui/surfaces";
+import cn from "@/src/core/ui/cn";
 import Button from "@/src/components/ui/Button";
 import Modal from "@/src/components/ui/Modal";
+import StickerPreview, { PREVIEW_MODE_LABELS } from "@/src/core/stickers/stickerPreview";
 import type { StickerItem, StickerKind } from "@/src/core/models/marking-sticker";
 import StickerPreviewPages from "./StickerPreviewPages";
-
-const PREVIEW_MODE_LABELS: Record<StickerKind, string> = {
-  insideFrame: "ในกรอบ",
-  outsideFrame: "นอกกรอบ",
-  customerName: "ชื่อ Template",
-  fscLogo: "โลโก้ FSC",
-};
-
-const PREVIEW_MODE_ORDER: StickerKind[] = ["insideFrame", "outsideFrame", "customerName", "fscLogo"];
 
 interface StickerPreviewButtonProps {
   items: StickerItem[];
@@ -33,46 +28,26 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
     previewGroup: null,
   };
 
-  private previewModes() {
-    const kinds = new Set(this.props.items.map((item) => item.kind));
-    return PREVIEW_MODE_ORDER.filter((kind) => kinds.has(kind));
-  }
-
-  private outsideGroups(items: StickerItem[]) {
-    const groups: Array<{ key: string; name: string; items: StickerItem[] }> = [];
-    items.forEach((item) => {
-      const name = item.group?.trim() || "นอกกรอบ";
-      const key = `${item.groupOrder ?? 0}:${name}`;
-      const group = groups.find((entry) => entry.key === key);
-      if (group) group.items.push(item);
-      else groups.push({ key, name, items: [item] });
-    });
-    return groups;
-  }
-
-  private firstPreviewMode() {
-    return this.previewModes()[0] ?? "insideFrame";
-  }
-
   render() {
     const { items, className = "" } = this.props;
     const { previewOpen, previewMode, previewGroup } = this.state;
-    const previewModes = this.previewModes();
-    const activeMode = previewModes.includes(previewMode) ? previewMode : this.firstPreviewMode();
+    const previewModes = StickerPreview.modes(items);
+    const activeMode = previewModes.includes(previewMode) ? previewMode : StickerPreview.firstMode(items);
     const modeItems = items.filter((item) => item.kind === activeMode);
-    const outsideGroups = activeMode === "outsideFrame" ? this.outsideGroups(modeItems) : [];
+    const outsideGroups = activeMode === "outsideFrame" ? StickerPreview.outsideItemGroups(modeItems) : [];
     const activeOutsideGroup = outsideGroups.find((group) => group.key === previewGroup) ?? outsideGroups[0];
     const activeItems = activeOutsideGroup?.items ?? modeItems;
 
     return (
-      // <div className="sticker-preview-wrap">
       <div>
         <Button
-          className={`sticker-preview-open marking-preview-open ${className}`.trim()}
+          variant="secondary"
+          size="md"
+          className={className}
           disabled={items.length === 0}
           onClick={() => this.setState({
             previewOpen: true,
-            previewMode: this.firstPreviewMode(),
+            previewMode: StickerPreview.firstMode(items),
             previewGroup: null,
           })}
           title={items.length === 0 ? "ยังไม่มีข้อมูลสำหรับ Preview Sticker" : "ดู Preview Sticker"}
@@ -85,7 +60,7 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
           subtitle="ตัวอย่างจากข้อมูลที่กรอกในหน้าหลัก"
           onClose={() => this.setState({ previewOpen: false })}
         >
-          <div className="editor-body sticker-template-preview-modal-body">
+          <div className={cn(MODAL_BODY, "sticker-template-preview-modal-body")}>
             {previewModes.length > 1 && (
               <div className="sticker-template-preview-modes" aria-label="เลือกโหมด Preview">
                 {previewModes.map((mode) => (
@@ -114,7 +89,7 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
                 ))}
               </div>
             )}
-            <div className="container pdf-preview sticker-template-real-preview">
+            <div className={cn(CONTAINER, "pdf-preview sticker-template-real-preview")}>
               <StickerPreviewPages items={activeItems} mode={activeMode} />
             </div>
           </div>

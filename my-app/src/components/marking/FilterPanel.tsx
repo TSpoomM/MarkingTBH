@@ -1,53 +1,63 @@
 "use client";
 
+import { Component } from "react";
 import Toast from "@/src/components/ui/Toast";
+import { CONTAINER } from "@/src/core/ui/surfaces";
 import Card from "@/src/components/ui/Card";
 import Input from "@/src/components/ui/Input";
 import CalendarInput from "@/src/components/ui/CalendarInput";
 import TemplateAutocomplete from "@/src/components/templates/TemplateAutocomplete";
-import MarkingComponent from "./MarkingComponent";
-import SectionTitle from "./SectionTitle";
+import SectionTitle from "@/src/components/ui/SectionTitle";
+import type { MarkingFilterPanelProps } from "@/src/core/models/marking";
 
-export default class FilterPanel extends MarkingComponent {
+export default class FilterPanel extends Component<MarkingFilterPanelProps> {
   render() {
+    const {
+      notice, templates, templateId, template, productionDate, lotCount, lotStart, isLoading,
+      onDismissNotice, onSelectTemplate, onProductionDateChange, onLotCountChange,
+    } = this.props;
+
     return (
-      <main className="container">
-        {this.state.notice && (
+      <main className={CONTAINER}>
+        {notice && (
           <Toast
-            type={this.state.notice.type}
-            message={this.state.notice.text}
-            onClose={() => this.actions.dismissNotice()}
+            type={notice.type}
+            message={notice.text}
+            onClose={onDismissNotice}
           />
         )}
-        <Card className="details-panel">
+        <Card className="overflow-visible p-[clamp(20px,2.4vw,30px)] max-bp700:p-4">
           <SectionTitle
             number="1"
             title="รายละเอียดสติ๊กเกอร์"
             subtitle="เลือก Template และกรอกข้อมูลการผลิต ส่วนค่า Sticker ถูกกำหนดโดย Admin"
           />
-          <div className="detail-grid">
+          <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-[18px] max-bp700:grid-cols-1">
             <TemplateAutocomplete
+              size="lg"
               label="Template"
-              hint={this.state.template ? `สติ๊กเกอร์นอกกรอบมี ${this.state.template.outside.length} ช่องข้อมูล` : undefined}
-              selectedTemplateId={this.state.templateId}
-              templates={this.state.templates}
-              placeholder={this.state.isLoading ? "กำลังโหลด Template..." : "เลือก Template"}
-              onSelectTemplate={(templateId) => void this.actions.selectTemplate(templateId)}
-              disabled={this.state.isLoading}
+              hint={template ? `สติ๊กเกอร์นอกกรอบมี ${template.outside.length} ช่องข้อมูล` : undefined}
+              selectedTemplateId={templateId}
+              templates={templates}
+              placeholder={isLoading ? "กำลังโหลด Template..." : "เลือก Template"}
+              onSelectTemplate={onSelectTemplate}
+              disabled={isLoading}
             />
             <CalendarInput
+              size="lg"
               label="Production Date *"
-              value={this.state.productionDate}
-              onChange={(value) => this.actions.setProductionDate(value)}
+              value={productionDate}
+              onChange={onProductionDateChange}
             />
             <Input
+              size="lg"
               label="จำนวน Lot ที่ต้องการ print *"
-              hint={`เริ่ม LOT ${this.state.lotStart}`}
+              hint={`เริ่ม LOT ${lotStart}`}
               type="text"
               inputMode="numeric"
               pattern="\d*"
-              value={this.state.lotCount}
-              onChange={(event) => this.actions.setLotCount(event.target.value)}
+              value={lotCount}
+              onChange={(event) => onLotCountChange(event.target.value)}
             />
           </div>
         </Card>

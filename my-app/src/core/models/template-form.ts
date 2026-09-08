@@ -1,12 +1,6 @@
 import type { TemplateDetail, StickerDefaults, TemplateField } from "./template";
 
-export const STICKER_FORMATS = {
-  "5533": [5, 5, 3, 3],
-  "555": [5, 5, 5],
-} as const;
-
 export type StickerField = "side" | "format" | "type" | "other";
-export type StickerLayoutKey = "insideFrame" | "outsideFrame" | "customerName" | "fscLogo";
 export type CounterType = "lot" | "pallet" | "sequence";
 
 export interface StickerLayouts {
