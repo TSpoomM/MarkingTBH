@@ -4,6 +4,8 @@ import MarkingComponent from "./MarkingComponent";
 import StickerFactory from "@/src/core/stickers/stickerFactory";
 import StickerPage from "./StickerPage";
 import TableSection from "./TableSection";
+import { LayersPlus } from 'lucide-react';
+
 
 export default class OrderTable extends MarkingComponent {
   render() {
@@ -53,53 +55,63 @@ export default class OrderTable extends MarkingComponent {
       : [];
     return (
       <>
-        <div className="container table-layout">
-          <div className="table-column table-column-inside">
-            <div className="table-column-label">
-              <span>สติ๊กเกอร์</span>
-              <strong>ในกรอบ</strong>
-            </div>
-            <TableSection
-              number="2"
-              title="ในกรอบ"
-              subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์ในกรอบ"
-              fields={this.state.template?.inside ?? []}
-              rows={this.state.insideRows}
-              lotStart={this.state.lotStart}
-              onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
-            />
-          </div>
-          <div className="table-column table-column-outside">
-            <div className="table-column-label">
-              <span>สติ๊กเกอร์</span>
-              <strong>นอกกรอบ</strong>
-            </div>
-            {this.state.template && outsideGroups.map((group, groupIndex) => (
+        {this.state.template ? (
+          <div className="container table-layout">
+            <div className="table-column table-column-inside">
+              <div className="table-column-label">
+                <span>สติ๊กเกอร์</span>
+                <strong>ในกรอบ</strong>
+              </div>
               <TableSection
-                key={`${group.name}-${groupIndex}`}
-                number={String(groupIndex + 3)}
-                title={group.name}
-                subtitle={`กรอกข้อมูลสำหรับ ${group.name}`}
-                fields={group.fields}
-                rows={this.state.outsideRows}
+                number="2"
+                title="ในกรอบ"
+                subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์ในกรอบ"
+                fields={this.state.template.inside}
+                rows={this.state.insideRows}
                 lotStart={this.state.lotStart}
-                onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
+                onChange={(row, key, value) => this.actions.updateRow("inside", row, key, value)}
               />
-            ))}
-            {this.state.template && outsideGroups.length === 0 && this.state.isAdmin && (
-              <TableSection
-                number="3"
-                title="ข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
-                subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
-                fields={[]}
-                rows={[]}
-                lotStart={this.state.lotStart}
-                onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
-                emptyText="ลูกค้ารายนี้ยังไม่ได้ตั้งค่าสติ๊กเกอร์นอกกรอบ"
-              />
-            )}
+            </div>
+            <div className="table-column table-column-outside">
+              <div className="table-column-label">
+                <span>สติ๊กเกอร์</span>
+                <strong>นอกกรอบ</strong>
+              </div>
+              {outsideGroups.map((group, groupIndex) => (
+                <TableSection
+                  key={`${group.name}-${groupIndex}`}
+                  number={String(groupIndex + 3)}
+                  title={group.name}
+                  subtitle={`กรอกข้อมูลสำหรับ ${group.name}`}
+                  fields={group.fields}
+                  rows={this.state.outsideRows}
+                  lotStart={this.state.lotStart}
+                  onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
+                />
+              ))}
+              {outsideGroups.length === 0 && this.state.isAdmin && (
+                <TableSection
+                  number="3"
+                  title="ข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
+                  subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
+                  fields={[]}
+                  rows={[]}
+                  lotStart={this.state.lotStart}
+                  onChange={(row, key, value) => this.actions.updateRow("outside", row, key, value)}
+                  emptyText="ลูกค้ารายนี้ยังไม่ได้ตั้งค่าสติ๊กเกอร์นอกกรอบ"
+                />
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="container template-print-empty">
+            {/* <div className="template-print-empty-mark" aria-hidden="true">
+              <span>TBH</span>
+            </div> */}
+            <LayersPlus className="item-center justify-center" strokeWidth={"1px"} size={"100px"} />
+            <strong>โปรดเลือก template ก่อนสั่งพิมพ์</strong>
+          </div>
+        )}
 
         <div className="print-sheet">
           {framePages.map((page, index) => (

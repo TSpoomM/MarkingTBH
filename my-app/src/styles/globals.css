@@ -1499,6 +1499,48 @@ select {
 	flex: 1;
 }
 
+.template-print-empty {
+	min-height: 280px;
+	display: grid;
+	place-items: center;
+	align-content: center;
+	gap: 14px;
+	border-top: 4px solid var(--primary);
+	border-radius: 0 0 var(--radius) var(--radius);
+	background: linear-gradient(180deg, #f8fbf9, #eef5f1);
+	color: #596a62;
+	text-align: center;
+}
+
+.template-print-empty-mark {
+	width: 78px;
+	height: 78px;
+	display: grid;
+	place-items: center;
+	border: 1px solid #bad4c8;
+	border-radius: 18px;
+	background: #fff;
+	box-shadow: 0 16px 36px rgba(31, 102, 67, .14);
+}
+
+.template-print-empty-mark span {
+	width: 52px;
+	height: 52px;
+	display: grid;
+	place-items: center;
+	border-radius: 12px;
+	background: var(--primary);
+	color: #fff;
+	font-size: 16px;
+	font-weight: 900;
+}
+
+.template-print-empty strong {
+	color: #1a2a24;
+	font-size: 18px;
+	font-weight: 900;
+}
+
 .header-actions { display:flex; align-items:center; gap:10px }
 
 .navbar-right { display:flex; align-items:center; justify-content:flex-end; gap:14px }
