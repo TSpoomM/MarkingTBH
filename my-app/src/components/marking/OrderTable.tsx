@@ -11,7 +11,7 @@ export default class OrderTable extends MarkingComponent {
       StickerFactory.matchesCondition(field, this.state.stickerType, this.state.stickerOther),
     );
     const outsideGroups = StickerFactory.outsideGroups(outsideFields);
-    const stickerItems = StickerFactory.build({
+    const stickerItems = this.state.isPrintSheetActive ? StickerFactory.build({
       customerName: "",
       format: this.state.stickerFormat,
       sideCount: Number(this.state.stickerSides || 0),
@@ -25,7 +25,7 @@ export default class OrderTable extends MarkingComponent {
       outsideFields,
       insideRow: this.state.insideRows[0],
       outsideRow: this.state.outsideRows[0],
-    });
+    }) : [];
     const insideFramePages = StickerFactory.chunk(
       stickerItems.filter((item) => item.kind === "insideFrame"),
       4,

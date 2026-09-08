@@ -50,6 +50,7 @@ export const INITIAL_MARKING_STATE: MarkingState = {
   isLoading: true,
   isSaving: false,
   isExportModalOpen: false,
+  isPrintSheetActive: false,
   isTemplateEditorOpen: false,
   notice: null,
 };

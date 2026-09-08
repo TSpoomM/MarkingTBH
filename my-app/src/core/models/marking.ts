@@ -29,6 +29,7 @@ export interface MarkingState {
   isLoading: boolean;
   isSaving: boolean;
   isExportModalOpen: boolean;
+  isPrintSheetActive: boolean;
   isTemplateEditorOpen: boolean;
   notice: Notice | null;
 }

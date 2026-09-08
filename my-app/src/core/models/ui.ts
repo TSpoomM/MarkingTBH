@@ -42,6 +42,7 @@ export interface ModalProps {
   title: string;
   subtitle?: ReactNode;
   children: ReactNode;
+  className?: string;
   footer?: ReactNode;
   onClose: () => void;
 }

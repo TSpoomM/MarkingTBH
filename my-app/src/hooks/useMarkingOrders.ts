@@ -141,7 +141,11 @@ export class MarkingOrdersController {
   setStickerType(stickerType: string) { this.setState({ stickerType, stickerFsc: stickerType === "TNR" ? this.state.stickerFsc : false }); }
   setStickerFsc(stickerFsc: boolean) { this.setState({ stickerFsc }); }
   setStickerOther(stickerOther: string) { this.setState({ stickerOther }); }
-  setLotCount(lotCount: string) { this.setState({ lotCount }); }
+  private digitsOnly(value: string) {
+    return value.replace(/\D/g, "");
+  }
+
+  setLotCount(lotCount: string) { this.setState({ lotCount: this.digitsOnly(lotCount) }); }
   setProductionDate(productionDate: string) {
     this.setState({ productionDate });
     if (this.state.templateId && productionDate) {
@@ -270,10 +274,20 @@ export class MarkingOrdersController {
     ) ?? key.toLowerCase().includes("lot");
   }
 
+  private isCounterKey(section: "inside" | "outside", key: string) {
+    const fields = section === "inside" ? this.state.template?.inside : this.state.template?.outside;
+    return fields?.some((field) =>
+      field.key === key
+        ? field.isCounter
+        : field.segments?.some((segment) => segment.key === key && segment.isCounter),
+    ) ?? false;
+  }
+
   updateRow(section: "inside" | "outside", rowIndex: number, key: string, value: string) {
     const stateKey = section === "inside" ? "insideRows" : "outsideRows";
     const lockedValue = this.lockedValue(section, key);
-    const normalizedValue = lockedValue ?? (this.shouldUppercase(section, key) ? value.toUpperCase() : value);
+    const inputValue = this.isCounterKey(section, key) ? this.digitsOnly(value) : value;
+    const normalizedValue = lockedValue ?? (this.shouldUppercase(section, key) ? inputValue.toUpperCase() : inputValue);
     const rows = this.state[stateKey].map((row, index) =>
       index === rowIndex ? { ...row, [key]: normalizedValue } : row,
     );
@@ -447,11 +461,16 @@ export class MarkingOrdersController {
     }
     const result = await this.save("print");
     if (!result) return;
-    this.setState({ isExportModalOpen: false });
+    this.setState({ isExportModalOpen: false, isPrintSheetActive: true });
     if (process.env.NODE_ENV !== "production") {
       console.debug("[Marking] export:print");
     }
-    window.setTimeout(() => window.print(), 120);
+    const deactivatePrintSheet = () => this.setState({ isPrintSheetActive: false });
+    window.addEventListener("afterprint", deactivatePrintSheet, { once: true });
+    window.setTimeout(() => {
+      window.print();
+      window.setTimeout(deactivatePrintSheet, 60000);
+    }, 120);
   }
 
   async saveTemplate() {

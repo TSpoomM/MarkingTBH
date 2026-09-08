@@ -19,13 +19,13 @@ export default class Modal extends Component<ModalProps, ModalState> {
   }
 
   render() {
-    const { open, title, subtitle, children, footer, onClose } = this.props;
+    const { open, title, subtitle, children, className = "", footer, onClose } = this.props;
     if (!open || !this.state.mounted) return null;
 
     const modal = (
       <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
         <section
-          className="template-modal"
+          className={`template-modal ${className}`.trim()}
           role="dialog"
           aria-modal="true"
           aria-labelledby="shared-modal-title"

@@ -43,8 +43,9 @@ export default class FilterPanel extends MarkingComponent {
             <Input
               label="จำนวน Lot ที่ต้องการ print *"
               hint={`เริ่ม LOT ${this.state.lotStart}`}
-              type="number"
-              min="1"
+              type="text"
+              inputMode="numeric"
+              pattern="\d*"
               value={this.state.lotCount}
               onChange={(event) => this.actions.setLotCount(event.target.value)}
             />

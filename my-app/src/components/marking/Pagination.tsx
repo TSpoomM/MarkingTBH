@@ -36,7 +36,7 @@ export default class Pagination extends MarkingComponent {
       customerName: "",
       format: previewFormat,
       sideCount: previewSideCount,
-      lotCount: Number(this.state.lotCount || 1),
+      lotCount: 1,
       lotStart: this.state.lotStart,
       productionDate: this.state.productionDate || "xxx",
       stickerType: this.state.stickerType,

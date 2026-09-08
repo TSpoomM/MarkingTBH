@@ -724,6 +724,22 @@ select {
 	font-size: 13px;
 }
 
+.date-format-modal {
+	width: min(1050px, 100%);
+	overflow: visible;
+}
+
+.date-format-modal .date-format-modal-body {
+	padding-bottom: 40px;
+	overflow: visible;
+	align-content: start;
+}
+
+.date-format-modal .date-format-builder-grid {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	align-items: start;
+}
+
 .date-format-modal-body .date-format-builder-grid label>span {
 	font-size: 13px;
 }
@@ -732,6 +748,11 @@ select {
 	height: 44px;
 	min-height: 44px;
 	font-size: 14px;
+}
+
+.date-format-modal-body .custom-select-list {
+	max-height: 180px;
+	z-index: 2100;
 }
 
 .template-draft-section {

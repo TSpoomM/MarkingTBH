@@ -641,6 +641,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
               </Modal>
               <Modal
                 open={dateFormatPromptIndex === index}
+                className="date-format-modal"
                 title="รูปแบบวันที่"
                 subtitle={`ตัวอย่าง: ${DateFormatter.formatDateInputValue("2026-09-02", field.dateFormat)}`}
                 onClose={() => this.closeDateFormatPrompt()}
