@@ -7,7 +7,7 @@ import type { ControlSize } from "@/src/core/ui/fields";
 import Field from "./Field";
 import cn from "@/src/core/ui/cn";
 import {
-  CAL_ACTION, CAL_ACTIONS, CAL_BTN, CAL_DAY, CAL_DAYS, CAL_DAY_EMPTY, CAL_DAY_SELECTED, CAL_DAY_TODAY,
+  CAL_ACTION, CAL_ACTIONS, CAL_BTN, CAL_DAY, CAL_DAYS, CAL_DAY_DEFAULT, CAL_DAY_EMPTY, CAL_DAY_SELECTED, CAL_DAY_TODAY,
   CAL_DISPLAY, CAL_DISPLAY_DISABLED, CAL_DISPLAY_PLACEHOLDER, CAL_DISPLAY_SIZE, CAL_GRID, CAL_HEAD,
   CAL_ICON, CAL_NAV,
   CAL_POPOVER, CAL_POPOVER_UP, CAL_SHELL, CAL_WEEKDAY, CAL_WEEKDAYS,
@@ -159,8 +159,11 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
           className={cn(
             CAL_BTN,
             CAL_DAY,
-            value === todayValue && CAL_DAY_TODAY,
-            value === selectedValue && CAL_DAY_SELECTED,
+            value === selectedValue
+              ? CAL_DAY_SELECTED
+              : value === todayValue
+                ? CAL_DAY_TODAY
+                : CAL_DAY_DEFAULT,
           )}
           onClick={() => this.selectDate(day)}
           key={value}

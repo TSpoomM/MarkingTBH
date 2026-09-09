@@ -7,7 +7,7 @@ import { PANEL } from "@/src/core/ui/surfaces";
 import HistoryPanelHeading from "./HistoryPanelHeading";
 import {
   HISTORY_EMPTY, HISTORY_ROW, HISTORY_TABLE, HISTORY_TABLE_WRAP,
-  HISTORY_TOGGLE, historyBadge,
+  HISTORY_TOGGLE,
 } from "@/src/core/ui/history";
 import HistoryFormatter from "@/src/core/history/historyFormatter";
 import type { HistoryLogsPanelProps } from "@/src/core/models/history";
@@ -32,15 +32,22 @@ export default class HistoryLogsPanel extends Component<HistoryLogsPanelProps> {
         ) : (
           <div className={HISTORY_TABLE_WRAP}>
             <table className={HISTORY_TABLE}>
+              <colgroup>
+                <col className="w-[16%]" />
+                <col className="w-[17%]" />
+                <col className="w-[17%]" />
+                <col className="w-[18%]" />
+                <col className="w-[20%]" />
+                <col className="w-[12%]" />
+              </colgroup>
               <thead>
                 <tr>
                   <th>เวลา</th>
                   <th>ผู้บันทึก</th>
                   <th>สาขา</th>
                   <th>ลูกค้า</th>
-                  <th>การทำรายการ</th>
-                  <th>รายละเอียด</th>
-                  <th></th>
+                  <th>สิ่งที่พิมพ์</th>
+                  <th>เนื้อหาการพิมพ์</th>
                 </tr>
               </thead>
               <tbody>
@@ -50,11 +57,10 @@ export default class HistoryLogsPanel extends Component<HistoryLogsPanelProps> {
                     <td>{item.employeeName || "-"}</td>
                     <td>{item.employeeLocation || "-"}</td>
                     <td>{item.customerName || `Template #${item.templateId}`}</td>
-                    <td><span className={historyBadge(item.actionType)}>{HistoryFormatter.actionLabel(item.actionType)}</span></td>
-                    <td>{HistoryFormatter.detailText(item)}</td>
+                    <td>{HistoryFormatter.printedSections(item)}</td>
                     <td>
                       <Button className={HISTORY_TOGGLE} onClick={() => onOpenDetail(item.id)}>
-                        ดู
+                        แสดง
                       </Button>
                     </td>
                   </tr>

@@ -41,6 +41,8 @@ export interface SaveMarkingPayload {
   actionType?: "save" | "print";
   contentInside: MarkingContent[];
   contentOutside: MarkingContent[];
+  /** Which sticker sections the user had ticked when this was printed - undefined for a plain save. */
+  printSections?: Partial<PrintSections>;
 }
 
 export interface CreateMarkingInput {
@@ -54,6 +56,7 @@ export interface CreateMarkingInput {
   actionType?: "save" | "print";
   contentInside: MarkingContent | MarkingContent[];
   contentOutside: MarkingContent | MarkingContent[];
+  printSections?: Partial<PrintSections>;
 }
 
 export interface MarkingHistoryItem {
@@ -81,6 +84,7 @@ export interface MarkingHistoryItem {
     inside: Record<string, MarkingHistoryFieldMeta>;
     outside: Record<string, MarkingHistoryFieldMeta>;
   };
+  printSections?: Partial<PrintSections>;
 }
 
 export interface MarkingHistoryFieldMeta {
@@ -88,6 +92,10 @@ export interface MarkingHistoryFieldMeta {
   parentKey: string;
   parentLabel: string;
   order: number;
+  /** Which outside-frame table (stickerGroup) this field belongs to - undefined when the
+   * template has no multi-table split, so all fields render under one section. */
+  group?: string;
+  groupOrder?: number;
 }
 
 export interface MarkingFilterPanelProps {

@@ -23,6 +23,16 @@ export class MarkingRepository {
     return rows.find((row) => row[key])?.[key] ?? "";
   }
 
+  private parsePrintSections(value: unknown): CreateMarkingInput["printSections"] {
+    if (!value) return undefined;
+    if (typeof value === "object") return value as CreateMarkingInput["printSections"];
+    try {
+      return JSON.parse(String(value));
+    } catch {
+      return undefined;
+    }
+  }
+
   private numberValue(value: unknown) {
     const number = Number(value ?? 0);
     return Number.isFinite(number) ? number : 0;
@@ -147,6 +157,8 @@ export class MarkingRepository {
         parentKey: field.key,
         parentLabel: field.label,
         order,
+        group: field.stickerGroup,
+        groupOrder: field.stickerGroupOrder,
       };
       field.segments?.forEach((segment, segmentIndex) => {
         meta[segment.key] = {
@@ -154,6 +166,8 @@ export class MarkingRepository {
           parentKey: field.key,
           parentLabel: field.label,
           order: segment.stickerOrder ?? order * 10 + segmentIndex,
+          group: field.stickerGroup,
+          groupOrder: field.stickerGroupOrder,
         };
       });
     });
@@ -185,8 +199,8 @@ export class MarkingRepository {
   async create(input: CreateMarkingInput) {
     const [result] = await this.pool.execute<ResultSetHeader>(
       `INSERT INTO tb_marking
-        (emp_id, cus_id, total_lot, sticker_sides, content_inside, content_outside, created_date)
-       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+        (emp_id, cus_id, total_lot, sticker_sides, content_inside, content_outside, print_sections, created_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         input.employeeId,
         input.templateId,
@@ -194,6 +208,7 @@ export class MarkingRepository {
         input.stickerSides,
         JSON.stringify(input.contentInside),
         JSON.stringify(input.contentOutside),
+        input.printSections ? JSON.stringify(input.printSections) : null,
       ],
     );
     return result.insertId;
@@ -282,6 +297,7 @@ export class MarkingRepository {
         inside,
         outside,
         fieldMeta: fieldMetaByTemplate.get(this.numberValue(record.cus_id)),
+        printSections: this.parsePrintSections(record.print_sections),
       };
     });
   }

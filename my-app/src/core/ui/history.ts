@@ -13,24 +13,13 @@ export const HISTORY_TABLE =
   "w-full border-separate border-spacing-0 bg-white text-sm " +
   "max-bp700:min-w-[820px] " +
   "[&_th]:sticky [&_th]:top-0 [&_th]:z-[2] [&_th]:border-b [&_th]:border-b-[#dce7e2] " +
-  "[&_th]:bg-[#f6faf8] [&_th]:px-4 [&_th]:py-[15px] [&_th]:text-left [&_th]:align-top " +
+  "[&_th]:bg-[#f6faf8] [&_th]:px-4 [&_th]:py-[15px] [&_th]:text-center [&_th]:align-top " +
   "[&_th]:text-xs [&_th]:font-black [&_th]:uppercase [&_th]:whitespace-nowrap [&_th]:text-[#52635b] " +
   "[&_td]:border-b [&_td]:border-b-[#edf2ef] [&_td]:bg-white [&_td]:px-4 [&_td]:py-[15px] " +
-  "[&_td]:text-left [&_td]:align-top [&_td]:leading-[1.45] [&_td]:text-[#21332c] " +
+  "[&_td]:text-center [&_td]:align-top [&_td]:leading-[1.45] [&_td]:text-[#21332c] " +
   "[&_td:first-child]:font-semibold [&_td:first-child]:whitespace-nowrap [&_td:first-child]:text-[#51655c]";
 
 export const HISTORY_ROW = "hover:[&>td]:bg-[#f7fbf9]";
-
-const BADGE_BASE =
-  "inline-flex min-h-[30px] min-w-[90px] items-center justify-center rounded-full border px-2.5 py-1 text-xs font-black";
-
-export const HISTORY_BADGE: Record<string, string> = {
-  print: `${BADGE_BASE} border-primary/35 bg-primary-soft text-primary-dark`,
-  save: `${BADGE_BASE} border-[#c9d8ee] bg-[#eef4ff] text-[#315987]`,
-  unknown: `${BADGE_BASE} border-[#ddd4bd] bg-[#f6f0e3] text-[#6b5a2f]`,
-};
-
-export const historyBadge = (action: string) => HISTORY_BADGE[action] ?? HISTORY_BADGE.unknown;
 
 export const HISTORY_FIELD_COUNT =
   "inline-flex min-h-[30px] items-center rounded-[7px] border border-[#c8d8d0] bg-[#f3f8f5] " +

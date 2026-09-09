@@ -25,6 +25,7 @@ export const markingSchema = z.object({
     z.record(z.string(), z.string()),
     z.array(z.record(z.string(), z.string())),
   ]),
+  printSections: z.record(z.string(), z.boolean()).optional(),
 });
 
 export class MarkingService {

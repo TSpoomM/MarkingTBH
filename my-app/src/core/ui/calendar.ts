@@ -55,9 +55,12 @@ export const CAL_WEEKDAY = "grid h-6 place-items-center text-[12px] font-black t
 export const CAL_DAYS = "gap-[5px]";
 
 export const CAL_DAY =
-  "!grid aspect-square !min-h-0 min-w-0 place-items-center !border-[#c9d8d0] !bg-white !p-0 text-[14px] !text-[#17352a]";
+  "!grid aspect-square !min-h-0 min-w-0 place-items-center !p-0 text-[14px]";
 export const CAL_DAY_EMPTY = "!border-transparent !bg-transparent pointer-events-none";
-export const CAL_DAY_TODAY = "!border-primary !text-primary-dark shadow-[inset_0_0_0_1px_var(--primary)]";
+/** Cell backgrounds are mutually exclusive (default / today / selected) so they never
+ * fight each other for the same !important property - see CalendarInput.renderDays(). */
+export const CAL_DAY_DEFAULT = "!border-[#c9d8d0] !bg-white !text-[#17352a]";
+export const CAL_DAY_TODAY = "!border-primary !bg-white !text-primary-dark shadow-[inset_0_0_0_1px_var(--primary)]";
 export const CAL_DAY_SELECTED =
   "!border-primary-dark !bg-primary !text-white shadow-[0_6px_14px_rgba(15,118,110,.28)] " +
   "hover:!border-primary-dark hover:!bg-primary hover:!text-white";

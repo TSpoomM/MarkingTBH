@@ -68,12 +68,23 @@ export default class HistoryDetailModal extends Component<HistoryDetailModalProp
                   <dt>Other</dt>
                   <dd>{item.stickerOther || "-"}</dd>
                 </div>
+                <div>
+                  <dt>สิ่งที่พิมพ์</dt>
+                  <dd>{HistoryFormatter.printedSections(item)}</dd>
+                </div>
               </dl>
             </section>
             <section className={cn(HISTORY_BOX, HISTORY_BOX_TITLE, "bg-[#fdfefe]")}>
               <h3>ข้อมูลในสติ๊กเกอร์</h3>
               <HistoryTemplateSection title="ในกรอบ" rows={item.inside} fieldMeta={item.fieldMeta?.inside} />
-              <HistoryTemplateSection title="นอกกรอบ" rows={item.outside} fieldMeta={item.fieldMeta?.outside} />
+              {HistoryFormatter.outsideGroups(item.outside, item.fieldMeta?.outside).map((group, index) => (
+                <HistoryTemplateSection
+                  key={group.name ?? `outside-${index}`}
+                  title={group.name ? `นอกกรอบ · ${group.name}` : "นอกกรอบ"}
+                  rows={group.rows}
+                  fieldMeta={item.fieldMeta?.outside}
+                />
+              ))}
             </section>
           </div>
         )}

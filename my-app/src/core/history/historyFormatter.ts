@@ -1,5 +1,6 @@
 import type { MarkingContent, MarkingHistoryFieldMeta, MarkingHistoryItem } from "@/src/core/models/marking";
 import type { HistoryPageState, TemplateHistoryItem } from "@/src/core/models/history";
+import { PREVIEW_MODE_LABELS, PREVIEW_MODE_ORDER } from "@/src/core/stickers/stickerPreview";
 
 export default class HistoryFormatter {
   static filteredItems(
@@ -69,15 +70,14 @@ export default class HistoryFormatter {
     return "ข้อมูลเก่า";
   }
 
-  static detailText(row: MarkingHistoryItem) {
-    const parts = [
-      row.productionDate && `Production ${row.productionDate}`,
-      row.lotStart && row.lotEnd && `LOT ${row.lotStart}-${row.lotEnd}`,
-      row.stickerFormat && `Format ${row.stickerFormat}`,
-      row.stickerType && `เกรด ${row.stickerType}`,
-      row.stickerOther && row.stickerOther,
-    ].filter(Boolean);
-    return parts.join(" / ") || "-";
+  /** Which sticker sections were ticked when this record was printed - "-" for a plain save
+   * or for records saved before print_sections started being recorded. */
+  static printedSections(row: MarkingHistoryItem) {
+    if (row.actionType !== "print" || !row.printSections) return "-";
+    const labels = PREVIEW_MODE_ORDER
+      .filter((section) => row.printSections?.[section])
+      .map((section) => PREVIEW_MODE_LABELS[section]);
+    return labels.length ? labels.join(", ") : "-";
   }
 
   private static isStickerDetailKey(key: string) {
@@ -151,6 +151,32 @@ export default class HistoryFormatter {
       return meta?.parentLabel ?? this.segmentGroupLabel(groupKey, groupKeys);
     }
     return fieldMeta[key]?.label ?? key;
+  }
+
+  /** Splits outside-frame rows back into their per-table groups (mirrors StickerFactory.outsideGroups()
+   * on the live print path), so a template with multiple outside tables doesn't collapse into one. */
+  static outsideGroups(rows: MarkingContent[], fieldMeta: Record<string, MarkingHistoryFieldMeta> = {}) {
+    const groupOrders = new Map<string, number>();
+    Object.values(fieldMeta).forEach((meta) => {
+      if (meta.group && !groupOrders.has(meta.group)) groupOrders.set(meta.group, meta.groupOrder ?? 0);
+    });
+    if (groupOrders.size === 0) return [{ name: undefined as string | undefined, rows }];
+
+    const orderedNames = Array.from(groupOrders.entries())
+      .sort(([, left], [, right]) => left - right)
+      .map(([name]) => name);
+
+    return orderedNames.map((name) => ({
+      name,
+      rows: rows.map((row) => {
+        const filtered: MarkingContent = {};
+        Object.entries(row).forEach(([key, value]) => {
+          const keyGroup = fieldMeta[key]?.group ?? orderedNames[0];
+          if (keyGroup === name) filtered[key] = value;
+        });
+        return filtered;
+      }),
+    }));
   }
 
   static filledEntries(row: MarkingContent, fieldMeta: Record<string, MarkingHistoryFieldMeta> = {}) {

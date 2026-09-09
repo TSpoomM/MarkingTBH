@@ -164,6 +164,7 @@ export class MarkingController extends Store<MarkingState> {
         ...(this.state.stickerOther && { sticker_other: this.state.stickerOther }),
       })),
       contentOutside: outsideRows,
+      ...(actionType === "print" && { printSections: this.state.printSections }),
     };
   }
 

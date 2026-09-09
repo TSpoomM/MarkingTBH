@@ -60,17 +60,19 @@ export default class MarkingPage extends StoreContainer<MarkingState> {
           fscLogoPages={fscLogoPages}
           onChangeRow={markingStore.updateRow}
         />
-        <Pagination
-          previewItems={MarkingStickerPlan.previewItems(state)}
-          printOptions={printOptions}
-          canExport={!!state.template}
-          isSaving={state.isSaving}
-          isExportModalOpen={state.isExportModalOpen}
-          onOpenExportModal={markingStore.openExportModal}
-          onCloseExportModal={markingStore.closeExportModal}
-          onToggleOption={this.toggleOption}
-          onExport={() => void markingStore.saveAndExport()}
-        />
+        {state.template && (
+          <Pagination
+            previewItems={MarkingStickerPlan.previewItems(state)}
+            printOptions={printOptions}
+            canExport={!!state.template}
+            isSaving={state.isSaving}
+            isExportModalOpen={state.isExportModalOpen}
+            onOpenExportModal={markingStore.openExportModal}
+            onCloseExportModal={markingStore.closeExportModal}
+            onToggleOption={this.toggleOption}
+            onExport={() => void markingStore.saveAndExport()}
+          />
+        )}
       </>
     );
   }

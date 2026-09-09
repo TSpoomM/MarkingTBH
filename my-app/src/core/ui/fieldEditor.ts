@@ -154,8 +154,8 @@ export const ADD_SEGMENT =
   "text-base font-black text-primary-dark shadow-none hover:border-primary-dark hover:bg-[#d6eadf]";
 
 export const ADD_ROW_BUTTON =
-  "h-[38px] min-h-11 w-full cursor-pointer rounded-b-lg border border-t-0 border-[#c7d6cc] bg-[#f7faf6] " +
-  "text-sm font-extrabold text-primary-dark";
+  "h-[38px] min-h-11 w-full cursor-pointer rounded-b-lg border border-t-0 border-dashed border-[#8fb3a2] bg-[#f7faf6] " +
+  "text-sm font-extrabold text-primary-dark hover:border-primary hover:bg-primary-soft";
 
 export const ADD_FIELD_BUTTON =
   "flex min-h-11 w-full items-center justify-center gap-[7px] rounded-lg border border-dashed " +

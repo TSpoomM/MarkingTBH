@@ -43,22 +43,26 @@ export default class FilterPanel extends Component<MarkingFilterPanelProps> {
               onSelectTemplate={onSelectTemplate}
               disabled={isLoading}
             />
-            <CalendarInput
-              size="lg"
-              label="Production Date *"
-              value={productionDate}
-              onChange={onProductionDateChange}
-            />
-            <Input
-              size="lg"
-              label="จำนวน Lot ที่ต้องการ print *"
-              hint={`เริ่ม LOT ${lotStart}`}
-              type="text"
-              inputMode="numeric"
-              pattern="\d*"
-              value={lotCount}
-              onChange={(event) => onLotCountChange(event.target.value)}
-            />
+            {templateId && (
+              <>
+                <CalendarInput
+                  size="lg"
+                  label="Production Date *"
+                  value={productionDate}
+                  onChange={onProductionDateChange}
+                />
+                <Input
+                  size="lg"
+                  label="จำนวน Lot ที่ต้องการ print *"
+                  hint={`เริ่ม LOT ${lotStart}`}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d*"
+                  value={lotCount}
+                  onChange={(event) => onLotCountChange(event.target.value)}
+                />
+              </>
+            )}
           </div>
         </Card>
       </main>

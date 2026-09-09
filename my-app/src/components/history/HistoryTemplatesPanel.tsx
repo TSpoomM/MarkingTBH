@@ -30,23 +30,30 @@ export default class HistoryTemplatesPanel extends Component<HistoryTemplatesPan
         ) : (
           <div className={HISTORY_TABLE_WRAP}>
             <table className={HISTORY_TABLE}>
+              <colgroup>
+                <col className="w-[24%]" />
+                <col className="w-[17%]" />
+                <col className="w-[17%]" />
+                <col className="w-[14%]" />
+                <col className="w-[28%]" />
+              </colgroup>
               <thead>
                 <tr>
                   <th>Template</th>
-                  <th>สร้างเมื่อ</th>
-                  <th>แก้ไขล่าสุด</th>
-                  <th>ผู้แก้ล่าสุด</th>
-                  <th>Fields</th>
+                  <th className="!text-center">สร้างเมื่อ</th>
+                  <th className="!text-center">แก้ไขล่าสุด</th>
+                  <th className="!text-center">ผู้แก้ล่าสุด</th>
+                  <th className="!text-center">Fields</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => (
                   <tr className={HISTORY_ROW} key={item.id}>
                     <td>{item.name || `Template #${item.id}`}</td>
-                    <td>{HistoryFormatter.formatDateTime(item.createdAt)}</td>
-                    <td>{HistoryFormatter.formatDateTime(item.updatedAt)}</td>
-                    <td>{item.updatedBy || "-"}</td>
-                    <td>
+                    <td className="!text-center">{HistoryFormatter.formatDateTime(item.createdAt)}</td>
+                    <td className="!text-center">{HistoryFormatter.formatDateTime(item.updatedAt)}</td>
+                    <td className="!text-center">{item.updatedBy || "-"}</td>
+                    <td className="!text-center">
                       <span className={HISTORY_FIELD_COUNT}>
                         ในกรอบ {item.insideFieldCount} / นอกกรอบ {item.outsideFieldCount}
                       </span>
