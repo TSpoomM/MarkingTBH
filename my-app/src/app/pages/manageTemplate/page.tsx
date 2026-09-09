@@ -2,7 +2,7 @@
 
 import StoreContainer from "@/src/components/StoreContainer";
 import { templateManageStore } from "@/src/core/controllers/templateManage.controller";
-import TemplateAccessGuard from "@/src/components/manageTemplate/TemplateAccessGuard";
+import Toast from "@/src/components/ui/Toast";
 import TemplateModeSwitch from "@/src/components/manageTemplate/TemplateModeSwitch";
 import EditTemplateForm from "@/src/components/manageTemplate/EditTemplateForm";
 import CreateTemplateForm from "@/src/components/manageTemplate/CreateTemplateForm";
@@ -101,7 +101,10 @@ export default class ManageTemplatePage extends StoreContainer<TemplateFormState
     return (
       <div className="min-h-screen bg-[#eef3f1]">
         <main className={PAGE_MAIN}>
-          <TemplateAccessGuard checkingRole={state.checkingRole} isAdmin={state.isAdmin} />
+          {state.checkingRole && <Toast type="success" message="กำลังตรวจสอบสิทธิ์..." />}
+          {!state.checkingRole && !state.isAdmin && (
+            <Toast type="error" message="เฉพาะ Admin เท่านั้นที่จัดการ Template และ Sticker Template ได้" />
+          )}
           {canManage && <TemplateModeSwitch mode={state.mode} onChangeMode={templateManageStore.changeMode} />}
           {canManage && state.mode === "edit" && this.editForm(state)}
           {canManage && state.mode === "create" && this.createForm(state)}

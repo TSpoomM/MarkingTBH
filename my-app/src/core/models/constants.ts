@@ -6,11 +6,21 @@ export const FONT_SCALE_MULTIPLIERS: Record<NonNullable<FontScale>, number> = {
   xlarge: 1.7,
 };
 
-export const STICKER_PAGE_CLASS: Record<"frame" | "frameVertical" | "customerName" | "fsc", string> = {
+export type StickerPageLayout = "frame" | "frameVertical" | "customerName" | "fsc";
+
+export const STICKER_PAGE_CLASS: Record<StickerPageLayout, string> = {
   frame: "sticker-page-frame",
   frameVertical: "sticker-page-frame-vertical",
   customerName: "sticker-page-template",
   fsc: "sticker-page-fsc",
+};
+
+/** How many stickers fit on one A4 page for each page layout. */
+export const STICKERS_PER_PAGE: Record<StickerPageLayout, number> = {
+  frame: 4,
+  frameVertical: 16,
+  customerName: 16,
+  fsc: 4,
 };
 
 export const STICKER_SIDE_OPTIONS = [1, 2, 3, 4, 5, 6] as const;

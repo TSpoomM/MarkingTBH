@@ -4,7 +4,7 @@ import StoreContainer from "@/src/components/StoreContainer";
 import { historyStore } from "@/src/core/controllers/history.controller";
 import HistoryFormatter from "@/src/core/history/historyFormatter";
 import { HISTORY_WRAP } from "@/src/core/ui/history";
-import HistoryNotice from "@/src/components/history/HistoryNotice";
+import Toast from "@/src/components/ui/Toast";
 import HistoryModeSwitch from "@/src/components/history/HistoryModeSwitch";
 import HistoryFilterPanel from "@/src/components/history/HistoryFilterPanel";
 import HistoryLogsPanel from "@/src/components/history/HistoryLogsPanel";
@@ -37,7 +37,7 @@ export default class HistoryPage extends StoreContainer<HistoryPageState> {
     return (
       <>
         <main className={HISTORY_WRAP}>
-          <HistoryNotice notice={state.notice} onDismiss={historyStore.dismissNotice} />
+          {state.notice && <Toast type="error" message={state.notice} onClose={historyStore.dismissNotice} />}
           <HistoryModeSwitch mode={state.mode} onChangeMode={historyStore.setMode} />
           <HistoryFilterPanel
             mode={state.mode}

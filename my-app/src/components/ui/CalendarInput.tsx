@@ -28,6 +28,8 @@ interface CalendarInputProps {
   size?: ControlSize;
   /** Applied to the wrapper, for context-specific spacing such as the vertical table on the marking page */
   className?: string;
+  displayVariant?: "calendar" | "input";
+  displayClassName?: string;
 }
 
 interface CalendarInputState {
@@ -170,12 +172,17 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
   }
 
   render() {
-    const { value, disabled, placeholder, label, hint, required, size = "md", className = "" } = this.props;
+    const {
+      value, disabled, placeholder, label, hint, required, size = "md", className = "",
+      displayVariant = "calendar", displayClassName = "",
+    } = this.props;
+    const displayClasses = displayVariant === "input"
+      ? displayClassName
+      : cn(CAL_DISPLAY, CAL_DISPLAY_SIZE[size], !value && CAL_DISPLAY_PLACEHOLDER, disabled && CAL_DISPLAY_DISABLED, displayClassName);
     const control = (
       <span className={cn("group/cal", CAL_SHELL, className)} ref={this.shellRef}>
-        <Button
-          variant="ghost"
-          className={cn(CAL_DISPLAY, CAL_DISPLAY_SIZE[size], !value && CAL_DISPLAY_PLACEHOLDER, disabled && CAL_DISPLAY_DISABLED)}
+        <button
+          className={displayClasses}
           type="button"
           disabled={disabled}
           aria-haspopup="dialog"
@@ -183,7 +190,7 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
           onClick={this.toggleOpen}
         >
           <span>{value || placeholder || "เลือกวันที่"}</span>
-        </Button>
+        </button>
         <CalendarDays className={CAL_ICON} size={20} aria-hidden="true" />
         {this.state.open && (
           <div

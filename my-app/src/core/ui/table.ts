@@ -12,14 +12,18 @@ export const VERTICAL_FIELDS =
   "max-bp700:[&_input]:m-3 max-bp700:[&_input]:w-[calc(100%_-_24px)]";
 
 /**
- * The CalendarInput padding inside the vertical table must match the other inputs in the same cell,
- * otherwise the button stretches to the full cell width and the calendar icon sticks to the border
+ * CalendarInput uses a wrapper for the popover. Keep the wrapper full-width, then size
+ * the trigger button exactly like the regular inputs in this table.
  */
-export const VERTICAL_FIELD_CALENDAR =
-  "m-[10px_14px] !h-12 !min-h-12 !w-[calc(100%_-_28px)] max-bp700:m-3 max-bp700:!w-[calc(100%_-_24px)] " +
-  "[&>button]:!h-12 [&>button]:!min-h-12 [&>button]:!w-full [&>button]:!bg-white " +
-  "[&>button]:!py-0 [&>button]:!pl-[14px] [&>button]:!pr-[50px] " +
-  "[&>svg]:right-8";
+export const VERTICAL_FIELD_CALENDAR = "!h-full !w-full self-stretch [&>svg]:right-8 max-bp700:[&>svg]:right-7";
+
+export const VERTICAL_FIELD_CALENDAR_DISPLAY =
+  "m-[10px_14px] box-border flex h-12 w-[calc(100%_-_28px)] cursor-pointer appearance-none items-center justify-start rounded-lg border border-[#cfdad6] bg-white " +
+  "px-[13px] py-0 pr-[50px] text-left text-base font-normal text-[#16231e] outline-none " +
+  "shadow-[inset_0_1px_0_rgba(20,33,28,.03)] transition-[border-color,box-shadow,background] duration-150 " +
+  "placeholder:text-[#98a6a0] hover:border-primary focus-visible:border-primary focus-visible:shadow-[0_0_0_4px_rgba(15,118,110,.12)] " +
+  "disabled:cursor-not-allowed disabled:bg-[#eef2f0] disabled:text-[#7b8a84] " +
+  "max-bp700:m-3 max-bp700:w-[calc(100%_-_24px)]";
 
 export const VERTICAL_SEGMENT_INPUTS =
   "m-[10px_14px] grid min-w-0 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2.5 " +
@@ -29,12 +33,12 @@ export const VERTICAL_SEGMENT_INPUTS =
 export const VERTICAL_FIELD_LABEL =
   "grid min-h-[72px] grid-cols-[minmax(190px,26%)_minmax(0,1fr)] items-center border-b border-b-[#d2ddd5] bg-white last:border-b-0 " +
   "max-bp700:grid-cols-1 " +
-  "[&>span]:flex [&>span]:flex-nowrap [&>span]:items-center [&>span]:content-center [&>span]:gap-x-1.5 [&>span]:gap-y-0.5 " +
-  "[&>span]:self-stretch [&>span]:whitespace-nowrap [&>span]:border-r [&>span]:border-r-[#d2ddd5] " +
-  "[&>span]:bg-[#f8fbf9] [&>span]:px-[18px] [&>span]:py-3.5 [&>span]:text-[16px] [&>span]:font-bold " +
-  "[&>span]:leading-[1.3] [&>span]:text-[#34443f] " +
-  "max-bp700:[&>span]:border-r-0 max-bp700:[&>span]:border-b max-bp700:[&>span]:border-b-[#e0e8e4] " +
-  "max-bp700:[&>span]:whitespace-normal " +
+  "[&>span:first-child]:flex [&>span:first-child]:flex-nowrap [&>span:first-child]:items-center [&>span:first-child]:content-center [&>span:first-child]:gap-x-1.5 [&>span:first-child]:gap-y-0.5 " +
+  "[&>span:first-child]:self-stretch [&>span:first-child]:whitespace-nowrap [&>span:first-child]:border-r [&>span:first-child]:border-r-[#d2ddd5] " +
+  "[&>span:first-child]:bg-[#f8fbf9] [&>span:first-child]:px-[18px] [&>span:first-child]:py-3.5 [&>span:first-child]:text-[16px] [&>span:first-child]:font-bold " +
+  "[&>span:first-child]:leading-[1.3] [&>span:first-child]:text-[#34443f] " +
+  "max-bp700:[&>span:first-child]:border-r-0 max-bp700:[&>span:first-child]:border-b max-bp700:[&>span:first-child]:border-b-[#e0e8e4] " +
+  "max-bp700:[&>span:first-child]:whitespace-normal " +
   "[&>span_small]:w-auto [&>span_small]:min-w-0 [&>span_small]:overflow-hidden [&>span_small]:text-ellipsis " +
   "[&>span_small]:whitespace-nowrap [&>span_small]:text-xs [&>span_small]:font-bold " +
   "[&>span_small]:leading-[1.35] [&>span_small]:text-[#718077]";

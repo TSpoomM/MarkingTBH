@@ -3,8 +3,8 @@
  * replacing the previous per-page .export-button / .print-export-secondary /
  * .template-cancel-button / .summary-delete-field / .add-field-button rules
  */
-export type ButtonVariant = "primary" | "secondary" | "danger" | "outline" | "ghost" | "icon";
-export type ButtonSize = "sm" | "md" | "lg";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "icon";
+export type ButtonSize = "md" | "lg";
 
 export const BUTTON_BASE =
   "relative inline-flex min-w-0 cursor-pointer items-center justify-center gap-2 " +
@@ -21,12 +21,6 @@ export const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   secondary:
     "rounded-lg border border-[#9fb8ad] bg-white text-[#182820] shadow-[0_1px_2px_rgba(20,33,28,.05)] " +
     "hover:border-primary hover:bg-[#f2f8f5] hover:text-primary-dark enabled:hover:-translate-y-px",
-  danger:
-    "rounded-md border border-[#c98288] bg-[#fff5f5] text-[#7f252d] shadow-none " +
-    "hover:border-[#ad555d] hover:bg-[#f6e6e6] hover:text-[#721f26]",
-  outline:
-    "rounded-lg border border-[#8db4a2] bg-[#f7faf6] text-primary-dark shadow-none " +
-    "hover:border-primary-dark hover:bg-primary-soft hover:text-primary-dark",
   ghost:
     "rounded-lg border border-[#c4d4cc] bg-white/70 text-[#24352d] shadow-none " +
     "hover:border-[#8fb5a5] hover:bg-white hover:text-primary-dark",
@@ -36,7 +30,6 @@ export const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
 };
 
 export const BUTTON_SIZES: Record<ButtonSize, string> = {
-  sm: "min-h-[34px] px-2.5 text-xs",
   md: "min-h-11 px-[18px] text-sm",
   lg: "min-h-12 px-5 text-[16px] font-black",
 };

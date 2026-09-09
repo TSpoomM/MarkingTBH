@@ -8,7 +8,8 @@ import Input from "@/src/components/ui/Input";
 import SectionTitle from "@/src/components/ui/SectionTitle";
 import { TABLE_HEADING } from "@/src/core/ui/surfaces";
 import {
-  LOCK_ICON, RECORD_CARD, VERTICAL_FIELDS, VERTICAL_FIELD_CALENDAR, VERTICAL_FIELD_LABEL, VERTICAL_SEGMENT_INPUTS,
+  LOCK_ICON, RECORD_CARD, VERTICAL_FIELDS, VERTICAL_FIELD_CALENDAR, VERTICAL_FIELD_CALENDAR_DISPLAY,
+  VERTICAL_FIELD_LABEL, VERTICAL_SEGMENT_INPUTS,
 } from "@/src/core/ui/table";
 import StickerFactory from "@/src/core/stickers/stickerFactory";
 import type { TableSectionProps } from "@/src/core/models/marking-sticker";
@@ -57,6 +58,8 @@ export default class TableSection extends Component<TableSectionProps> {
                         field.type === "date" ? (
                           <CalendarInput
                             className={VERTICAL_FIELD_CALENDAR}
+                            displayVariant="input"
+                            displayClassName={VERTICAL_FIELD_CALENDAR_DISPLAY}
                             value={row[field.key] ?? ""}
                             dateFormat={field.dateFormat}
                             onChange={(value) => onChange(rowIndex, field.key, value)}

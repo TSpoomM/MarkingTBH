@@ -1,9 +1,10 @@
 import StickerFactory from "./stickerFactory";
 import StickerPreview from "./stickerPreview";
+import { STICKERS_PER_PAGE, type StickerPageLayout } from "@/src/core/models/constants";
 import type { MarkingState, PrintSection, PrintSections } from "@/src/core/models/marking";
 import type { StickerItem } from "@/src/core/models/marking-sticker";
 
-export type FramePageLayout = "frame" | "frameVertical";
+export type FramePageLayout = Extract<StickerPageLayout, "frame" | "frameVertical">;
 
 export interface FramePage {
   items: StickerItem[];
@@ -23,14 +24,6 @@ export interface PrintOption {
   description: string;
   outsideGroupKey?: string;
 }
-
-const STICKERS_PER_PAGE = {
-  insideFrame: 4,
-  outsideFrame: 4,
-  outsideFrameVertical: 16,
-  customerName: 16,
-  fscLogo: 4,
-} as const;
 
 const PREVIEW_FALLBACK = {
   format: "555",
@@ -93,7 +86,7 @@ export default class MarkingStickerPlan {
   static printPages(state: MarkingState): PrintPages {
     const items = this.printItems(state);
     const insideFramePages: FramePage[] = StickerFactory
-      .chunk(items.filter((item) => item.kind === "insideFrame"), STICKERS_PER_PAGE.insideFrame)
+      .chunk(items.filter((item) => item.kind === "insideFrame"), STICKERS_PER_PAGE.frame)
       .map((pageItems) => ({ items: pageItems, layout: "frame" }));
     const outsideFramePages: FramePage[] = this.outsideGroups(state).flatMap((group) => {
       if (state.printOutsideGroups[StickerFactory.outsideGroupKey(group)] === false) return [];
@@ -101,7 +94,7 @@ export default class MarkingStickerPlan {
         item.kind === "outsideFrame" && item.group === group.name && item.groupOrder === group.order,
       );
       const isVertical = StickerFactory.isVerticalGroupLayout(group.layout);
-      const perPage = isVertical ? STICKERS_PER_PAGE.outsideFrameVertical : STICKERS_PER_PAGE.outsideFrame;
+      const perPage = STICKERS_PER_PAGE[isVertical ? "frameVertical" : "frame"];
       return StickerFactory.chunk(groupItems, perPage).map((pageItems): FramePage => ({
         items: pageItems,
         layout: isVertical ? "frameVertical" : "frame",
@@ -118,7 +111,7 @@ export default class MarkingStickerPlan {
         STICKERS_PER_PAGE.customerName,
       ),
       fscLogoPages: state.printSections.fscLogo
-        ? StickerFactory.chunk(items.filter((item) => item.kind === "fscLogo"), STICKERS_PER_PAGE.fscLogo)
+        ? StickerFactory.chunk(items.filter((item) => item.kind === "fscLogo"), STICKERS_PER_PAGE.fsc)
         : [],
     };
   }

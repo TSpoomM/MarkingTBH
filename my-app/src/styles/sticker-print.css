@@ -188,21 +188,18 @@
 	text-overflow: clip
 }
 
-.print-sheet .sticker-label.customerName,
-.print-sheet .sticker-label.outsideFrame.sticker-text-only {
+.print-sheet .sticker-label.customerName {
 	padding: 1.5mm 3mm;
 	align-items: center;
 	justify-content: center;
 	text-align: center
 }
 
-.print-sheet .sticker-label.customerName header,
-.print-sheet .sticker-label.outsideFrame.sticker-text-only header {
+.print-sheet .sticker-label.customerName header {
 	display: none
 }
 
-.print-sheet .sticker-label.customerName p,
-.print-sheet .sticker-label.outsideFrame.sticker-text-only p {
+.print-sheet .sticker-label.customerName p {
 	margin: 0;
 	font-family: Arial, sans-serif;
 	font-weight: 700;
@@ -311,8 +308,7 @@
 	object-fit: contain
 }
 
-.pdf-preview .sticker-label.customerName,
-.pdf-preview .sticker-label.outsideFrame.sticker-text-only {
+.pdf-preview .sticker-label.customerName {
 	aspect-ratio: auto;
 	min-height: 90px
 }
@@ -398,16 +394,14 @@
 	text-overflow: clip
 }
 
-.pdf-preview .sticker-label.customerName,
-.pdf-preview .sticker-label.outsideFrame.sticker-text-only {
+.pdf-preview .sticker-label.customerName {
 	align-items: center;
 	text-align: center;
 	min-height: 30px;
 	padding: 6px 8px
 }
 
-.pdf-preview .sticker-label.customerName p,
-.pdf-preview .sticker-label.outsideFrame.sticker-text-only p {
+.pdf-preview .sticker-label.customerName p {
 	margin: 0;
 	font-family: Arial, sans-serif;
 	font-weight: 700;
@@ -416,29 +410,8 @@
 	white-space: nowrap
 }
 
-.sticker-preview-wrap {
-	display: contents
-}
-
 .sticker-template-preview-modal-body .pdf-preview {
 	margin-top: 0
-}
-
-.sticker-preview-section {
-	display: grid;
-	gap: 12px
-}
-
-.sticker-preview-section + .sticker-preview-section {
-	margin-top: 24px;
-	padding-top: 20px;
-	border-top: 1px solid #d6e0d9
-}
-
-.sticker-preview-section > h3 {
-	margin: 0;
-	color: var(--primary-dark);
-	font-size: 15px
 }
 
 .sticker-template-preview-modes {
@@ -480,128 +453,6 @@
 .sticker-template-preview-groups button {
 	min-height: 36px;
 	font-size: 13px
-}
-
-.sticker-preview-grid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 14px
-}
-
-.sticker-preview-card {
-	min-height: 250px;
-	border: 1px solid #748379;
-	border-radius: 6px;
-	background: #fff;
-	padding: 16px;
-	display: grid;
-	gap: 14px;
-	align-content: start
-}
-
-.sticker-preview-card header {
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 14px;
-	border-bottom: 1px solid #9ba8a0;
-	padding-bottom: 10px
-}
-
-.sticker-preview-card header strong {
-	font-size: 18px
-}
-
-.sticker-preview-card header span {
-	font-size: 12px;
-	font-weight: 700;
-	text-align: right
-}
-
-.sticker-preview-meta {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 8px
-}
-
-.sticker-preview-meta b {
-	border: 1px solid #a8b3ac;
-	border-radius: 4px;
-	padding: 8px;
-	text-align: center;
-	font-size: 11px
-}
-
-.sticker-preview-card dl {
-	margin: 0;
-	display: grid;
-	gap: 7px;
-	font-size: 12px
-}
-
-.sticker-preview-card dl > .sticker-preview-select-row {
-	display: grid;
-	grid-template-columns: 130px 1fr;
-	gap: 10px;
-	border-bottom: 1px solid #e0e6e2;
-	padding-bottom: 6px
-}
-
-.sticker-preview-card dt {
-	font-weight: 800
-}
-
-.sticker-preview-card dd {
-	margin: 0;
-	color: #536159
-}
-
-.sticker-preview-section-selects input {
-	flex: 1 1 0;
-	width: 0;
-	min-width: 0;
-	height: 34px;
-	border: 1px solid #b8c5bd;
-	border-radius: 5px;
-	background: #fff;
-	padding: 0 8px;
-	font-size: 12px;
-	outline: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap
-}
-
-.sticker-preview-section-selects {
-	display: flex;
-	flex-wrap: nowrap;
-	gap: 8px;
-	overflow: hidden
-}
-
-.sticker-preview-section-selects input:disabled {
-	background: #f8faf8;
-	color: #25352f;
-	opacity: 1;
-	cursor: default
-}
-
-.sticker-preview-segments {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	margin-top: 7px
-}
-
-.sticker-preview-segments span {
-	min-height: 26px;
-	padding: 5px 8px;
-	border: 1px solid #c8d5cb;
-	border-radius: 5px;
-	background: #eef4ef;
-	color: #3b4a42;
-	font-size: 11px;
-	font-weight: 700
 }
 
 @media print {
@@ -666,26 +517,6 @@
 		font-weight: 700
 	}
 
-	.sticker-meta {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 3mm;
-		margin: 4mm 0
-	}
-
-	.sticker-meta b {
-		border: 1px solid #111;
-		padding: 3mm;
-		text-align: center;
-		font-size: 14px
-	}
-
-	.sticker-production-date {
-		margin: 0 0 3mm;
-		font-size: 11px;
-		font-weight: 700
-	}
-
 	.print-sheet>h1 {
 		font-size: 21px;
 		margin: 0 0 4px
@@ -727,136 +558,6 @@
 
 @media screen {
 
-	.sticker-preview-wrap {
-		border-radius: 8px;
-	}
-}
-
-@media screen {
-
-	.sticker-preview-wrap {
-		background: #fbfcfb;
-		border-color: #dbe4e0;
-	}
-
-	.sticker-preview-grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-
-	.sticker-preview-card {
-		min-height: 220px;
-		border-color: #cfdad6;
-		border-radius: 8px;
-		box-shadow: 0 8px 22px rgba(23, 35, 31, .05);
-	}
-
-	.sticker-preview-card header strong {
-		color: #1f2d28;
-	}
-
-	.sticker-preview-card header span {
-		color: var(--muted);
-	}
-}
-
-@media screen and (max-width:1050px) {
-
-	.sticker-preview-grid {
-		grid-template-columns: 1fr;
-	}
-}
-
-@media screen {
-
-	.sticker-preview-wrap {
-		max-width: 100%;
-		overflow: hidden;
-	}
-
-	.sticker-preview-grid {
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
-	}
-}
-
-@media screen {
-
-	.sticker-preview-wrap {
-		border-radius: var(--radius);
-	}
-
-	.sticker-preview-card {
-		box-shadow: var(--shadow-sm);
-	}
-
-	.sticker-preview-card dl > .sticker-preview-select-row {
-		align-items: start;
-	}
-}
-
-@media screen {
-
-	.sticker-preview-wrap {
-		gap: 16px;
-		padding: clamp(16px, 2vw, 22px);
-		background: #f8fbf9;
-	}
-
-	.sticker-preview-grid {
-		gap: 16px;
-	}
-
-	.sticker-preview-card {
-		min-height: 260px;
-		padding: 18px;
-	}
-
-	.sticker-preview-card header strong {
-		font-size: 20px;
-	}
-
-	.sticker-preview-card header span {
-		font-size: 14px;
-	}
-
-	.sticker-preview-card dl {
-		gap: 10px;
-		font-size: 14px;
-	}
-
-	.sticker-preview-card dl > .sticker-preview-select-row {
-		grid-template-columns: minmax(150px, .55fr) minmax(0, 1fr);
-		gap: 14px;
-		padding-bottom: 10px;
-	}
-
-	.sticker-preview-section-selects {
-		display: flex;
-		flex-wrap: nowrap;
-		gap: 10px;
-	}
-
-	.sticker-preview-section-selects input {
-		flex: 1 1 0;
-		width: 0;
-		min-width: 0;
-		height: 42px;
-		font-size: 14px;
-	}
-}
-
-@media screen and (max-width:640px) {
-
-	.sticker-preview-card dl > .sticker-preview-select-row {
-		grid-template-columns: 1fr;
-	}
-
-	.sticker-preview-card {
-		padding: 14px;
-	}
-}
-
-@media screen {
-
 	.pdf-preview .sticker-page {
 		border-color: #d7e2de;
 		border-radius: 8px;
@@ -879,63 +580,3 @@
 	}
 }
 
-@media print {
-	.navbar-spacer {
-		display: none !important;
-	}
-}
-
-@media screen {
-	.sticker-preview-grid {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
-	.sticker-preview-card dl {
-		gap: 8px;
-	}
-
-	.sticker-preview-card dl > .sticker-preview-select-row {
-		grid-template-columns: minmax(120px, 24%) minmax(0, 1fr);
-		align-items: center;
-		gap: 12px;
-		min-width: 0;
-	}
-
-	.sticker-preview-card dt,
-	.sticker-preview-card dd,
-	.sticker-preview-section-selects,
-	.sticker-preview-section-selects input {
-		min-width: 0;
-	}
-
-	.sticker-preview-card dt {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.sticker-preview-section-selects {
-		display: flex;
-		flex-wrap: nowrap;
-		gap: 8px;
-	}
-
-	.sticker-preview-section-selects input {
-		flex: 1 1 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-}
-
-@media screen and (max-width:560px) {
-
-	.sticker-preview-card dl > .sticker-preview-select-row {
-		grid-template-columns: minmax(92px, 34%) minmax(0, 1fr);
-		gap: 8px;
-	}
-
-	.sticker-preview-section-selects {
-		gap: 6px;
-	}
-}

@@ -1,3 +1,5 @@
+import { STICKERS_PER_PAGE, type StickerPageLayout } from "@/src/core/models/constants";
+import StickerFactory from "./stickerFactory";
 import type { StickerItem, StickerKind } from "@/src/core/models/marking-sticker";
 
 export const PREVIEW_MODE_LABELS: Record<StickerKind, string> = {
@@ -8,6 +10,11 @@ export const PREVIEW_MODE_LABELS: Record<StickerKind, string> = {
 };
 
 export const PREVIEW_MODE_ORDER: StickerKind[] = ["insideFrame", "outsideFrame", "customerName", "fscLogo"];
+
+export interface PreviewPages {
+  layout: StickerPageLayout;
+  pages: StickerItem[][];
+}
 
 export interface OutsideItemGroup {
   key: string;
@@ -76,5 +83,22 @@ export default class StickerPreview {
       else groups.push({ key, name, items: [item] });
     });
     return groups;
+  }
+
+  /** The 8x2 outside layout prints sideways, so it gets its own page layout. */
+  private static isVerticalOutside(mode: StickerKind, items: StickerItem[]) {
+    return mode === "outsideFrame" && StickerFactory.isVerticalGroupLayout(items[0]?.groupLayout);
+  }
+
+  static pageLayout(mode: StickerKind, items: StickerItem[]): StickerPageLayout {
+    if (mode === "customerName") return "customerName";
+    if (mode === "fscLogo") return "fsc";
+    return this.isVerticalOutside(mode, items) ? "frameVertical" : "frame";
+  }
+
+  /** Splits preview stickers into pages the same way the print sheet does. */
+  static pages(items: StickerItem[], mode: StickerKind): PreviewPages {
+    const layout = this.pageLayout(mode, items);
+    return { layout, pages: StickerFactory.chunk(items, STICKERS_PER_PAGE[layout]) };
   }
 }

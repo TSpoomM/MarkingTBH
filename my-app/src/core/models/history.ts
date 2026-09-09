@@ -24,11 +24,6 @@ export interface HistoryPageState {
   openId: string | number | null;
 }
 
-export interface HistoryNoticeProps {
-  notice: string;
-  onDismiss: () => void;
-}
-
 export interface HistoryModeSwitchProps {
   mode: HistoryPageState["mode"];
   onChangeMode: (mode: HistoryPageState["mode"]) => void;

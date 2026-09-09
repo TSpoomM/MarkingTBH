@@ -2,6 +2,7 @@
 
 import { Component, type ChangeEvent } from "react";
 import Autocomplete from "@/src/components/ui/Autocomplete";
+import TemplateOptions from "@/src/core/templates/templateOptions";
 import type { Template } from "@/src/core/models/template";
 import type { ControlSize } from "@/src/core/ui/fields";
 
@@ -23,9 +24,12 @@ interface TemplateAutocompleteState {
   query: string;
 }
 
+/** Keeps the typed text in sync with the selected template id. */
 export default class TemplateAutocomplete extends Component<TemplateAutocompleteProps, TemplateAutocompleteState> {
+  private readonly normalizeDelayMs = 140;
+
   state: TemplateAutocompleteState = {
-    query: this.selectedTemplateLabel(this.props.selectedTemplateId),
+    query: TemplateOptions.labelFor(this.props.templates, this.props.selectedTemplateId),
   };
 
   componentDidUpdate(previousProps: TemplateAutocompleteProps) {
@@ -33,55 +37,29 @@ export default class TemplateAutocomplete extends Component<TemplateAutocomplete
       previousProps.selectedTemplateId !== this.props.selectedTemplateId ||
       previousProps.templates !== this.props.templates
     ) {
-      this.setState({ query: this.selectedTemplateLabel(this.props.selectedTemplateId) });
+      this.setState({ query: TemplateOptions.labelFor(this.props.templates, this.props.selectedTemplateId) });
     }
   }
 
-  private templateLabel(template: Template) {
-    return template.isActive === false ? `[Inactive] ${template.name}` : template.name;
-  }
-
-  private selectableTemplates() {
-    return this.props.includeInactive
-      ? this.props.templates
-      : this.props.templates.filter((template) => template.isActive !== false);
-  }
-
-  private selectedTemplateLabel(templateId: string) {
-    const template = this.props.templates.find((item) => String(item.id) === templateId);
-    return template ? this.templateLabel(template) : "";
-  }
-
-  private templateIdForQuery(query: string) {
-    const normalized = query.trim().toLowerCase();
-    const template = this.selectableTemplates().find((item) =>
-      this.templateLabel(item).trim().toLowerCase() === normalized ||
-      item.name.trim().toLowerCase() === normalized ||
-      String(item.id) === query.trim(),
-    );
-    return template ? String(template.id) : "";
-  }
-
-  private options() {
-    return this.selectableTemplates().map((template) => this.templateLabel(template));
+  private idForQuery(query: string) {
+    return TemplateOptions.idForQuery(this.props.templates, query, this.props.includeInactive);
   }
 
   private changeQuery = (event: ChangeEvent<HTMLInputElement>) => {
     const query = event.target.value;
-    const templateId = this.templateIdForQuery(query);
+    const templateId = this.idForQuery(query);
     this.setState({ query });
     if (templateId || !query.trim()) {
       this.props.onSelectTemplate(templateId);
     }
   };
 
+  /** Runs after the option list has had a chance to commit its own selection. */
   private normalizeQuery = () => {
     window.setTimeout(() => {
-      const templateId = this.templateIdForQuery(this.state.query);
-      this.setState({
-        query: templateId ? this.selectedTemplateLabel(templateId) : this.selectedTemplateLabel(this.props.selectedTemplateId),
-      });
-    }, 140);
+      const templateId = this.idForQuery(this.state.query) || this.props.selectedTemplateId;
+      this.setState({ query: TemplateOptions.labelFor(this.props.templates, templateId) });
+    }, this.normalizeDelayMs);
   };
 
   render() {
@@ -93,7 +71,7 @@ export default class TemplateAutocomplete extends Component<TemplateAutocomplete
         hint={this.props.hint}
         label={this.props.label}
         maxOptions={this.props.maxOptions ?? 24}
-        options={this.options()}
+        options={TemplateOptions.options(this.props.templates, this.props.includeInactive)}
         placeholder={this.props.placeholder}
         value={this.state.query}
         onBlur={this.normalizeQuery}
