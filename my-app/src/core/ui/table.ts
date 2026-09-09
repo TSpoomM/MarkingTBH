@@ -15,7 +15,7 @@ export const VERTICAL_FIELDS =
  * CalendarInput uses a wrapper for the popover. Keep the wrapper full-width, then size
  * the trigger button exactly like the regular inputs in this table.
  */
-export const VERTICAL_FIELD_CALENDAR = "!h-full !w-full self-stretch [&>svg]:right-8 max-bp700:[&>svg]:right-7";
+export const VERTICAL_FIELD_CALENDAR = "!h-full !w-full self-stretch [&>svg]:right-8 max-bp700:[&>svg]:right-7 [&>svg]:top-[48%]";
 
 export const VERTICAL_FIELD_CALENDAR_DISPLAY =
   "m-[10px_14px] box-border flex h-12 w-[calc(100%_-_28px)] cursor-pointer appearance-none items-center justify-start rounded-lg border border-[#cfdad6] bg-white " +
