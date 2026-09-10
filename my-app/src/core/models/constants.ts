@@ -1,10 +1,4 @@
 import type { MarkingState } from "@/src/core/models/marking";
-import type { FontScale } from "@/src/core/models/template";
-
-export const FONT_SCALE_MULTIPLIERS: Record<NonNullable<FontScale>, number> = {
-  normal: 1,
-  xlarge: 1.7,
-};
 
 export type StickerPageLayout = "frame" | "frameVertical" | "customerName" | "fsc";
 

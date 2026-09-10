@@ -21,7 +21,7 @@ export default class AutoFitStickerDetails extends Component<
   private readonly minFontSize = 1;
   private readonly ref = createRef<HTMLDListElement>();
   private resizeObserver: ResizeObserver | undefined;
-  private rowMeasurements = new Map<string, { group: string; baseFontSize: number }>();
+  private rowMeasurements = new Map<string, { group: string; fontSize: number }>();
 
   state = { fontScale: 1, gapScale: this.getGapScale(this.props.details), sharedRowFontSizes: {} as Record<string, number> };
 
@@ -64,15 +64,15 @@ export default class AutoFitStickerDetails extends Component<
     }
   }
 
-  private handleRowMeasured = (rowId: string, group: string, baseFontSize: number) => {
-    this.rowMeasurements.set(rowId, { group, baseFontSize });
+  private handleRowMeasured = (rowId: string, group: string, fontSize: number) => {
+    this.rowMeasurements.set(rowId, { group, fontSize });
     if (this.rowMeasurements.size < this.props.details.length) return;
 
     const minByGroup: Record<string, number> = {};
     for (const measurement of this.rowMeasurements.values()) {
       minByGroup[measurement.group] = minByGroup[measurement.group] !== undefined
-        ? Math.min(minByGroup[measurement.group], measurement.baseFontSize)
-        : measurement.baseFontSize;
+        ? Math.min(minByGroup[measurement.group], measurement.fontSize)
+        : measurement.fontSize;
     }
     this.setState({ sharedRowFontSizes: minByGroup });
   };
@@ -141,7 +141,7 @@ export default class AutoFitStickerDetails extends Component<
               cardScale={this.state.fontScale}
               maxFontSize={maxRowFontSize}
               rowId={rowId}
-              sharedBaseFontSize={this.state.sharedRowFontSizes[detail.fontScale ?? "normal"]}
+              sharedFontSize={this.state.sharedRowFontSizes[detail.fontScale ?? "normal"]}
               onMeasured={this.handleRowMeasured}
               key={rowId}
             />

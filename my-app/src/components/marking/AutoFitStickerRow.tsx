@@ -1,7 +1,7 @@
 "use client";
 
 import { Component, createRef, type CSSProperties } from "react";
-import { FONT_SCALE_MULTIPLIERS } from "@/src/core/models/constants";
+import { XLARGE_FONT_PX } from "@/src/core/stickers/stickerLabelMetrics";
 import type { StickerItem } from "@/src/core/models/marking-sticker";
 
 type Props = {
@@ -9,16 +9,19 @@ type Props = {
   cardScale: number;
   maxFontSize?: number;
   rowId: string;
-  /** Base (pre-fontScale) size every row in this row's scale group has agreed to use. Undefined while still measuring. */
-  sharedBaseFontSize?: number;
-  /** Reports the base font size this row would need on its own, so the group can settle on the smallest one. */
-  onMeasured: (rowId: string, group: string, baseFontSize: number) => void;
+  /** Size every row in this row's scale group has agreed to use. Undefined while still measuring. */
+  sharedFontSize?: number;
+  /** Reports the font size this row would need on its own, so the group can settle on the smallest one. */
+  onMeasured: (rowId: string, group: string, fontSize: number) => void;
 };
 
 // Layer B: rows in the same fontScale group render at one shared size — the smallest
 // size any row in the group needs to keep its text on one line. Measurement happens in
 // two passes: each row first measures its own natural fit and reports it up (Details
 // takes the minimum per group), then rows re-render at that agreed size.
+//
+// A "xlarge" row (the "ขนาดใหญ่พิเศษ" field toggle) ignores the card's normal autofit
+// size entirely and starts from its own fixed, larger ceiling instead.
 export default class AutoFitStickerRow extends Component<Props, { fontSize: number }> {
   private readonly defaultFontSize = 35;
   private readonly minFontSize = 1;
@@ -45,7 +48,7 @@ export default class AutoFitStickerRow extends Component<Props, { fontSize: numb
       previousProps.detail !== this.props.detail ||
       previousProps.cardScale !== this.props.cardScale ||
       previousProps.maxFontSize !== this.props.maxFontSize ||
-      previousProps.sharedBaseFontSize !== this.props.sharedBaseFontSize
+      previousProps.sharedFontSize !== this.props.sharedFontSize
     ) {
       this.fit();
     }
@@ -60,45 +63,41 @@ export default class AutoFitStickerRow extends Component<Props, { fontSize: numb
     return this.props.detail.fontScale ?? "normal";
   }
 
-  private rowScale() {
-    return FONT_SCALE_MULTIPLIERS[this.group()] ?? 1;
-  }
-
   private fitNow = () => {
     const element = this.ref.current;
     if (!element) return;
-    const rowScale = this.rowScale();
 
-    if (this.props.sharedBaseFontSize !== undefined) {
-      const fontSize = this.props.sharedBaseFontSize * rowScale;
+    if (this.props.sharedFontSize !== undefined) {
+      const fontSize = this.props.sharedFontSize;
       element.style.fontSize = `${fontSize}px`;
       if (Math.abs(fontSize - this.state.fontSize) > 0.5) this.setState({ fontSize });
       return;
     }
 
+    const isXlarge = this.group() === "xlarge";
     const inheritedFontSize = Number.parseFloat(getComputedStyle(element).getPropertyValue("--sticker-font"));
-    const baseCeiling = (Number.isFinite(inheritedFontSize) ? inheritedFontSize : this.defaultFontSize) * this.props.cardScale;
+    const ceiling = isXlarge ? XLARGE_FONT_PX : (Number.isFinite(inheritedFontSize) ? inheritedFontSize : this.defaultFontSize);
+    const baseCeiling = ceiling * this.props.cardScale;
     const maxFontSize = this.props.maxFontSize ?? Number.POSITIVE_INFINITY;
 
-    let baseFontSize = Math.min(baseCeiling, maxFontSize / rowScale);
-    element.style.fontSize = `${baseFontSize * rowScale}px`;
+    let fontSize = Math.min(baseCeiling, maxFontSize);
+    element.style.fontSize = `${fontSize}px`;
     let availableWidth = element.clientWidth;
     let requiredWidth = element.scrollWidth;
     if (availableWidth > 0 && requiredWidth > availableWidth) {
-      baseFontSize = Math.max(this.minFontSize, baseFontSize * (availableWidth / requiredWidth));
-      element.style.fontSize = `${baseFontSize * rowScale}px`;
+      fontSize = Math.max(this.minFontSize, fontSize * (availableWidth / requiredWidth));
+      element.style.fontSize = `${fontSize}px`;
       for (let pass = 0; pass < this.maxVerifyPasses; pass += 1) {
         availableWidth = element.clientWidth;
         requiredWidth = element.scrollWidth;
-        if (requiredWidth <= availableWidth || baseFontSize <= this.minFontSize) break;
-        baseFontSize = Math.max(this.minFontSize, baseFontSize - 1);
-        element.style.fontSize = `${baseFontSize * rowScale}px`;
+        if (requiredWidth <= availableWidth || fontSize <= this.minFontSize) break;
+        fontSize = Math.max(this.minFontSize, fontSize - 1);
+        element.style.fontSize = `${fontSize}px`;
       }
     }
 
-    const fontSize = baseFontSize * rowScale;
     if (Math.abs(fontSize - this.state.fontSize) > 0.5) this.setState({ fontSize });
-    this.props.onMeasured(this.props.rowId, this.group(), baseFontSize);
+    this.props.onMeasured(this.props.rowId, this.group(), fontSize);
   };
 
   private fit = () => window.requestAnimationFrame(this.fitNow);
