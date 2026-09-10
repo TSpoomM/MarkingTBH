@@ -63,7 +63,7 @@ export class MarkingController extends Store<MarkingState> {
     try {
       const productionDate = this.state.productionDate || this.today();
       const template = await this.service.getTemplate(Number(templateId));
-      const lotStart = await this.loadLotStart(templateId, productionDate);
+      const lotStart = await this.loadLotStart(templateId, productionDate, template.inside);
       const stickerDefaults = template.sticker.defaults;
       this.setState({
         template,
@@ -123,17 +123,38 @@ export class MarkingController extends Store<MarkingState> {
     this.setState({ isExportModalOpen: true, notice: null });
   };
 
-  private async loadLotStart(templateId: string, productionDate: string) {
+  private numericDefault(value: unknown) {
+    const number = Number(String(value ?? "").trim());
+    return Number.isInteger(number) && number > 0 ? number : 0;
+  }
+
+  private templateLotStart(template?: Pick<TemplateField, "key" | "label" | "isCounter" | "counterType" | "defaultValue" | "segments">[] | null) {
+    const lotCounter = template?.find((field) =>
+      field.isCounter && this.counterType(field, { counterType: field.counterType }) === "lot",
+    );
+    if (lotCounter) return this.numericDefault(lotCounter.defaultValue) || 1;
+
+    const segmentedLotCounter = template?.find((field) =>
+      field.segments?.some((segment) =>
+        segment.isCounter && this.counterType(field, segment) === "lot",
+      ),
+    );
+    return this.numericDefault(segmentedLotCounter?.defaultValue) || 1;
+  }
+
+  private async loadLotStart(templateId: string, productionDate: string, template?: TemplateField[] | null) {
+    const templateLotStart = this.templateLotStart(template);
     try {
-      return await this.service.getNextLotStart(Number(templateId), productionDate);
+      const nextLotStart = await this.service.getNextLotStart(Number(templateId), productionDate);
+      return Math.max(nextLotStart, templateLotStart);
     } catch {
-      return 1;
+      return templateLotStart;
     }
   }
 
   private async refreshLotStart(templateId: string, productionDate: string) {
     const previousLotStart = this.state.lotStart;
-    const lotStart = await this.loadLotStart(templateId, productionDate);
+    const lotStart = await this.loadLotStart(templateId, productionDate, this.state.template?.inside);
     this.setState({
       lotStart,
       insideRows: this.withCounterDefaults(this.state.insideRows, this.state.template?.inside ?? [], lotStart, previousLotStart),

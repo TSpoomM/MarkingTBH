@@ -5,7 +5,21 @@ import Field from "./Field";
 import Input from "./Input";
 import cn from "@/src/core/ui/cn";
 import { LISTBOX, LISTBOX_OPTION, LISTBOX_OPTION_ACTIVE, LISTBOX_OPTION_TEXT } from "@/src/core/ui/listbox";
+import { ChevronDown } from "lucide-react";
 
+const AUTOCOMPLETE_WRAP =
+  "group/autocomplete relative w-full min-w-0 " +
+  "before:pointer-events-none before:absolute before:top-1/2 before:right-9 before:z-[1] " +
+  "before:h-[min(28px,calc(100%-16px))] before:w-px before:-translate-y-1/2 before:bg-[#d7e4de] " +
+  "before:transition-colors before:content-[''] " +
+  "hover:before:bg-[#9bc4b4] focus-within:before:bg-[#9bc4b4] " +
+  "has-[input:disabled]:before:opacity-45";
+
+const AUTOCOMPLETE_CHEVRON =
+  "pointer-events-none absolute top-1/2 right-3 z-[1] -translate-y-1/2 text-primary " +
+  "transition-colors duration-150 " +
+  "group-hover/autocomplete:text-primary-dark group-focus-within/autocomplete:text-primary-dark " +
+  "group-has-[input:disabled]/autocomplete:opacity-45";
 
 interface AutocompleteState {
   open: boolean;
@@ -58,18 +72,20 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
       onBlur,
       onKeyDown,
       generatedId,
+      style,
       ...props
     } = this.props;
     const filteredOptions = this.filteredOptions(options, maxOptions);
     const hasOptions = filteredOptions.length > 0;
     const listId = `${props.id ?? generatedId}-options`;
     const control = (
-      <div className="relative w-full min-w-0">
+      <div className={AUTOCOMPLETE_WRAP}>
         <Input
           bare
           size={size}
           required={required}
           className={className}
+          style={{ ...style, paddingRight: "46px" }}
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={this.state.open && hasOptions}
@@ -113,6 +129,7 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
           }}
           {...props}
         />
+        <ChevronDown className={AUTOCOMPLETE_CHEVRON} size={18} aria-hidden="true" />
         {this.state.open && hasOptions && (
           <div className={LISTBOX} id={listId} role="listbox">
             {filteredOptions.map((option, index) => (

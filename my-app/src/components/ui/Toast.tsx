@@ -12,6 +12,10 @@ const TONE = {
 export default class Toast extends Component<AlertProps> {
   private timer: ReturnType<typeof setTimeout> | undefined;
 
+  state = {
+    dismissed: false,
+  };
+
   componentDidMount() {
     this.scheduleClose();
   }
@@ -24,6 +28,7 @@ export default class Toast extends Component<AlertProps> {
       previousProps.onClose !== this.props.onClose
     ) {
       this.clearTimer();
+      this.setState({ dismissed: false });
       this.scheduleClose();
     }
   }
@@ -41,11 +46,21 @@ export default class Toast extends Component<AlertProps> {
   private scheduleClose() {
     const { onClose, durationMs = 4200 } = this.props;
     if (!onClose || durationMs <= 0) return;
-    this.timer = setTimeout(onClose, durationMs);
+    this.timer = setTimeout(() => this.close(), durationMs);
   }
 
+  private close = () => {
+    this.clearTimer();
+    this.props.onClose?.();
+    if (!this.props.onClose) {
+      this.setState({ dismissed: true });
+    }
+  };
+
   render() {
-    const { type, message, onClose } = this.props;
+    if (this.state.dismissed) return null;
+
+    const { type, message } = this.props;
     const tone = TONE[type];
     const Glyph = tone.Glyph;
     return (
@@ -69,11 +84,9 @@ export default class Toast extends Component<AlertProps> {
           <strong className="text-sm font-extrabold leading-tight text-[#101a16]">{tone.title}</strong>
           <span className="text-sm leading-[1.45] break-words text-[#26352f]">{message}</span>
         </div>
-        {onClose && (
-          <Button variant="icon" className="-mt-0.5 text-[#63736d]" onClick={onClose} aria-label="ปิดข้อความ">
-            <X size={18} />
-          </Button>
-        )}
+        <Button variant="icon" className="-mt-0.5 text-[#63736d]" onClick={this.close} aria-label="ปิดข้อความ">
+          <X size={18} strokeWidth={2.6} aria-hidden="true" />
+        </Button>
       </div>
     );
   }

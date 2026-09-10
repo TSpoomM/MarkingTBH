@@ -80,7 +80,7 @@ export const STATUS_CAPTION = "text-xs font-extrabold text-[#415049]";
 
 /** Active/Inactive switch; previously .template-status-toggle */
 export const STATUS_TOGGLE =
-  "!grid !h-[58px] !min-h-[58px] !w-full !grid-cols-2 !items-stretch gap-1 overflow-hidden " +
+  "!grid !h-[100] !min-h-[58px] !w-full !grid-cols-2 !items-stretch gap-1 overflow-hidden " +
   "!rounded-[10px] !border !p-1 !text-[14px] !leading-none !font-black shadow-none " +
   "transition-[border-color,background,box-shadow] duration-200";
 
@@ -126,7 +126,7 @@ export const EMPTY_GUIDE =
   "mt-4 grid min-h-[112px] place-content-center gap-1.5 rounded-lg border border-dashed border-[#b9c8c3] " +
   "bg-[#fbfcfb] p-[18px] text-center text-muted shadow-[0_1px_2px_rgba(20,33,28,.06)]";
 
-export const OUTSIDE_TITLE = "flex items-center justify-between gap-5 max-bp1050:flex-col max-bp1050:items-stretch";
+export const OUTSIDE_TITLE = "flex items-center justify-between gap-5 max-bp1050:flex-col max-bp1050:items-stretch mb-5";
 
 export const OUTSIDE_EMPTY =
   "mt-5 grid h-[130px] place-content-center gap-[7px] rounded-lg border border-dashed border-[#afc2b4] " +

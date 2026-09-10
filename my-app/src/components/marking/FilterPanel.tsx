@@ -30,13 +30,13 @@ export default class FilterPanel extends Component<MarkingFilterPanelProps> {
           <SectionTitle
             number="1"
             title="รายละเอียดสติ๊กเกอร์"
-            subtitle="เลือก Template และกรอกข้อมูลการผลิต ส่วนค่า Sticker ถูกกำหนดโดย Admin"
+            subtitle="เลือก Template พร้อมกรอกข้อมูลการผลิต และ จำนวน lot ที่ต้องการพิมพ์"
           />
           <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-[18px] max-bp700:grid-cols-1">
             <TemplateAutocomplete
               size="lg"
               label="Template"
-              hint={template ? `สติ๊กเกอร์นอกกรอบมี ${template.outside.length} ช่องข้อมูล` : undefined}
+              // hint={template ? `สติ๊กเกอร์นอกกรอบมี ${template.outside.length} ช่องข้อมูล` : undefined}
               selectedTemplateId={templateId}
               templates={templates}
               placeholder={isLoading ? "กำลังโหลด Template..." : "เลือก Template"}

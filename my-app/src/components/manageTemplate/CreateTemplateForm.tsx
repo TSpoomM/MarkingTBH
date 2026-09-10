@@ -2,7 +2,8 @@ import Link from "next/link";
 import cn from "@/src/core/ui/cn";
 import {
   BACK_LINK, CONFIG_CARD, DEFAULT_CHECK, DEFAULT_GRID, NAME_STATUS_ROW, STATUS_CAPTION, STATUS_FIELD, STATUS_OPTION, STATUS_TOGGLE, STATUS_TOGGLE_ACTIVE,
-  STATUS_TOGGLE_INACTIVE, TEMPLATE_MANAGER_GRID, TEMPLATE_NAME_BOX, } from "@/src/core/ui/template";
+  STATUS_TOGGLE_INACTIVE, TEMPLATE_MANAGER_GRID, TEMPLATE_NAME_BOX,
+} from "@/src/core/ui/template";
 import { ACTION_BAR, ACTION_BAR_BUTTONS } from "@/src/core/ui/surfaces";
 import { Component } from "react";
 import Input from "@/src/components/ui/Input";
@@ -64,11 +65,11 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
           />
         )}
         <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
-          <section className={cn(CONFIG_CARD, "relative z-20 overflow-visible")}>
+          <section className={cn(CONFIG_CARD, "relative z-20 overflow-visible mb-5")}>
             <SectionHeading
               number="1"
               title="เพิ่ม Template"
-              subtitle="กรอกชื่อลูกค้าและตั้งค่าสติ๊กเกอร์ให้ครบ แล้วบันทึกในขั้นตอนเดียว"
+              subtitle="กรอกชื่อลูกค้า / จัดการ field ให้ครบ แล้วกดบันทึก"
             />
             <div className={NAME_STATUS_ROW}>
               <label className={TEMPLATE_NAME_BOX}>

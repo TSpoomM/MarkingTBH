@@ -37,13 +37,13 @@ export default class TemplateModeSwitch extends Component<TemplateModeSwitchProp
         <div className={MODE_HELP}>
           <strong>
             {mode === "edit"
-              ? "เลือก Tempate เดิม แล้วปรับช่องบนสติ๊กเกอร์"
-              : "สร้าง Template ใหม่ แล้วกำหนดช่องที่ User ต้องกรอก"}
+              ? "เลือก Tempate เดิม แล้วทำการแก้ไข"
+              : "สร้าง Template ใหม่"}
           </strong>
           <span>
             {mode === "edit"
               ? "เหมาะกับการแก้ Field, ลำดับ Preview และ Template ที่ใช้อยู่"
-              : "ทำตามลำดับ 1 ถึง 4 แล้วกดบันทึกด้านล่าง"}
+              : "สร้าง Template จัดการช่องสำหรับกรอกข้อมูล หรือ duplicate จากของเก่า"}
           </span>
         </div>
       </div>

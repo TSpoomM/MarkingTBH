@@ -33,12 +33,12 @@ export default class HistoryLogsPanel extends Component<HistoryLogsPanelProps> {
           <div className={HISTORY_TABLE_WRAP}>
             <table className={HISTORY_TABLE}>
               <colgroup>
-                <col className="w-[16%]" />
-                <col className="w-[17%]" />
-                <col className="w-[17%]" />
-                <col className="w-[18%]" />
                 <col className="w-[20%]" />
-                <col className="w-[12%]" />
+                <col className="w-[20%]" />
+                <col className="w-[10%]" />
+                <col className="w-[15%]" />
+                <col className="w-[20%]" />
+                <col className="w-[15%]" />
               </colgroup>
               <thead>
                 <tr>

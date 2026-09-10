@@ -20,7 +20,7 @@ const pageNavbarConfig: Record<string, NavbarProps> = {
   "/pages/manageTemplate": {
     badge: "ADM",
     title: "จัดการ Template",
-    subtitle: "เพิ่มลูกค้าใหม่ และแก้ไข Sticker Template ของลูกค้าเดิม",
+    subtitle: "เพิ่ม หรือ แก้ไข Template ",
     activeNav: "templates",
   },
 };

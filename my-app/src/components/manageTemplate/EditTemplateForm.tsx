@@ -62,7 +62,7 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
           <SectionHeading
             number="1"
             title="แก้ไข Sticker Template"
-            subtitle="เลือก Template เดิมเพื่อแก้ไข Field ที่จะไปแสดงบนสติ๊กเกอร์ในกรอบและนอกกรอบ"
+            subtitle=""
           />
         </div>
         {notice && (

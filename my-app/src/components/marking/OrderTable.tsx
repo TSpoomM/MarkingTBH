@@ -19,7 +19,7 @@ export default class OrderTable extends Component<OrderTableProps> {
     return (
       <>
         {template ? (
-          <div className={cn(CONTAINER, "mb-[118px] grid grid-cols-[minmax(0,1fr)] items-start gap-7 max-bp700:mb-[190px]")}>
+          <div className={cn(CONTAINER, "pt-0 mb-[118px] grid grid-cols-[minmax(0,1fr)] items-start gap-7 max-bp700:mb-[190px]")}>
             <div className={cn(TABLE_COLUMN, "border-t-primary")}>
               <div className={TABLE_COLUMN_LABEL}>
                 <span>สติ๊กเกอร์</span>
