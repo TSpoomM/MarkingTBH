@@ -13,7 +13,7 @@ import type { MarkingFilterPanelProps } from "@/src/core/models/marking";
 export default class FilterPanel extends Component<MarkingFilterPanelProps> {
   render() {
     const {
-      notice, templates, templateId, template, productionDate, lotCount, lotStart, isLoading,
+      notice, templates, templateId, productionDate, lotCount, lotStart, isLoading,
       onDismissNotice, onSelectTemplate, onProductionDateChange, onLotCountChange,
     } = this.props;
 
