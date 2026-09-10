@@ -4,7 +4,7 @@ import { markingApiService, MarkingApiService } from "@/src/core/services/markin
 import { sessionApiService, SessionApiService } from "@/src/core/services/session-api.service";
 import { printService, PrintService } from "@/src/core/services/print.service";
 import StickerFactory from "@/src/core/stickers/stickerFactory";
-import StickerDebugReporter from "@/src/core/stickers/stickerDebugReporter";
+// import StickerDebugReporter from "@/src/core/stickers/stickerDebugReporter";
 import type {
   MarkingContent,
   MarkingState,
