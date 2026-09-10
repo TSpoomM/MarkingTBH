@@ -298,10 +298,10 @@ export class MarkingController extends Store<MarkingState> {
     this.setState({ isSaving: true });
     try {
       const payload = this.buildSavePayload(actionType);
-      StickerDebugReporter.log("save:start", { payload });
-      StickerDebugReporter.logFontMetrics("save:start");
+      // StickerDebugReporter.log("save:start", { payload });
+      // StickerDebugReporter.logFontMetrics("save:start");
       const result = await this.service.saveMarking(payload);
-      StickerDebugReporter.log("save:done", { payload, result });
+      // StickerDebugReporter.log("save:done", { payload, result });
       this.setState({
         notice: { type: "success", text: `บันทึกรายการ #${result.id} แล้ว` },
       });
@@ -322,8 +322,8 @@ export class MarkingController extends Store<MarkingState> {
     const result = await this.save("print");
     if (!result) return;
     this.setState({ isExportModalOpen: false, isPrintSheetActive: true });
-    StickerDebugReporter.log("export:print", {});
-    window.requestAnimationFrame(() => StickerDebugReporter.logFontMetrics("export:print"));
+    // StickerDebugReporter.log("export:print", {});
+    // window.requestAnimationFrame(() => StickerDebugReporter.logFontMetrics("export:print"));
     this.printer.print(() => this.setState({ isPrintSheetActive: false }));
   };
 
