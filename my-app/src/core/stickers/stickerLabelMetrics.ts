@@ -3,8 +3,8 @@ import type { StickerItem } from "@/src/core/models/marking-sticker";
 
 const PT_TO_PX = 96 / 72;
 
-/** 8x2 cells are printed sideways and get the largest font the cell allows. */
-export const VERTICAL_OUTSIDE_MAX_FONT_PX = 50 * PT_TO_PX;
+/** Outside-frame stickers (2x2 and 8x2 alike) get the largest font the cell allows. */
+export const OUTSIDE_MAX_FONT_PX = 70 * PT_TO_PX;
 
 const COMFORTABLE_ROW_COUNT = 5;
 const FONT = { max: 35, min: 22, pressurePerRow: 1.1 };
@@ -22,15 +22,13 @@ export default class StickerLabelMetrics {
 
   /** Font size the sticker starts at, before AutoFit shrinks it to fit. */
   static maxRowFontSize(item: StickerItem) {
-    return this.isVerticalOutside(item) ? VERTICAL_OUTSIDE_MAX_FONT_PX : undefined;
+    return item.kind === "outsideFrame" ? OUTSIDE_MAX_FONT_PX : undefined;
   }
 
   private static fontSize(item: StickerItem) {
-    if (this.isVerticalOutside(item)) return VERTICAL_OUTSIDE_MAX_FONT_PX;
     // Outside stickers hold few rows, so only inside stickers shrink by row count.
-    const rowPressure = item.kind === "outsideFrame"
-      ? 0
-      : Math.max(0, item.details.length - COMFORTABLE_ROW_COUNT) * FONT.pressurePerRow;
+    if (item.kind === "outsideFrame") return OUTSIDE_MAX_FONT_PX;
+    const rowPressure = Math.max(0, item.details.length - COMFORTABLE_ROW_COUNT) * FONT.pressurePerRow;
     return Math.max(FONT.min, FONT.max - rowPressure);
   }
 

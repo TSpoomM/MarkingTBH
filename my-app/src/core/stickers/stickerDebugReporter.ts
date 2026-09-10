@@ -20,8 +20,12 @@ export default class StickerDebugReporter {
       return;
     }
 
+    const outsideStickers = stickers.filter((sticker) => sticker.classList.contains("outsideFrame"));
+    const otherStickers = stickers.filter((sticker) => !sticker.classList.contains("outsideFrame"));
+    const sampledStickers = [...outsideStickers.slice(0, 8), ...otherStickers.slice(0, 8 - Math.min(8, outsideStickers.length))];
+
     console.groupCollapsed(`[Marking] ${label}: sticker font metrics`);
-    console.table(stickers.slice(0, 8).map((sticker, index) => {
+    console.table(sampledStickers.map((sticker, index) => {
       const style = getComputedStyle(sticker);
       const details = sticker.querySelector<HTMLElement>(".sticker-details");
       const detailsStyle = details ? getComputedStyle(details) : null;
@@ -41,7 +45,7 @@ export default class StickerDebugReporter {
       };
     }));
 
-    console.table(stickers.slice(0, 3).flatMap((sticker, stickerIndex) =>
+    console.table(sampledStickers.slice(0, 3).flatMap((sticker, stickerIndex) =>
       Array.from(sticker.querySelectorAll<HTMLElement>(".sticker-detail-row")).map((row, rowIndex) => {
         const style = getComputedStyle(row);
         return {

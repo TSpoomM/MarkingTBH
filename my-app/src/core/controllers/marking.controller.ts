@@ -323,6 +323,7 @@ export class MarkingController extends Store<MarkingState> {
     if (!result) return;
     this.setState({ isExportModalOpen: false, isPrintSheetActive: true });
     StickerDebugReporter.log("export:print", {});
+    window.requestAnimationFrame(() => StickerDebugReporter.logFontMetrics("export:print"));
     this.printer.print(() => this.setState({ isPrintSheetActive: false }));
   };
 

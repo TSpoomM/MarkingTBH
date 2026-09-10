@@ -46,12 +46,12 @@
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	grid-template-rows: repeat(8, minmax(0, 1fr));
 	row-gap: 0;
-	column-gap: 3mm
+	column-gap: 1.5mm
 }
 
 .print-sheet .sticker-page-frame-vertical .sticker-label {
 	min-height: 0;
-	padding: 1mm 2mm;
+	padding: 0.5mm 1mm;
 	align-items: center;
 	justify-content: center
 }
@@ -60,6 +60,15 @@
 	justify-items: start;
 	justify-content: start;
 	gap: calc(1mm * var(--sticker-fit-scale, 1))
+}
+
+.print-sheet .sticker-page-frame-vertical .sticker-label.outsideFrame .sticker-details {
+	gap: calc(1.5mm * var(--sticker-fit-scale, 1))
+}
+
+.print-sheet .sticker-page-frame-vertical .sticker-detail-row {
+	grid-template-columns: minmax(min-content, var(--sticker-label-column)) 1.5mm minmax(0, 1fr);
+	gap: 0.5mm
 }
 
 .print-sheet .sticker-label {
