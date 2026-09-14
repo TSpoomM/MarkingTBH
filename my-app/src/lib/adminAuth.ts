@@ -2,7 +2,7 @@ import { pool } from "@/src/lib/db";
 import { currentUserService } from "@/src/lib/currentUser";
 import { requestCurrentUserService } from "@/src/lib/requestCurrentUser";
 import type { AdminAccess } from "@/src/core/models/auth";
-import type { EmployeeReportAccessRow, EmployeeRoleRow } from "@/src/core/models/database";
+import type { EmployeeReportAccessRow } from "@/src/core/models/database";
 
 export class AdminAuthService {
   private getAdminUserIds(): Set<string> {
@@ -15,33 +15,11 @@ export class AdminAuthService {
     );
   }
 
-  private isAdminPosition(position: string | null | undefined) {
-    if (!position) return false;
-    return /\badmin\b/i.test(position.trim());
-  }
-
   async isUserAdmin(userId: string): Promise<boolean> {
     const normalizedId = currentUserService.normalizeUserId(userId);
     if (!normalizedId) return false;
 
-    if (this.getAdminUserIds().has(normalizedId)) return true;
-
-    try {
-      const [rows] = await pool.query<EmployeeRoleRow[]>(
-        `
-        SELECT em.position
-        FROM tb_employee_list e
-        LEFT JOIN tb_emp_email em ON e.fs_id = em.Code
-        WHERE e.fs_id = ?
-        LIMIT 1
-        `,
-        [normalizedId]
-      );
-
-      return this.isAdminPosition(rows[0]?.position);
-    } catch {
-      return false;
-    }
+    return this.getAdminUserIds().has(normalizedId);
   }
 
   async getAccess(request: Request): Promise<AdminAccess> {

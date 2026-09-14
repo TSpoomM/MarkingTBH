@@ -3,7 +3,7 @@ import type { HrkpisSession } from "@/src/core/models/auth";
 export const isDevAuthBypassEnabled =
   process.env.NODE_ENV === "development" && process.env.DEV_AUTH_BYPASS === "true";
 
-const DEV_AUTH_EMP_ID = process.env.DEV_AUTH_EMP_ID?.trim() || "10180";
+const DEV_AUTH_EMP_ID = process.env.DEV_AUTH_EMP_ID?.trim() || "88888";
 
 export class DevAuthService {
   getSession(): HrkpisSession {

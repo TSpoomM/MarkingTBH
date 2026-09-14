@@ -19,6 +19,11 @@ export class SessionApiService {
       return false;
     }
   }
+
+  /** Logout has nothing to unwrap, so this skips the {data,message} envelope httpService.postJson expects. */
+  async logout() {
+    await this.http.json("/api/auth/logout", { method: "POST" });
+  }
 }
 
 export const sessionApiService = new SessionApiService(httpService);

@@ -15,10 +15,6 @@ export type EmployeeRow = RowDataPacket & { fs_id: string };
 
 export type EmployeeLocationRow = RowDataPacket & { location_emp: string | null };
 
-export type EmployeeRoleRow = RowDataPacket & {
-  position: string | null;
-};
-
 export type EmployeeReportAccessRow = RowDataPacket & {
   section: string | number | null;
   location_emp: string | null;
@@ -29,4 +25,10 @@ export type ActionLogRow = RowDataPacket & {
   empId: string;
   createdDate: Date | string;
   action: string;
+};
+
+export type TbhUserRow = RowDataPacket & {
+  userInv: string;
+  passwordInv: string;
+  fs_id: string | number | null;
 };

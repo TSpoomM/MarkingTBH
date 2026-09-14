@@ -3,8 +3,9 @@
 import { readFile, stat } from "fs/promises";
 import path from "path";
 import type { HrkpisSession, PhpValue } from "@/src/core/models/auth";
+import { PHP_SESSION_COOKIE_NAME } from "@/src/lib/sessionCookieNames";
 
-const SESSION_COOKIE_NAME = process.env.PHP_SESSION_COOKIE_NAME || "PHPSESSID";
+const SESSION_COOKIE_NAME = PHP_SESSION_COOKIE_NAME;
 const SESSION_SAVE_PATH = process.env.PHP_SESSION_SAVE_PATH || "C:\\xampp\\tmp";
 const SESSION_MAX_AGE_SECONDS = Number(process.env.PHP_SESSION_MAX_AGE_SECONDS) || 1440;
 

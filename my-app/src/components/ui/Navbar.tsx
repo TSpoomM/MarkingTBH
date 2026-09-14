@@ -3,8 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Component } from "react";
+import { LogOut } from "lucide-react";
 import cn from "@/src/core/ui/cn";
+import Button from "./Button";
 import { sessionApiService } from "@/src/core/services/session-api.service";
+import { basePathService } from "@/src/lib/basePath";
 import type { NavbarProps } from "@/src/core/models/ui";
 
 type NavbarState = {
@@ -49,14 +52,22 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
     this.setState({ isAdmin });
   }
 
+  private handleLogout = async () => {
+    try {
+      await sessionApiService.logout();
+    } finally {
+      window.location.href = basePathService.withBasePath("/login");
+    }
+  };
+
   render() {
     const { badge, title, subtitle, action, activeNav } = this.props;
     const navItems = [
       { key: "marking", label: "Marking", href: "/" },
       ...(this.state.isAdmin
         ? [
-          { key: "history", label: "ประวัติ", href: "/pages/history" },
-          { key: "templates", label: "จัดการ Template", href: "/pages/manageTemplate" },
+          { key: "history", label: "ประวัติ", href: "/history" },
+          { key: "templates", label: "จัดการ Template", href: "/manageTemplate" },
         ]
         : []),
     ] as const;
@@ -115,6 +126,15 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
                   {action}
                 </div>
               )}
+              <Button
+                type="button"
+                variant="ghost"
+                className="shrink-0 max-bp900:w-full"
+                onClick={() => void this.handleLogout()}
+              >
+                <LogOut size={16} aria-hidden="true" />
+                ออกจากระบบ
+              </Button>
             </div>
           </div>
         </header>
