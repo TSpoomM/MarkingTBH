@@ -13,7 +13,7 @@ export const DATE_SEPARATOR_OPTIONS: Array<{ value: DateSeparator; label: string
   { value: ".", label: ". จุด" },
 ];
 
-export const MONTH_ABBREVIATIONS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+export const MONTH_ABBREVIATIONS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 interface DateFormatConfig {
   parts: [DatePart, DatePart, DatePart];

@@ -26,14 +26,11 @@ export default class AutoFitStickerDetails extends Component<
   state = { fontScale: 1, gapScale: this.getGapScale(this.props.details), sharedRowFontSizes: {} as Record<string, number> };
 
   componentDidMount() {
-    this.fit();
+    this.fitNow();
     window.addEventListener("beforeprint", this.handleBeforePrint);
-    if (typeof ResizeObserver !== "undefined" && this.ref.current) {
+    if (typeof ResizeObserver !== "undefined" && this.ref.current?.parentElement) {
       this.resizeObserver = new ResizeObserver(() => this.fit());
-      this.resizeObserver.observe(this.ref.current);
-      if (this.ref.current.parentElement) {
-        this.resizeObserver.observe(this.ref.current.parentElement);
-      }
+      this.resizeObserver.observe(this.ref.current.parentElement);
     }
   }
 

@@ -6,6 +6,7 @@ import Button from "@/src/components/ui/Button";
 import CalendarInput from "@/src/components/ui/CalendarInput";
 import Select from "@/src/components/ui/Select";
 import cn from "@/src/core/ui/cn";
+import { FIELD_HINT_LG, FIELD_LABEL_LG, FIELD_LG } from "@/src/core/ui/fields";
 import { PANEL } from "@/src/core/ui/surfaces";
 import type { HistoryFilterPanelProps, HistoryPageState } from "@/src/core/models/history";
 
@@ -63,15 +64,17 @@ export default class HistoryFilterPanel extends Component<HistoryFilterPanelProp
           value={date}
           onChange={onDateChange}
         />
-        <div className="grid grid-rows-[auto_52px_minmax(17px,auto)] self-stretch max-bp1100:col-span-full max-bp1100:justify-end max-bp700:justify-stretch">
+        <div className={cn(FIELD_LG, "max-bp1100:col-span-full max-bp1100:justify-end max-bp700:justify-stretch")}>
+          <span className={FIELD_LABEL_LG} aria-hidden="true">&nbsp;</span>
           <Button
             type="button"
-            className="row-start-2 h-[52px] min-h-[52px] rounded-lg border border-[#c5d6cf] bg-[#f7faf8] px-4 text-sm whitespace-nowrap text-[#315446] max-bp700:w-full"
+            className="h-[52px] min-h-[52px] rounded-lg border border-[#c5d6cf] bg-[#f7faf8] px-4 text-sm whitespace-nowrap text-[#315446] max-bp700:w-full"
             onClick={onClearFilters}
             disabled={activeFilterCount === 0}
           >
             ล้าง Filter
           </Button>
+          <small className={FIELD_HINT_LG} aria-hidden="true">&nbsp;</small>
         </div>
       </section>
     );

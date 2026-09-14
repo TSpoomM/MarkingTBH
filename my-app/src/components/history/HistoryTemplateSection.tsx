@@ -8,7 +8,7 @@ import cn from "@/src/core/ui/cn";
 
 export default class HistoryTemplateSection extends Component<HistoryTemplateSectionProps> {
   render() {
-    const { title, rows, fieldMeta = {} } = this.props;
+    const { title, rows, fieldMeta = {}, groupName } = this.props;
     const filledRows = rows
       .map((row, index) => ({ index, entries: HistoryFormatter.filledEntries(row, fieldMeta) }))
       .filter((row) => row.entries.length > 0);
@@ -23,7 +23,11 @@ export default class HistoryTemplateSection extends Component<HistoryTemplateSec
             {filledRows.map((row) => (
               <article className={HISTORY_TEMPLATE_CARD} key={`${title}-${row.index}`}>
                 <header>
-                  <strong>ชุดที่ {row.index + 1}</strong>
+                  <strong>
+                    {groupName
+                      ? (filledRows.length > 1 ? `${groupName} ${row.index + 1}` : groupName)
+                      : `ชุดที่ ${row.index + 1}`}
+                  </strong>
                   <span>{row.entries.length} Field</span>
                 </header>
                 <dl>

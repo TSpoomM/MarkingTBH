@@ -74,4 +74,6 @@ export interface HistoryTemplateSectionProps {
   title: string;
   rows: MarkingContent[];
   fieldMeta?: Record<string, MarkingHistoryFieldMeta>;
+  /** Outside-frame table name (stickerGroup) - shown instead of "ชุดที่ N" when the template names its tables. */
+  groupName?: string;
 }

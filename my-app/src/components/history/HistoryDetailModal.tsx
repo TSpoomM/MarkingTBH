@@ -80,9 +80,10 @@ export default class HistoryDetailModal extends Component<HistoryDetailModalProp
               {HistoryFormatter.outsideGroups(item.outside, item.fieldMeta?.outside).map((group, index) => (
                 <HistoryTemplateSection
                   key={group.name ?? `outside-${index}`}
-                  title={group.name ? `นอกกรอบ · ${group.name}` : "นอกกรอบ"}
+                  title={"นอกกรอบ"}
                   rows={group.rows}
                   fieldMeta={item.fieldMeta?.outside}
+                  groupName={group.name}
                 />
               ))}
             </section>

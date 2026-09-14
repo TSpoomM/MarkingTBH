@@ -32,14 +32,11 @@ export default class AutoFitStickerRow extends Component<Props, { fontSize: numb
   state = { fontSize: this.defaultFontSize };
 
   componentDidMount() {
-    this.fit();
+    this.fitNow();
     window.addEventListener("beforeprint", this.fitNow);
-    if (typeof ResizeObserver !== "undefined" && this.ref.current) {
+    if (typeof ResizeObserver !== "undefined" && this.ref.current?.parentElement) {
       this.resizeObserver = new ResizeObserver(() => this.fit());
-      this.resizeObserver.observe(this.ref.current);
-      if (this.ref.current.parentElement) {
-        this.resizeObserver.observe(this.ref.current.parentElement);
-      }
+      this.resizeObserver.observe(this.ref.current.parentElement);
     }
   }
 
