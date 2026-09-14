@@ -3,7 +3,7 @@
  * replacing the previous per-page .export-button / .print-export-secondary /
  * .template-cancel-button / .summary-delete-field / .add-field-button rules
  */
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "icon";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "icon" | "alert";
 export type ButtonSize = "md" | "lg";
 
 export const BUTTON_BASE =
@@ -27,6 +27,9 @@ export const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   icon:
     "size-[34px] shrink-0 rounded-lg border border-[#c4d4cc] bg-white/55 text-[21px] text-[#405049] shadow-none " +
     "hover:border-[#8fb5a5] hover:bg-white hover:text-primary-dark",
+  alert:
+    "rounded-lg border border-[#d7b3b7] bg-[#fff7f7] text-[#7f252d] shadow-none " +
+    "hover:border-[#a15c66] hover:bg-[#a15c66] hover:text-white enabled:hover:-translate-y-px",
 };
 
 export const BUTTON_SIZES: Record<ButtonSize, string> = {

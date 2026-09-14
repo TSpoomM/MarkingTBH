@@ -24,11 +24,12 @@ const NAV_LINK =
   "max-bp700:text-[14px] max-bp560:min-h-10 max-bp560:px-2.5 max-bp560:text-xs";
 
 const NAV_LINK_IDLE =
-  "border-[#c4d8cf] bg-white text-[#38534a] shadow-[0_8px_20px_rgba(38,59,45,.07)]";
+  "border-[#c4d8cf] bg-white text-[#38534a] shadow-[0_8px_20px_rgba(38,59,45,.07)] " +
+  "hover:border-[#8fb5a5] hover:bg-primary-soft hover:text-primary-dark enabled:hover:-translate-y-px";
 
 const NAV_LINK_ACTIVE =
   "border-primary-dark bg-primary text-white " +
-  "shadow-[0_12px_24px_rgba(15,118,110,.28)]";
+  "shadow-[0_12px_24px_rgba(15,118,110,.28)] hover:border-[#0b4f48] hover:bg-primary-dark hover:text-white";
 
 export default class Navbar extends Component<NavbarProps, NavbarState> {
   private isMounted = false;
@@ -128,7 +129,7 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
               )}
               <Button
                 type="button"
-                variant="ghost"
+                variant="alert"
                 className="shrink-0 max-bp900:w-full"
                 onClick={() => void this.handleLogout()}
               >
