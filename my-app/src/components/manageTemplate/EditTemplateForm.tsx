@@ -79,6 +79,7 @@ export default class EditTemplateForm extends Component<EditTemplateFormProps> {
             includeInactive
             selectedTemplateId={selectedTemplateId}
             templates={templates}
+            maxOptions={templates.length}
             placeholder={loadingTemplates ? "กำลังโหลดลูกค้า..." : "เลือก Template ที่ต้องการแก้ไข"}
             onSelectTemplate={onSelectTemplate}
             disabled={loadingTemplates || loadingTemplate}

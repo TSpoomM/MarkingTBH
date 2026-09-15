@@ -102,9 +102,9 @@ export default class DateFormatter {
 
   private static parseCommonDate(value: string) {
     const textMonthPatterns: Array<{ pattern: RegExp; order: [DatePart, DatePart, DatePart] }> = [
-      { pattern: /^(\d{4})[-/.]([A-Z]{3})[-/.](\d{2})$/, order: ["yyyy", "mmm", "dd"] },
-      { pattern: /^(\d{2})[-/.]([A-Z]{3})[-/.](\d{4})$/, order: ["dd", "mmm", "yyyy"] },
-      { pattern: /^([A-Z]{3})[-/.](\d{2})[-/.](\d{4})$/, order: ["mmm", "dd", "yyyy"] },
+      { pattern: /^(\d{4})[-/. ]([A-Z]{3})[-/. ](\d{2})$/, order: ["yyyy", "mmm", "dd"] },
+      { pattern: /^(\d{2})[-/. ]([A-Z]{3})[-/. ](\d{4})$/, order: ["dd", "mmm", "yyyy"] },
+      { pattern: /^([A-Z]{3})[-/. ](\d{2})[-/. ](\d{4})$/, order: ["mmm", "dd", "yyyy"] },
     ];
     for (const item of textMonthPatterns) {
       const match = value.match(item.pattern);
@@ -114,7 +114,7 @@ export default class DateFormatter {
       return values.yyyy && month && values.dd ? `${values.yyyy}-${month}-${values.dd}` : "";
     }
 
-    const numericMatch = value.match(/^(\d{2})[-/.](\d{2})[-/.](\d{4})$/);
+    const numericMatch = value.match(/^(\d{2})[-/. ](\d{2})[-/. ](\d{4})$/);
     if (!numericMatch) return "";
     const [, first, second, year] = numericMatch;
     return `${year}-${second}-${first}`;
@@ -133,6 +133,7 @@ export default class DateFormatter {
   }
 
   private static findSeparator(format: string): DateSeparator {
+    if (format.includes(" ")) return " ";
     if (format.includes("/")) return "/";
     if (format.includes(".")) return ".";
     return "-";

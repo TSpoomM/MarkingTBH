@@ -100,8 +100,10 @@ export default class CreateTemplateForm extends Component<CreateTemplateFormProp
               <span>คัดลอก Template จาก</span>
               <TemplateAutocomplete
                 bare
+                includeInactive
                 selectedTemplateId={duplicateSourceTemplateId}
                 templates={templates}
+                maxOptions={templates.length}
                 placeholder={loadingTemplates ? "กำลังโหลดลูกค้า..." : "เริ่มจากว่างเปล่า หรือเลือก Template เดิม"}
                 onSelectTemplate={onDuplicateSourceChange}
                 disabled={loadingTemplates || duplicatingTemplate}

@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 const stickerTypeConditionSchema = z.enum(["TNR", "NON TNR", "NON-TNR", "FCS"])
   .transform((value) => value === "NON-TNR" ? "NON TNR" : value === "FCS" ? "TNR" : value);
-const dateFormatSchema = z.string().regex(/^(dd|mm|mmm|yyyy)([-/.])(dd|mm|mmm|yyyy)\2(dd|mm|mmm|yyyy)$/).optional();
+const dateFormatSchema = z.string().regex(/^(dd|mm|mmm|yyyy)([-/. ])(dd|mm|mmm|yyyy)\2(dd|mm|mmm|yyyy)$/).optional();
 
 class TemplateRouteValueParser {
   static isActiveValue(value: number | string | boolean | null | undefined) {
