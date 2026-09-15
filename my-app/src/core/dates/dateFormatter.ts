@@ -23,7 +23,7 @@ interface DateFormatConfig {
 
 export default class DateFormatter {
   static defaultFormat(): DateFormat {
-    return "yyyy-mm-dd";
+    return "dd-mm-yyyy";
   }
 
   static buildFormat(parts: [DatePart, DatePart, DatePart], separator: DateSeparator): DateFormat {
