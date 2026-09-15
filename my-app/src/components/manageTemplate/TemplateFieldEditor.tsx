@@ -30,7 +30,7 @@ const OUTSIDE_TABLE_LAYOUT_OPTIONS: Array<{ value: StickerGroupLayout; label: st
 const COUNTER_TYPE_OPTIONS: Array<{ value: CounterType; label: string; description: string }> = [
   { value: "lot", label: "Lot", description: "นับตามเลข Lot ของรอบพิมพ์" },
   { value: "pallet", label: "Pallet", description: "นับตามลำดับ Pallet ในแต่ละ Lot" },
-  { value: "sequence", label: "+1 ไปเรื่อยๆ", description: "นับต่อเนื่องไปเรื่อยๆ ไม่อิงกับ Lot หรือ Pallet" },
+  { value: "sequence", label: "+1 ไปเรื่อยๆ", description: "นับต่อเนื่องไปเรื่อยๆ (คล้าย pallet แต่ไม่วนกลับมา 1 ใหม่)" },
 ];
 
 const ADD_FIELD_OPTIONS: Array<{ value: TemplateFieldPreset; label: string; description: string }> = [
@@ -421,7 +421,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
               >
                 <div className={MODAL_BODY}>
                   <article className={EDITOR_FIELD}>
-                    
+
                     <label>
                       <span>ชื่อ Field</span>
                       <Input
