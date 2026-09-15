@@ -80,7 +80,7 @@ export default class StickerPreviewButton extends Component<StickerPreviewButton
                 {outsideGroups.map((group) => (
                   <Button
                     type="button"
-                    className={group.key === activeOutsideGroup?.key ? "active" : ""}
+                    className={cn(group.key === activeOutsideGroup?.key && "active", "preview-mode-outside")}
                     onClick={() => this.setState({ previewGroup: group.key })}
                     key={group.key}
                   >

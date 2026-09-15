@@ -104,7 +104,7 @@ export default class StickerTemplatePreview extends Component<
                 {outsideGroups.map((group) => (
                   <Button
                     type="button"
-                    className={group === activeGroup ? "active" : ""}
+                    className={cn(group === activeGroup && "active", "preview-mode-outside")}
                     onClick={() => this.setState({ previewGroup: group })}
                     key={group}
                   >

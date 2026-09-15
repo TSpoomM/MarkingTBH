@@ -456,12 +456,20 @@
 .sticker-template-preview-groups {
 	grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
 	border-style: dashed;
-	background: #f2f6f3
+	border-color: #dec2d4;
+	background: #fff7fb
 }
 
 .sticker-template-preview-groups button {
 	min-height: 36px;
+	color: #74415f;
 	font-size: 13px
+}
+
+.sticker-template-preview-groups button.active {
+	background: #9b3f72;
+	color: #fff;
+	box-shadow: 0 2px 6px #9b3f7226
 }
 
 @media print {
@@ -588,4 +596,3 @@
 		border-color: #17231f;
 	}
 }
-
