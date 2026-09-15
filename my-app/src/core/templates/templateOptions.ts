@@ -17,6 +17,14 @@ export default class TemplateOptions {
     return this.selectable(templates, includeInactive).map((template) => this.label(template));
   }
 
+  static autocompleteOptions(templates: Template[], includeInactive = false, disableInactive = false) {
+    return this.selectable(templates, includeInactive).map((template) => ({
+      value: this.label(template),
+      label: this.label(template),
+      disabled: disableInactive && template.isActive === false,
+    }));
+  }
+
   static labelFor(templates: Template[], templateId: string) {
     const template = templates.find((item) => String(item.id) === templateId);
     return template ? this.label(template) : "";

@@ -5,7 +5,7 @@ import Field from "./Field";
 import Input from "./Input";
 import cn from "@/src/core/ui/cn";
 import { LISTBOX, LISTBOX_OPTION, LISTBOX_OPTION_ACTIVE, LISTBOX_OPTION_TEXT } from "@/src/core/ui/listbox";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, CircleOff } from "lucide-react";
 
 const AUTOCOMPLETE_WRAP =
   "group/autocomplete relative w-full min-w-0 " +
@@ -27,6 +27,7 @@ interface AutocompleteState {
 }
 
 type AutocompleteBaseProps = AutocompleteProps & { generatedId: string };
+type NormalizedOption = { value: string; label: string; disabled: boolean };
 
 class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteState> {
   state: AutocompleteState = {
@@ -38,20 +39,33 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
     return String(this.props.value ?? "");
   }
 
-  private filteredOptions(options: string[], maxOptions: number) {
+  private normalizeOptions(options: AutocompleteProps["options"]) {
+    const seen = new Set<string>();
+    return options.reduce<NormalizedOption[]>((items, option) => {
+      const item = typeof option === "string"
+        ? { value: option, label: option, disabled: false }
+        : { value: option.value, label: option.label, disabled: option.disabled === true };
+      if (!item.value || seen.has(item.value)) return items;
+      seen.add(item.value);
+      return [...items, item];
+    }, []);
+  }
+
+  private filteredOptions(options: AutocompleteProps["options"], maxOptions: number) {
     const value = this.value().trim().toLowerCase();
-    const uniqueOptions = Array.from(new Set(options.filter(Boolean)));
-    if (!value) return uniqueOptions.slice(0, maxOptions);
-    return uniqueOptions
-      .filter((option) => option.toLowerCase().includes(value))
+    const normalizedOptions = this.normalizeOptions(options);
+    if (!value) return normalizedOptions.slice(0, maxOptions);
+    return normalizedOptions
+      .filter((option) => option.label.toLowerCase().includes(value) || option.value.toLowerCase().includes(value))
       .slice(0, maxOptions);
   }
 
-  private selectOption(option: string) {
+  private selectOption(option: NormalizedOption) {
+    if (option.disabled) return;
     const { onChange } = this.props;
     const event = {
-      target: { value: option },
-      currentTarget: { value: option },
+      target: { value: option.value },
+      currentTarget: { value: option.value },
     } as ChangeEvent<HTMLInputElement>;
     onChange?.(event);
     this.setState({ open: false, activeIndex: -1 });
@@ -138,13 +152,15 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
                 className={cn(LISTBOX_OPTION, index === this.state.activeIndex && LISTBOX_OPTION_ACTIVE)}
                 role="option"
                 aria-selected={index === this.state.activeIndex}
+                disabled={option.disabled}
                 onMouseDown={(event) => {
                   event.preventDefault();
                   this.selectOption(option);
                 }}
-                key={option}
+                key={option.value}
               >
-                <span className={LISTBOX_OPTION_TEXT}>{option}</span>
+                <span className={LISTBOX_OPTION_TEXT}>{option.label}</span>
+                {option.disabled && <CircleOff className="ml-auto shrink-0 text-[#8c4d55]" size={16} strokeWidth={2.6} aria-hidden="true" />}
               </Button>
             ))}
           </div>

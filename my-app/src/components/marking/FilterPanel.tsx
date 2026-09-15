@@ -39,6 +39,9 @@ export default class FilterPanel extends Component<MarkingFilterPanelProps> {
               // hint={template ? `สติ๊กเกอร์นอกกรอบมี ${template.outside.length} ช่องข้อมูล` : undefined}
               selectedTemplateId={templateId}
               templates={templates}
+              includeInactive
+              disableInactive
+              maxOptions={templates.length}
               placeholder={isLoading ? "กำลังโหลด Template..." : "เลือก Template"}
               onSelectTemplate={onSelectTemplate}
               disabled={isLoading}

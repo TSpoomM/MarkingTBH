@@ -47,7 +47,7 @@ export default class ManageTemplatePage extends StoreContainer<TemplateFormState
         onStickerDefaultsChange={(defaults) => templateManageStore.changeStickerDefaults("edit", defaults)}
         onSelectPreviewSlot={(section, slotIndex, fieldKey) => templateManageStore.setPreviewSlot("edit", section, slotIndex, fieldKey)}
         onChangeField={(section, index, patch) => templateManageStore.changeDraftField("edit", section, index, patch)}
-        onAddField={(section, tableOrder) => templateManageStore.addField("edit", section, tableOrder)}
+        onAddField={(section, tableOrder, preset) => templateManageStore.addField("edit", section, tableOrder, preset)}
         onRemoveField={(section, index) => templateManageStore.removeField("edit", section, index)}
         onMoveField={(section, fromIndex, toIndex, tableOrder) => templateManageStore.moveField("edit", section, fromIndex, toIndex, tableOrder)}
         onAddTable={(layout) => templateManageStore.addTable("edit", layout)}
@@ -82,7 +82,7 @@ export default class ManageTemplatePage extends StoreContainer<TemplateFormState
         onStickerDefaultsChange={(defaults) => templateManageStore.changeStickerDefaults("create", defaults)}
         onSelectPreviewSlot={(section, slotIndex, fieldKey) => templateManageStore.setPreviewSlot("create", section, slotIndex, fieldKey)}
         onChangeField={(section, index, patch) => templateManageStore.changeDraftField("create", section, index, patch)}
-        onAddField={(section, tableOrder) => templateManageStore.addField("create", section, tableOrder)}
+        onAddField={(section, tableOrder, preset) => templateManageStore.addField("create", section, tableOrder, preset)}
         onRemoveField={(section, index) => templateManageStore.removeField("create", section, index)}
         onMoveField={(section, fromIndex, toIndex, tableOrder) => templateManageStore.moveField("create", section, fromIndex, toIndex, tableOrder)}
         onAddTable={(layout) => templateManageStore.addTable("create", layout)}

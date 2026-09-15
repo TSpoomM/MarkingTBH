@@ -7,6 +7,7 @@ import {
   fixedInsideFields,
   initialGroups,
   type TemplateFormState,
+  type TemplateFieldPreset,
   type TemplateManageMode,
 } from "@/src/core/models/manage-template";
 import TemplateFormDefaults from "@/src/core/templates/templateFormDefaults";
@@ -228,20 +229,32 @@ export class TemplateManageController extends Store<TemplateFormState> {
     ));
   };
 
-  addField = (target: TemplateFormTarget, section: Section, tableOrder?: number) => {
+  addField = (target: TemplateFormTarget, section: Section, tableOrder?: number, preset: TemplateFieldPreset = "field") => {
     const { key, fields } = this.draft(target, section);
     const outsideGroup = section === "outside" ? this.outsideGroup(fields, tableOrder) : undefined;
     if (section === "outside" && TemplateFormDefaults.isVerticalStickerGroupLayout(outsideGroup?.layout)) return;
+    const fieldKey = `${section}_${preset}_${TemplateFieldUtils.uid()}`;
+    const isSectionPreset = preset === "section";
     const nextField: TemplateField = {
-      key: `${section}_field_${TemplateFieldUtils.uid()}`,
-      label: "",
+      key: fieldKey,
+      label: isSectionPreset ? "SECTION" : "",
       type: "text",
       required: true,
       showOnSticker: true,
       stickerGroup: outsideGroup?.name,
       stickerGroupOrder: outsideGroup?.order,
       stickerGroupLayout: outsideGroup?.layout,
-      uppercase: section === "outside" ? true : undefined,
+      uppercase: true,
+      segments: isSectionPreset
+        ? [{
+          key: `${fieldKey}_1`,
+          label: "SECTION 1",
+          type: "number",
+          showOnSticker: true,
+          isCounter: true,
+          counterType: "lot",
+        }]
+        : undefined,
     };
     const insertIndex = section === "outside"
       ? this.lastOutsideGroupIndex(fields, outsideGroup?.order ?? 0) + 1
@@ -405,17 +418,17 @@ export class TemplateManageController extends Store<TemplateFormState> {
         dateFormat: field.type === "date" ? DateFormatter.normalizeFormat(field.dateFormat) : undefined,
         defaultValue: !field.segments?.length && field.locked
           ? field.defaultValue?.trim() || field.label.trim()
-          : section === "outside" ? undefined : field.defaultValue?.trim() || undefined,
+          : field.defaultValue?.trim() || undefined,
         locked: !field.segments?.length ? field.locked === true : false,
         required: true,
         condition: undefined,
         showOnSticker: field.showOnSticker ?? true,
         stickerOrder: field.showOnSticker === false ? undefined : index,
-        uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
-        isCounter: section === "outside" && !field.segments?.length ? field.isCounter : undefined,
-        counterType: section === "outside" && !field.segments?.length ? field.counterType : undefined,
-        counterPad4: section === "outside" && !field.segments?.length ? field.counterPad4 : undefined,
-        fontScale: section === "outside" && !isVerticalOutside ? field.fontScale : undefined,
+        uppercase: field.uppercase ?? true,
+        isCounter: !field.segments?.length ? field.isCounter : undefined,
+        counterType: !field.segments?.length ? field.counterType : undefined,
+        counterPad4: !field.segments?.length ? field.counterPad4 : undefined,
+        fontScale: !isVerticalOutside ? field.fontScale : undefined,
         segments: field.segments?.map((segment, segmentIndex) => ({
           ...segment,
           key: TemplateFieldUtils.uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
@@ -427,6 +440,7 @@ export class TemplateManageController extends Store<TemplateFormState> {
           showOnSticker: segment.showOnSticker ?? true,
           stickerOrder: segment.showOnSticker === false ? undefined : index * 10 + segmentIndex,
           counterType: segment.counterType ?? TemplateFieldUtils.inferCounterType({ ...field, key: fieldKey }),
+          counterPad4: segment.counterPad4,
         })),
       });
     });

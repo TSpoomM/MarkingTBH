@@ -42,7 +42,7 @@ export interface AutocompleteProps extends Omit<InputHTMLAttributes<HTMLInputEle
   bare?: boolean;
   size?: ControlSize;
   maxOptions?: number;
-  options: string[];
+  options: Array<string | { value: string; label: string; disabled?: boolean }>;
 }
 
 export interface ModalProps {

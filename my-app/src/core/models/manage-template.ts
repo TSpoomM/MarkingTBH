@@ -3,6 +3,7 @@ import type { InsideGroup, StickerLayouts } from "@/src/core/models/template-for
 
 export type TemplateFormNotice = { kind: "error" | "success"; text: string };
 export type TemplateManageMode = "edit" | "create";
+export type TemplateFieldPreset = "field" | "section";
 
 export type StickerSelectableField = {
   key: string;
@@ -65,7 +66,7 @@ export interface CreateTemplateFormProps {
   onStickerDefaultsChange: (defaults: StickerDefaults) => void;
   onSelectPreviewSlot: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
-  onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
+  onAddField: (section: "inside" | "outside", tableOrder?: number, preset?: TemplateFieldPreset) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
   onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number, tableOrder?: number) => void;
   onAddTable: (layout: StickerGroupLayout) => void;
@@ -97,7 +98,7 @@ export interface EditTemplateFormProps {
   onStickerDefaultsChange: (defaults: StickerDefaults) => void;
   onSelectPreviewSlot: (section: "inside" | "outside", slotIndex: number, fieldKey: string) => void;
   onChangeField: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
-  onAddField: (section: "inside" | "outside", tableOrder?: number) => void;
+  onAddField: (section: "inside" | "outside", tableOrder?: number, preset?: TemplateFieldPreset) => void;
   onRemoveField: (section: "inside" | "outside", index: number) => void;
   onMoveField: (section: "inside" | "outside", fromIndex: number, toIndex: number, tableOrder?: number) => void;
   onAddTable: (layout: StickerGroupLayout) => void;
@@ -118,7 +119,7 @@ export interface TemplateFieldEditorProps {
   section: "inside" | "outside";
   fields: TemplateField[];
   onChange: (section: "inside" | "outside", index: number, patch: Partial<TemplateField>) => void;
-  onAdd: (section: "inside" | "outside", tableOrder?: number) => void;
+  onAdd: (section: "inside" | "outside", tableOrder?: number, preset?: TemplateFieldPreset) => void;
   onRemove: (section: "inside" | "outside", index: number) => void;
   onMove: (section: "inside" | "outside", fromIndex: number, toIndex: number, tableOrder?: number) => void;
   onAddTable?: (layout: StickerGroupLayout) => void;

@@ -20,7 +20,7 @@ import Select from "@/src/components/ui/Select";
 import TemplateFieldUtils from "@/src/core/templates/templateFieldUtils";
 import DateFormatter, { DATE_PART_OPTIONS, DATE_SEPARATOR_OPTIONS } from "@/src/core/dates/dateFormatter";
 import type { CounterType, DatePart, DateSeparator, StickerGroupLayout, TemplateField } from "@/src/core/models/template";
-import type { TemplateFieldEditorProps } from "@/src/core/models/manage-template";
+import type { TemplateFieldEditorProps, TemplateFieldPreset } from "@/src/core/models/manage-template";
 
 const OUTSIDE_TABLE_LAYOUT_OPTIONS: Array<{ value: StickerGroupLayout; label: string; description: string }> = [
   { value: "2x2", label: "2 x 2 แนวนอน", description: "A4 แนวนอน 4 ดวง/หน้า (ค่าเริ่มต้น)" },
@@ -31,6 +31,11 @@ const COUNTER_TYPE_OPTIONS: Array<{ value: CounterType; label: string; descripti
   { value: "lot", label: "Lot", description: "นับตามเลข Lot ของรอบพิมพ์" },
   { value: "pallet", label: "Pallet", description: "นับตามลำดับ Pallet ในแต่ละ Lot" },
   { value: "sequence", label: "+1 ไปเรื่อยๆ", description: "นับต่อเนื่องไปเรื่อยๆ ไม่อิงกับ Lot หรือ Pallet" },
+];
+
+const ADD_FIELD_OPTIONS: Array<{ value: TemplateFieldPreset; label: string; description: string }> = [
+  { value: "field", label: "Field ปกติ", description: "เพิ่มช่องข้อมูลทั่วไป แล้วค่อยตั้งค่าเพิ่มเติมได้" },
+  { value: "section", label: "Section", description: "เพิ่ม Field แบบ Section พร้อมตัวนับเริ่มต้น แล้วค่อยปรับแต่งต่อได้" },
 ];
 
 interface CounterPromptTarget {
@@ -49,6 +54,8 @@ interface State {
   counterPromptTarget: CounterPromptTarget | null;
   pendingCounterType: CounterType;
   pendingCounterPad4: boolean;
+  addFieldPrompt: { tableOrder?: number } | null;
+  pendingFieldPreset: TemplateFieldPreset;
 }
 
 export default class TemplateFieldEditor extends Component<TemplateFieldEditorProps, State> {
@@ -63,7 +70,22 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
     counterPromptTarget: null,
     pendingCounterType: "lot",
     pendingCounterPad4: false,
+    addFieldPrompt: null,
+    pendingFieldPreset: "field",
   };
+
+  private openAddFieldPrompt(tableOrder?: number) {
+    this.setState({ addFieldPrompt: { tableOrder }, pendingFieldPreset: "field" });
+  }
+
+  private closeAddFieldPrompt() {
+    this.setState({ addFieldPrompt: null });
+  }
+
+  private confirmAddField() {
+    this.props.onAdd(this.props.section, this.state.addFieldPrompt?.tableOrder, this.state.pendingFieldPreset);
+    this.closeAddFieldPrompt();
+  }
 
   private openAddTablePrompt() {
     this.setState({ addTableLayoutPromptOpen: true, pendingTableLayout: "2x2" });
@@ -250,7 +272,6 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
       section,
       fields,
       onChange,
-      onAdd,
       onRemove,
       onAddTable,
       onRenameTable,
@@ -260,7 +281,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
     const {
       editingFieldIndex, dateFormatPromptIndex, draggingFieldKey, draggingTableOrder, draggingSegmentKey,
       addTableLayoutPromptOpen, pendingTableLayout,
-      counterPromptTarget, pendingCounterType, pendingCounterPad4,
+      counterPromptTarget, pendingCounterType, pendingCounterPad4, addFieldPrompt, pendingFieldPreset,
     } = this.state;
     const counterPromptField = counterPromptTarget ? fields[counterPromptTarget.fieldIndex] : undefined;
     const counterPromptCurrent = counterPromptField && counterPromptTarget
@@ -279,7 +300,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
         {!fields.length && <div className={EDITOR_EMPTY}>ยังไม่มี Field</div>}
         {fields.map((field, index) => {
           const tableOrder = field.stickerGroupOrder ?? 0;
-          const isInsideNettField = section === "inside" && field.key === "nett" && !field.segments?.length;
+          const canUseDefaultValue = !field.segments?.length && !field.locked;
           const previousTableOrder = fields[index - 1]?.stickerGroupOrder ?? 0;
           const nextTableOrder = fields[index + 1]?.stickerGroupOrder ?? 0;
           const showTableHeader = section === "outside" && (index === 0 || tableOrder !== previousTableOrder);
@@ -428,13 +449,13 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         </span>
                       </label>
                     )}
-                    {isInsideNettField && (
+                    {canUseDefaultValue && (
                       <label className={TOGGLE_BOX}>
                         <Input
                           bare
                           type="checkbox"
                           checked={field.defaultValue !== undefined}
-                          onChange={(event) => onChange(section, index, { defaultValue: event.target.checked ? field.defaultValue ?? "1260" : undefined })}
+                          onChange={(event) => onChange(section, index, { defaultValue: event.target.checked ? field.defaultValue ?? "" : undefined })}
                         />
                         <span className={TOGGLE_COPY}>
                           <strong>ใช้ค่าเริ่มต้น</strong>
@@ -442,18 +463,18 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         </span>
                       </label>
                     )}
-                    {isInsideNettField && field.defaultValue !== undefined && (
+                    {canUseDefaultValue && field.defaultValue !== undefined && (
                       <label className="grid content-start gap-2 [&>span]:text-sm [&>span]:font-extrabold">
                         <span>ค่า default</span>
                         <Input
                           bare
-                          type="number"
+                          type={field.type === "number" || field.isCounter ? "number" : "text"}
                           value={field.defaultValue}
                           onChange={(event) => onChange(section, index, { defaultValue: event.target.value })}
                         />
                       </label>
                     )}
-                    {section === "outside" && (
+                    {(
                       <label className={TOGGLE_BOX}>
                         <Input
                           bare
@@ -477,7 +498,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         <strong>ไม่พิมพ์ชื่อ Field</strong>
                       </span>
                     </label>
-                    {section === "outside" && !field.segments?.length && (
+                    {!field.segments?.length && (
                       <Button
                         type="button"
                         className={cn(COUNT_BUTTON, field.isCounter && COUNT_BUTTON_ACTIVE)}
@@ -512,7 +533,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         {`รูปแบบวันที่: ${DateFormatter.formatDateInputValue("2026-09-02", field.dateFormat)}`}
                       </Button>
                     )}
-                    {section === "outside" && !isVerticalTable && (
+                    {!isVerticalTable && (
                       <label className={TOGGLE_BOX}>
                         <Input
                           bare
@@ -717,7 +738,7 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                 <Button
                   type="button"
                   className={ADD_ROW_BUTTON}
-                  onClick={() => onAdd(section, tableOrder)}
+                  onClick={() => this.openAddFieldPrompt(tableOrder)}
                 >
                   เพิ่มแถว
                 </Button>
@@ -731,10 +752,44 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
           </Button>
         )}
         {section !== "outside" && (
-          <Button size="md" className={ADD_FIELD_BUTTON} onClick={() => onAdd(section)}>
+          <Button size="md" className={ADD_FIELD_BUTTON} onClick={() => this.openAddFieldPrompt()}>
             เพิ่ม Field
           </Button>
         )}
+        <Modal
+          open={!!addFieldPrompt}
+          title="เพิ่ม Field"
+          subtitle="เลือกชนิด Field ที่ต้องการเพิ่ม"
+          onClose={() => this.closeAddFieldPrompt()}
+          footer={(
+            <div className={MODAL_ACTIONS}>
+              <Button type="button" variant="secondary" size="lg" onClick={() => this.closeAddFieldPrompt()}>
+                ยกเลิก
+              </Button>
+              <Button type="button" variant="primary" onClick={() => this.confirmAddField()}>
+                เพิ่ม Field
+              </Button>
+            </div>
+          )}
+        >
+          <div className={cn(MODAL_BODY, CHOICE_LIST)}>
+            {ADD_FIELD_OPTIONS.map((option) => (
+              <label
+                className={cn(CHOICE, pendingFieldPreset === option.value && CHOICE_SELECTED)}
+                key={option.value}
+              >
+                <Input
+                  bare
+                  type="radio"
+                  name={`${section}-add-field-preset`}
+                  checked={pendingFieldPreset === option.value}
+                  onChange={() => this.setState({ pendingFieldPreset: option.value })}
+                />
+                <span><b>{option.label}</b><small>{option.description}</small></span>
+              </label>
+            ))}
+          </div>
+        </Modal>
         {section === "outside" && onAddTable && (
           <Modal
             open={addTableLayoutPromptOpen}

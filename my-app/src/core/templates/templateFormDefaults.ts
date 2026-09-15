@@ -49,15 +49,15 @@ export default class TemplateFormDefaults {
       type: field.isCounter ? "number" : field.type ?? "text",
       required: true,
       condition: undefined,
-      fontScale: section === "outside" && !isVerticalOutside ? field.fontScale : undefined,
-      isCounter: section === "outside" && !field.segments?.length ? field.isCounter : undefined,
-      counterType: section === "outside" && !field.segments?.length ? field.counterType : undefined,
-      counterPad4: section === "outside" && !field.segments?.length ? field.counterPad4 : undefined,
+      fontScale: !isVerticalOutside ? field.fontScale : undefined,
+      isCounter: !field.segments?.length ? field.isCounter : undefined,
+      counterType: !field.segments?.length ? field.counterType : undefined,
+      counterPad4: !field.segments?.length ? field.counterPad4 : undefined,
       showOnSticker: field.showOnSticker ?? true,
-      uppercase: section === "outside" ? field.uppercase ?? true : field.uppercase,
+      uppercase: field.uppercase ?? true,
       defaultValue: !field.segments?.length && field.locked
         ? field.defaultValue ?? field.label
-        : section === "outside" ? undefined : field.defaultValue,
+        : field.defaultValue,
       dateFormat: field.type === "date" ? DateFormatter.normalizeFormat(field.dateFormat) : undefined,
       locked: !field.segments?.length ? field.locked : false,
     });

@@ -11,6 +11,7 @@ export const DATE_SEPARATOR_OPTIONS: Array<{ value: DateSeparator; label: string
   { value: "-", label: "- ขีดกลาง" },
   { value: "/", label: "/ สแลช" },
   { value: ".", label: ". จุด" },
+  { value: " ", label: "  ช่องว่าง" },
 ];
 
 export const MONTH_ABBREVIATIONS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -127,7 +128,7 @@ export default class DateFormatter {
   }
 
   private static monthNumber(monthName: string) {
-    const index = MONTH_ABBREVIATIONS.indexOf(monthName);
+    const index = MONTH_ABBREVIATIONS.findIndex((month) => month.toLowerCase() === monthName.toLowerCase());
     return index >= 0 ? String(index + 1).padStart(2, "0") : "";
   }
 

@@ -194,11 +194,8 @@ export class MarkingController extends Store<MarkingState> {
   }
 
   private shouldUppercase(section: Section, key: string) {
-    if (section === "inside") return true;
-    const fields = this.state.template?.outside ?? [];
-    const field = fields.find((item) =>
-      item.key === key || item.segments?.some((segment) => segment.key === key),
-    );
+    if (this.isDateKey(section, key)) return false;
+    const field = this.findField(section, key);
     return field?.uppercase ?? true;
   }
 
@@ -206,11 +203,24 @@ export class MarkingController extends Store<MarkingState> {
     return section === "inside" ? this.state.template?.inside : this.state.template?.outside;
   }
 
+  private findField(section: Section, key: string) {
+    return this.sectionFields(section)?.find((item) =>
+      item.key === key || item.segments?.some((segment) => segment.key === key),
+    );
+  }
+
+  private isDateKey(section: Section, key: string) {
+    const field = this.findField(section, key);
+    if (!field) return false;
+    if (field.key === key) return field.type === "date";
+    return field.segments?.some((segment) => segment.key === key && segment.type === "date") ?? false;
+  }
+
   private lockedValue(section: Section, key: string) {
     const field = this.sectionFields(section)?.find((item) => item.key === key);
     if (!field?.locked) return undefined;
     const value = String(field.defaultValue ?? field.label);
-    return field.uppercase === false ? value : value.toUpperCase();
+    return field.type === "date" || field.uppercase === false ? value : value.toUpperCase();
   }
 
   private withLockedDefaults(section: Section, rows: MarkingContent[]) {
@@ -355,7 +365,7 @@ export class MarkingController extends Store<MarkingState> {
 
   private fieldDefault(field: TemplateField) {
     const value = String(field.locked ? field.defaultValue ?? field.label : field.defaultValue ?? "");
-    return field.uppercase === false ? value : value.toUpperCase();
+    return field.type === "date" || field.uppercase === false ? value : value.toUpperCase();
   }
 
   private emptyRow(fields: TemplateField[], lotStart = this.state.lotStart): MarkingContent {

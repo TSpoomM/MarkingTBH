@@ -16,6 +16,7 @@ export interface TemplateAutocompleteProps {
   size?: ControlSize;
   disabled?: boolean;
   includeInactive?: boolean;
+  disableInactive?: boolean;
   maxOptions?: number;
   onSelectTemplate: (templateId: string) => void;
 }
@@ -42,7 +43,10 @@ export default class TemplateAutocomplete extends Component<TemplateAutocomplete
   }
 
   private idForQuery(query: string) {
-    return TemplateOptions.idForQuery(this.props.templates, query, this.props.includeInactive);
+    const templateId = TemplateOptions.idForQuery(this.props.templates, query, this.props.includeInactive);
+    if (!templateId || !this.props.disableInactive) return templateId;
+    const template = this.props.templates.find((item) => String(item.id) === templateId);
+    return template?.isActive === false ? "" : templateId;
   }
 
   private changeQuery = (event: ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +75,7 @@ export default class TemplateAutocomplete extends Component<TemplateAutocomplete
         hint={this.props.hint}
         label={this.props.label}
         maxOptions={this.props.maxOptions ?? 24}
-        options={TemplateOptions.options(this.props.templates, this.props.includeInactive)}
+        options={TemplateOptions.autocompleteOptions(this.props.templates, this.props.includeInactive, this.props.disableInactive)}
         placeholder={this.props.placeholder}
         value={this.state.query}
         onBlur={this.normalizeQuery}

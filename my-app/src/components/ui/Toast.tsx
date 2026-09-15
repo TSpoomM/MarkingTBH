@@ -1,12 +1,12 @@
 import { Component } from "react";
-import { CircleAlert, CircleCheck, X } from "lucide-react";
+import { CircleCheckBig, TriangleAlert, X } from "lucide-react";
 import Button from "./Button";
 import cn from "@/src/core/ui/cn";
 import type { AlertProps } from "@/src/core/models/ui";
 
 const TONE = {
-  success: { box: "border-[#2f9461] bg-[#f3fbf6]", mark: "bg-[#dcf4e6] text-[#17603f]", title: "สำเร็จ", Glyph: CircleCheck },
-  error: { box: "border-[#c63d47] bg-[#fff6f6]", mark: "bg-[#fde7e7] text-[#943039]", title: "แจ้งเตือน", Glyph: CircleAlert },
+  success: { box: "border-[#2f9461] bg-[#f3fbf6]", mark: "bg-[#dcf4e6] text-[#17603f]", title: "สำเร็จ", Glyph: CircleCheckBig },
+  error: { box: "border-[#c63d47] bg-[#fff6f6]", mark: "bg-[#fde7e7] text-[#943039]", title: "แจ้งเตือน", Glyph: TriangleAlert },
 } as const;
 
 export default class Toast extends Component<AlertProps> {
@@ -76,9 +76,9 @@ export default class Toast extends Component<AlertProps> {
       >
         <div
           aria-hidden="true"
-          className={cn("grid size-[34px] place-items-center rounded-lg font-black max-bp560:size-[30px]", tone.mark)}
+          className={cn("grid size-[34px] place-items-center rounded-lg font-black [&_svg]:block [&_svg]:size-5 max-bp560:size-[30px]", tone.mark)}
         >
-          <Glyph size={20} />
+          <Glyph size={20} strokeWidth={2.8} />
         </div>
         <div className="grid min-w-0 gap-[3px]">
           <strong className="text-sm font-extrabold leading-tight text-[#101a16]">{tone.title}</strong>
