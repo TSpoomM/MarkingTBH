@@ -1,11 +1,14 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const rawBasePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "/markingsticker";
+const basePath = rawBasePath === "/" ? "" : rawBasePath.replace(/\/$/, "");
 
-module.exports = {
-  allowedDevOrigins: ['10.3.8.126'],
-}
+const nextConfig: NextConfig = {
+  basePath: basePath || undefined,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
+  },
+  allowedDevOrigins: ["10.3.8.126"],
+};
 
 export default nextConfig;

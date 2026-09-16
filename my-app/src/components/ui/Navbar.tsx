@@ -82,7 +82,7 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
                 badge === "TBH" ? (
                   <Image
                     className="size-12 shrink-0 object-contain max-bp600:hidden"
-                    src="/Logo.png"
+                    src={basePathService.withBasePath("/Logo.png")}
                     alt="TBH"
                     width={48}
                     height={48}

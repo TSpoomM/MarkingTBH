@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# This file is meant to be placed in:
+# C:/xampp/htdocs/markingsticker/.htaccess
+#
+# The Next.js app must already be running on 127.0.0.1:3000.
+# Apache receives /markingsticker/... and proxies it to the Next server.
+RewriteRule ^(.*)$ http://127.0.0.1:3000/markingsticker/$1 [P,L]

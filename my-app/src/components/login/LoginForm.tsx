@@ -17,6 +17,7 @@ import {
   LOGIN_FOOTER_LINKS,
   LOGIN_FOOTER_LINK,
 } from "@/src/core/ui/login";
+import { basePathService } from "@/src/lib/basePath";
 import type { LoginFormProps } from "@/src/core/models/login";
 
 type LoginFormState = {
@@ -42,7 +43,7 @@ export default class LoginForm extends Component<LoginFormProps, LoginFormState>
     return (
       <form className={LOGIN_CARD} onSubmit={this.handleSubmit}>
         <div className={LOGIN_HEADER}>
-          <Image src="/Logo.png" alt="TBH" width={98} height={98} unoptimized priority className="w-[98px] h-[98px] object-contain" />
+          <Image src={basePathService.withBasePath("/Logo.png")} alt="TBH" width={98} height={98} unoptimized priority className="w-[98px] h-[98px] object-contain" />
           <h1 className={LOGIN_TITLE_TH}>เข้าสู่ระบบ</h1>
           <p className={LOGIN_TITLE_EN}>ระบบจัดทำสติกเกอร์</p>
           <p className={LOGIN_SUBTITLE}>บริษัท ยางไทยปักษ์ใต้ จำกัด</p>
