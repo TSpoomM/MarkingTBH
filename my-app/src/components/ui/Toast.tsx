@@ -1,6 +1,5 @@
 import { Component } from "react";
 import { CircleCheckBig, TriangleAlert, X } from "lucide-react";
-import Button from "./Button";
 import cn from "@/src/core/ui/cn";
 import type { AlertProps } from "@/src/core/models/ui";
 
@@ -84,9 +83,14 @@ export default class Toast extends Component<AlertProps> {
           <strong className="text-sm font-extrabold leading-tight text-[#101a16]">{tone.title}</strong>
           <span className="text-sm leading-[1.45] break-words text-[#26352f]">{message}</span>
         </div>
-        <Button variant="icon" className="-mt-0.5 text-[#63736d]" onClick={this.close} aria-label="ปิดข้อความ">
-          <X size={18} strokeWidth={2.6} aria-hidden="true" />
-        </Button>
+        <button
+          type="button"
+          className="-mt-0.5 grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-lg border border-[#c4d4cc] bg-white text-[#405049] shadow-none transition-[background,border-color,color] hover:border-[#8fb5a5] hover:bg-white hover:text-primary-dark focus-visible:outline-none focus-visible:shadow-[0_0_0_4px_var(--focus)]"
+          onClick={this.close}
+          aria-label="ปิดข้อความ"
+        >
+          <X className="block size-[18px]" size={18} strokeWidth={2.8} aria-hidden="true" />
+        </button>
       </div>
     );
   }

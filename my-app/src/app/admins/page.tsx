@@ -6,6 +6,7 @@ import Autocomplete from "@/src/components/ui/Autocomplete";
 import Button from "@/src/components/ui/Button";
 import Modal from "@/src/components/ui/Modal";
 import Select from "@/src/components/ui/Select";
+import Toast from "@/src/components/ui/Toast";
 import { CONTAINER, PANEL, TABLE_HEADING } from "@/src/core/ui/surfaces";
 import { HISTORY_EMPTY, HISTORY_ROW, HISTORY_TABLE, HISTORY_TABLE_WRAP } from "@/src/core/ui/history";
 import { httpService } from "@/src/core/services/http.service";
@@ -210,6 +211,9 @@ export default class AdminsPage extends Component<object, AdminPageState> {
 
     return (
       <main className={CONTAINER}>
+        {message && <Toast type="success" message={message} onClose={() => this.setState({ message: "" })} />}
+        {error && <Toast type="error" message={error} onClose={() => this.setState({ error: "" })} />}
+
         <section className={TABLE_HEADING}>
           <div>
             <h2 className="m-0 text-xl font-black text-[#10231d]">Admins</h2>
@@ -274,8 +278,6 @@ export default class AdminsPage extends Component<object, AdminPageState> {
               </Button>
             </div>
           )}
-          {message && <p className="m-0 rounded-lg bg-[#eaf7f1] px-3 py-2 text-sm font-semibold text-primary-dark">{message}</p>}
-          {error && <p className="m-0 rounded-lg bg-[#fff0f0] px-3 py-2 text-sm font-semibold text-[#9d3434]">{error}</p>}
         </form>
 
         <section className={PANEL + " overflow-hidden"}>
