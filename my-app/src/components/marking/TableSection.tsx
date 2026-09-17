@@ -46,8 +46,8 @@ export default class TableSection extends Component<TableSectionProps> {
                               key={`${field.key}-${segment.key}-${segmentIndex}`}
                               bare
                               type="text"
-                              inputMode={segment.isCounter ? "numeric" : undefined}
-                              pattern={segment.isCounter ? "\\d*" : undefined}
+                              inputMode={segment.isCounter || segment.type === "number" ? "numeric" : undefined}
+                              pattern={segment.isCounter || segment.type === "number" ? "\\d*" : undefined}
                               value={row[segment.key] ?? (segment.isCounter ? StickerFactory.previewCounterValue(field, lotStart, segment) : "")}
                               onChange={(event) => onChange(rowIndex, segment.key, event.target.value)}
                               placeholder={segment.isCounter ? `${segment.label} +1` : segment.label}
@@ -69,9 +69,9 @@ export default class TableSection extends Component<TableSectionProps> {
                         ) : (
                           <Input
                             bare
-                            type={field.isCounter || field.type === "textarea" ? "text" : field.type}
-                            inputMode={field.isCounter ? "numeric" : undefined}
-                            pattern={field.isCounter ? "\\d*" : undefined}
+                            type="text"
+                            inputMode={field.isCounter || field.type === "number" ? "numeric" : undefined}
+                            pattern={field.isCounter || field.type === "number" ? "\\d*" : undefined}
                             value={row[field.key] ?? (field.isCounter ? StickerFactory.previewCounterValue(field, lotStart) : "")}
                             onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
                             disabled={field.locked === true}
