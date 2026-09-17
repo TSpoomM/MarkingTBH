@@ -26,6 +26,12 @@ const pageNavbarConfig: Record<string, NavbarProps> = {
     subtitle: "เพิ่ม หรือ แก้ไข Template ",
     activeNav: "templates",
   },
+  "/admins": {
+    badge: "ADM",
+    title: "Admin",
+    subtitle: "Manage application admins",
+    activeNav: "admins",
+  },
 };
 
 const defaultNavbarConfig = pageNavbarConfig["/"];

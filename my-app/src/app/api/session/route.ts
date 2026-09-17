@@ -8,11 +8,11 @@ class SessionRoute {
   async get(request: NextRequest) {
     if (isDevAuthBypassEnabled) {
       const session = devAuthService.getSession();
-      const isAdmin = await adminAuthService.isUserAdmin(session.empId);
+      const role = await adminAuthService.getUserRole(session.empId);
       return NextResponse.json({
         authenticated: true,
         ...session,
-        user: { role: isAdmin ? "admin" : "user" },
+        user: { role: role ?? "user" },
       });
     }
 
@@ -20,13 +20,13 @@ class SessionRoute {
     const appSession = authSessionService.readFromCookieValue(appSessionCookie);
     if (appSession) {
       const empId = appSession.empId || appSession.userInv;
-      const isAdmin = await adminAuthService.isUserAdmin(empId);
+      const role = await adminAuthService.getUserRole(empId);
       return NextResponse.json({
         authenticated: true,
         userId: empId,
         empId,
         userInv: appSession.userInv,
-        user: { role: isAdmin ? "admin" : "user" },
+        user: { role: role ?? "user" },
       });
     }
 
@@ -39,7 +39,7 @@ class SessionRoute {
       return response;
     }
 
-    const isAdmin = await adminAuthService.isUserAdmin(session.empId);
+    const role = await adminAuthService.getUserRole(session.empId);
 
     return NextResponse.json({
       authenticated: true,
@@ -48,7 +48,7 @@ class SessionRoute {
       userInv: session.userInv,
       imgProfile: session.imgProfile,
       yearAssessment: session.yearAssessment,
-      user: { role: isAdmin ? "admin" : "user" },
+      user: { role: role ?? "user" },
     });
   }
 }

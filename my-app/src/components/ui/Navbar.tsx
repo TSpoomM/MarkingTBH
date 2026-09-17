@@ -12,6 +12,7 @@ import type { NavbarProps } from "@/src/core/models/ui";
 
 type NavbarState = {
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 };
 
 /** The navbar height comes from the --navbar-height variable in globals.css (varies by screen size) */
@@ -36,6 +37,7 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
 
   state: NavbarState = {
     isAdmin: false,
+    isSuperAdmin: false,
   };
 
   componentDidMount() {
@@ -48,9 +50,12 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
   }
 
   private async loadAccess() {
-    const isAdmin = await sessionApiService.isAdmin();
+    const [isAdmin, isSuperAdmin] = await Promise.all([
+      sessionApiService.isAdmin(),
+      sessionApiService.isSuperAdmin(),
+    ]);
     if (!this.isMounted) return;
-    this.setState({ isAdmin });
+    this.setState({ isAdmin, isSuperAdmin });
   }
 
   private handleLogout = async () => {
@@ -69,6 +74,11 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
         ? [
           { key: "history", label: "ประวัติ", href: "/history" },
           { key: "templates", label: "จัดการ Template", href: "/manageTemplate" },
+        ]
+        : []),
+      ...(this.state.isSuperAdmin
+        ? [
+          { key: "admins", label: "Admin", href: "/admins" },
         ]
         : []),
     ] as const;

@@ -13,6 +13,11 @@ export type TemplateRow = RowDataPacket & {
 
 export type EmployeeRow = RowDataPacket & { fs_id: string };
 
+export type EmployeeOptionRow = RowDataPacket & {
+  fs_id: string | number | null;
+  emp_name: string | null;
+};
+
 export type EmployeeLocationRow = RowDataPacket & { location_emp: string | null };
 
 export type EmployeeReportAccessRow = RowDataPacket & {
@@ -31,4 +36,15 @@ export type TbhUserRow = RowDataPacket & {
   userInv: string;
   passwordInv: string;
   fs_id: string | number | null;
+};
+
+export type AdminRole = "admin" | "super_admin";
+
+export type AdminRow = RowDataPacket & {
+  idUser: number;
+  fs_id: string | number;
+  role: AdminRole | string;
+  userInv: string | null;
+  createdDate: Date | string | null;
+  emp_name?: string | null;
 };

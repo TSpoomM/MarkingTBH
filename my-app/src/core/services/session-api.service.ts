@@ -1,6 +1,7 @@
 import { httpService, HttpService } from "./http.service";
 
-export type SessionUser = { role?: string };
+export type SessionRole = "user" | "admin" | "super_admin";
+export type SessionUser = { role?: SessionRole | string };
 export type SessionResponse = { user?: SessionUser };
 
 /** Reads the signed-in user. Previously each page fetched /api/session on its own. */
@@ -14,7 +15,16 @@ export class SessionApiService {
   async isAdmin() {
     try {
       const session = await this.getSession();
-      return session.user?.role === "admin";
+      return session.user?.role === "admin" || session.user?.role === "super_admin";
+    } catch {
+      return false;
+    }
+  }
+
+  async isSuperAdmin() {
+    try {
+      const session = await this.getSession();
+      return session.user?.role === "super_admin";
     } catch {
       return false;
     }

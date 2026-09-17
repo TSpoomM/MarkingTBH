@@ -2,6 +2,8 @@ import { pool } from "@/src/lib/db";
 import { currentUserService } from "@/src/lib/currentUser";
 import { requestCurrentUserService } from "@/src/lib/requestCurrentUser";
 import type { AdminAccess } from "@/src/core/models/auth";
+import { adminRepository } from "@/src/core/repositories/admin.repository";
+import type { AdminRole } from "@/src/core/models/database";
 import type { EmployeeReportAccessRow } from "@/src/core/models/database";
 
 export class AdminAuthService {
@@ -15,16 +17,33 @@ export class AdminAuthService {
     );
   }
 
-  async isUserAdmin(userId: string): Promise<boolean> {
+  async getUserRole(userId: string): Promise<AdminRole | null> {
     const normalizedId = currentUserService.normalizeUserId(userId);
-    if (!normalizedId) return false;
+    if (!normalizedId) return null;
 
-    return this.getAdminUserIds().has(normalizedId);
+    try {
+      const admin = await adminRepository.findByFsId(normalizedId);
+      if (admin?.role === "admin" || admin?.role === "super_admin") return admin.role;
+    } catch (error) {
+      console.error("Admin role lookup failed", error);
+    }
+
+    return this.getAdminUserIds().has(normalizedId) ? "admin" : null;
+  }
+
+  async isUserAdmin(userId: string): Promise<boolean> {
+    return Boolean(await this.getUserRole(userId));
+  }
+
+  async isUserSuperAdmin(userId: string): Promise<boolean> {
+    return (await this.getUserRole(userId)) === "super_admin";
   }
 
   async getAccess(request: Request): Promise<AdminAccess> {
     const userId = await requestCurrentUserService.getCurrentUserId(request);
-    const isAdmin = await this.isUserAdmin(userId);
+    const role = await this.getUserRole(userId);
+    const isAdmin = role === "admin" || role === "super_admin";
+    const isSuperAdmin = role === "super_admin";
 
     let isBranchManager = false;
     let branch: string | null = null;
@@ -52,8 +71,11 @@ export class AdminAuthService {
     return {
       userId,
       isAdmin,
+      isSuperAdmin,
+      role,
       isBranchManager,
       branch,
+      canManageAdmins: isSuperAdmin,
       canAccessReport: isAdmin || isBranchManager,
     };
   }

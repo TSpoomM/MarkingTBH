@@ -43,6 +43,7 @@ export interface AutocompleteProps extends Omit<InputHTMLAttributes<HTMLInputEle
   size?: ControlSize;
   maxOptions?: number;
   options: Array<string | { value: string; label: string; disabled?: boolean }>;
+  onSelectOption?: (option: { value: string; label: string }) => void;
 }
 
 export interface ModalProps {
@@ -60,7 +61,7 @@ export interface NavbarProps {
   title: string;
   subtitle?: string;
   action?: ReactNode;
-  activeNav?: "marking" | "history" | "templates";
+  activeNav?: "marking" | "history" | "templates" | "admins";
 }
 
 export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> {

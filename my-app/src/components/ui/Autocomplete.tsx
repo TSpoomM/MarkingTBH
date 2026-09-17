@@ -62,7 +62,12 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
 
   private selectOption(option: NormalizedOption) {
     if (option.disabled) return;
-    const { onChange } = this.props;
+    const { onChange, onSelectOption } = this.props;
+    if (onSelectOption) {
+      onSelectOption({ value: option.value, label: option.label });
+      this.setState({ open: false, activeIndex: -1 });
+      return;
+    }
     const event = {
       target: { value: option.value },
       currentTarget: { value: option.value },
@@ -82,6 +87,7 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
       required,
       className = "",
       onChange,
+      onSelectOption: _onSelectOption,
       onFocus,
       onBlur,
       onKeyDown,
@@ -89,6 +95,7 @@ class AutocompleteBase extends Component<AutocompleteBaseProps, AutocompleteStat
       style,
       ...props
     } = this.props;
+    void _onSelectOption;
     const filteredOptions = this.filteredOptions(options, maxOptions);
     const hasOptions = filteredOptions.length > 0;
     const listId = `${props.id ?? generatedId}-options`;
