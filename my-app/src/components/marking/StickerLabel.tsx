@@ -5,6 +5,7 @@ import Image from "next/image";
 import AutoFitStickerDetails from "./AutoFitStickerDetails";
 import AutoFitStickerText from "./AutoFitStickerText";
 import StickerLabelMetrics from "@/src/core/stickers/stickerLabelMetrics";
+import { basePathService } from "@/src/lib/basePath";
 import type { StickerItem } from "@/src/core/models/marking-sticker";
 
 export default class StickerLabel extends Component<{ item: StickerItem }> {
@@ -18,7 +19,7 @@ export default class StickerLabel extends Component<{ item: StickerItem }> {
           Array.from({ length: item.logoCount ?? 1 }, (_, index) => (
             <Image
               className="sticker-fsc-logo"
-              src="/FSC_Logo.png"
+              src={basePathService.withBasePath("/FSC_Logo.png")}
               alt="โลโก้ FSC"
               width={200}
               height={300}
