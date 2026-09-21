@@ -9,11 +9,17 @@ export type AppSessionPayload = { userInv: string; empId?: string };
 
 const SESSION_COOKIE_NAME = APP_SESSION_COOKIE_NAME;
 const SESSION_SECRET = process.env.AUTH_SESSION_SECRET || "";
+const AUTH_COOKIE_SECURE = process.env.AUTH_COOKIE_SECURE;
 // Not logged in => back to /login (see middleware.ts); logged in => session
 // itself expires after 30 minutes, which also sends the user back to /login.
 const SESSION_MAX_AGE_SECONDS = 30 * 60;
 
 export class AuthSessionService {
+  private isSecureCookie() {
+    if (AUTH_COOKIE_SECURE !== undefined) return AUTH_COOKIE_SECURE !== "false";
+    return process.env.NODE_ENV === "production";
+  }
+
   private getSigningSecret() {
     if (SESSION_SECRET) return SESSION_SECRET;
     if (process.env.NODE_ENV === "production") {
@@ -38,7 +44,7 @@ export class AuthSessionService {
   setCookie(response: NextResponse, payload: AppSessionPayload) {
     response.cookies.set(SESSION_COOKIE_NAME, this.encode(payload), {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: this.isSecureCookie(),
       sameSite: "lax",
       path: "/",
       maxAge: SESSION_MAX_AGE_SECONDS,
