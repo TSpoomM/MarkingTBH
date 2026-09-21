@@ -44,7 +44,6 @@ export type AdminRow = RowDataPacket & {
   idUser: number;
   fs_id: string | number;
   role: AdminRole | string;
-  userInv: string | null;
   createdDate: Date | string | null;
   emp_name?: string | null;
 };

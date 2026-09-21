@@ -39,7 +39,7 @@ export class AdminRepository {
 
     const [rows] = await pool.query<AdminRow[]>(
       `
-      SELECT a.idUser, a.fs_id, a.role, a.userInv, a.createdDate, e.emp_name
+      SELECT a.idUser, a.fs_id, a.role, a.createdDate, e.emp_name
       FROM tb_admin a
       LEFT JOIN tb_employee_list e ON TRIM(CAST(e.fs_id AS CHAR)) = TRIM(CAST(a.fs_id AS CHAR))
       WHERE TRIM(CAST(a.fs_id AS CHAR)) = ?
@@ -55,7 +55,7 @@ export class AdminRepository {
   async findAll(): Promise<AdminUser[]> {
     const [rows] = await pool.query<AdminRow[]>(
       `
-      SELECT a.idUser, a.fs_id, a.role, a.userInv, a.createdDate, e.emp_name
+      SELECT a.idUser, a.fs_id, a.role, a.createdDate, e.emp_name
       FROM tb_admin a
       LEFT JOIN tb_employee_list e ON TRIM(CAST(e.fs_id AS CHAR)) = TRIM(CAST(a.fs_id AS CHAR))
       ORDER BY a.role = 'super_admin' DESC, e.emp_name ASC, a.fs_id ASC
@@ -86,10 +86,10 @@ export class AdminRepository {
 
     const [result] = await pool.query(
       `
-      INSERT INTO tb_admin (fs_id, role, userInv, createdDate)
-      VALUES (?, ?, ?, CURDATE())
+      INSERT INTO tb_admin (fs_id, role, createdDate)
+      VALUES (?, ?, CURDATE())
       `,
-      [fsId, input.role, ""],
+      [fsId, input.role],
     );
 
     return await this.findByFsId(fsId) ?? {
@@ -104,7 +104,7 @@ export class AdminRepository {
   async deleteById(idUser: number): Promise<AdminUser | null> {
     const [rows] = await pool.query<AdminRow[]>(
       `
-      SELECT a.idUser, a.fs_id, a.role, a.userInv, a.createdDate, e.emp_name
+      SELECT a.idUser, a.fs_id, a.role, a.createdDate, e.emp_name
       FROM tb_admin a
       LEFT JOIN tb_employee_list e ON TRIM(CAST(e.fs_id AS CHAR)) = TRIM(CAST(a.fs_id AS CHAR))
       WHERE a.idUser = ?

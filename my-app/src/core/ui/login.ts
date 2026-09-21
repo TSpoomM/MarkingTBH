@@ -55,7 +55,3 @@ export const LOGIN_SUBMIT =
   "transition-[transform,box-shadow,opacity] duration-150 " +
   "hover:enabled:-translate-y-px hover:enabled:bg-primary-dark hover:enabled:shadow-[0_14px_28px_rgba(15,118,110,.28)] " +
   "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:translate-y-0";
-
-export const LOGIN_FOOTER_LINKS = "mt-1 flex items-center justify-between text-base font-medium text-[#767f7a]";
-
-export const LOGIN_FOOTER_LINK = "cursor-not-allowed no-underline hover:text-[#767f7a]";

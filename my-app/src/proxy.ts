@@ -3,6 +3,13 @@ import type { NextRequest } from "next/server";
 import { isDevAuthBypassEnabled } from "@/src/lib/devAuth";
 import { APP_SESSION_COOKIE_NAME, PHP_SESSION_COOKIE_NAME } from "@/src/lib/sessionCookieNames";
 
+function redirectTo(request: NextRequest, pathname: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = "";
+  return NextResponse.redirect(url);
+}
+
 /**
  * Gates every page behind /login. Runs on the Edge runtime, which can't read the
  * PHP session file or verify the HMAC-signed app_session cookie (both need Node
@@ -21,11 +28,11 @@ export function proxy(request: NextRequest) {
     request.cookies.has(PHP_SESSION_COOKIE_NAME);
 
   if (pathname === "/login") {
-    if (isAuthenticated) return NextResponse.redirect(new URL("/", request.url));
+    if (isAuthenticated) return redirectTo(request, "/");
     return NextResponse.next();
   }
 
-  if (!isAuthenticated) return NextResponse.redirect(new URL("/login", request.url));
+  if (!isAuthenticated) return redirectTo(request, "/login");
 
   return NextResponse.next();
 }

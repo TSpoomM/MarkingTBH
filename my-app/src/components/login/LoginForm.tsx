@@ -14,8 +14,6 @@ import {
   LOGIN_INPUT,
   LOGIN_TOGGLE_PASSWORD,
   LOGIN_SUBMIT,
-  LOGIN_FOOTER_LINKS,
-  LOGIN_FOOTER_LINK,
 } from "@/src/core/ui/login";
 import { basePathService } from "@/src/lib/basePath";
 import type { LoginFormProps } from "@/src/core/models/login";
@@ -91,11 +89,6 @@ export default class LoginForm extends Component<LoginFormProps, LoginFormState>
         <button type="submit" className={LOGIN_SUBMIT} disabled={isSubmitting}>
           {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
         </button>
-
-        <div className={LOGIN_FOOTER_LINKS}>
-          <span className={LOGIN_FOOTER_LINK} title="ยังไม่เปิดใช้งาน">เปลี่ยนรหัสผ่าน</span>
-          <span className={LOGIN_FOOTER_LINK} title="ยังไม่เปิดใช้งาน">ลืมรหัสผ่าน</span>
-        </div>
       </form>
     );
   }
