@@ -28,7 +28,6 @@ export function proxy(request: NextRequest) {
     request.cookies.has(PHP_SESSION_COOKIE_NAME);
 
   if (pathname === "/login") {
-    if (isAuthenticated) return redirectTo(request, "/");
     return NextResponse.next();
   }
 

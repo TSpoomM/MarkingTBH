@@ -21,7 +21,7 @@ class TemplateNextLotRoute {
         return Response.json({ message: "Production date ไม่ถูกต้อง" }, { status: 400 });
       }
 
-      const employeeId = await requestCurrentUserService.getCurrentUserId(request);
+      const employeeId = await requestCurrentUserService.requireCurrentUserId(request);
       const employeeLocation = employeeId ? await employeeRepository.findLocationByFsId(employeeId) : null;
       if (!employeeLocation) {
         return Response.json({ message: "ไม่พบสาขาของผู้ใช้" }, { status: 400 });
@@ -30,6 +30,9 @@ class TemplateNextLotRoute {
       const lastLotEnd = await markingRepository.findLastLotEnd(templateId, productionYear, employeeLocation);
       return Response.json({ data: { lotStart: lastLotEnd + 1 } });
     } catch (error) {
+      if (error instanceof Error && error.message === "UNAUTHENTICATED") {
+        return Response.json({ message: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
+      }
       console.error("GET /api/templates/[id]/next-lot", error);
       return Response.json({ message: "โหลดเลข LOT ถัดไปไม่สำเร็จ" }, { status: 500 });
     }

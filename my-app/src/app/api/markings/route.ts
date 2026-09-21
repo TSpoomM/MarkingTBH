@@ -26,7 +26,7 @@ class MarkingsRoute {
   async post(request: Request) {
     try {
       const payload = await request.json();
-      const employeeId = await requestCurrentUserService.getCurrentUserId(request);
+      const employeeId = await requestCurrentUserService.requireCurrentUserId(request);
       const result = await markingService.save(payload, employeeId);
       const actionType = (payload as { actionType?: string })?.actionType === "print"
         ? "พิมพ์สติ๊กเกอร์"
@@ -43,6 +43,9 @@ class MarkingsRoute {
           { message: error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง", issues: error.issues },
           { status: 400 },
         );
+      }
+      if (error instanceof Error && error.message === "UNAUTHENTICATED") {
+        return Response.json({ message: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
       }
       console.error("POST /api/markings", error);
       return Response.json({ message: "บันทึกข้อมูลไม่สำเร็จ" }, { status: 500 });

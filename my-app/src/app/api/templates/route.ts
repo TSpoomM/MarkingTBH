@@ -1,6 +1,7 @@
 import { templateService } from "@/src/core/services/template.service";
 import { adminAuthService } from "@/src/lib/adminAuth";
 import { actionLogger } from "@/src/lib/actionLogger";
+import { requestCurrentUserService } from "@/src/lib/requestCurrentUser";
 import { z, ZodError } from "zod";
 
 export const runtime = "nodejs";
@@ -22,6 +23,7 @@ class TemplatesGetRoute {
   async get(request: Request) {
   try {
     const searchParams = new URL(request.url).searchParams;
+    await requestCurrentUserService.requireCurrentUserId(request);
     if (searchParams.get("history") === "1") {
       const access = await adminAuthService.requireAdmin(request);
       if (!access.isAdmin) {
@@ -31,10 +33,9 @@ class TemplatesGetRoute {
     }
     const includeInactiveParam = searchParams.get("includeInactive");
     const includeInactive = includeInactiveParam === "1" || includeInactiveParam === "visible";
-    const visibleInactive = includeInactiveParam === "visible";
     if (includeInactive) {
-      const access = visibleInactive ? { isAdmin: false } : await adminAuthService.requireAdmin(request);
-      if (!visibleInactive && !access.isAdmin) {
+      const access = await adminAuthService.requireAdmin(request);
+      if (!access.isAdmin) {
         return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
       }
     }
@@ -50,6 +51,9 @@ class TemplatesGetRoute {
       data: templates,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHENTICATED") {
+      return Response.json({ message: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
+    }
     console.error("GET /api/templates", error);
     return Response.json(
       { message: "เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบ XAMPP และไฟล์ .env" },

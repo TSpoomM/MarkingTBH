@@ -6,7 +6,7 @@ export class MarkingApiService {
   constructor(private readonly http: HttpService) {}
 
   getTemplates(): Promise<Template[]> {
-    return this.http.data<Template[]>("/api/templates?includeInactive=visible");
+    return this.http.data<Template[]>("/api/templates");
   }
 
   getTemplate(templateId: number): Promise<TemplateDetail> {

@@ -1,6 +1,7 @@
 import { templateService } from "@/src/core/services/template.service";
 import { adminAuthService } from "@/src/lib/adminAuth";
 import { actionLogger } from "@/src/lib/actionLogger";
+import { requestCurrentUserService } from "@/src/lib/requestCurrentUser";
 import { z, ZodError } from "zod";
 import type { TemplateDetailRouteContext } from "@/src/core/models/api";
 
@@ -12,17 +13,28 @@ const dateFormatSchema = z.string().regex(/^(dd|mm|mmm|yyyy)([-/. ])(dd|mm|mmm|y
 
 class TemplateDetailGetRoute {
   async get(
-  _request: Request,
+  request: Request,
   context: TemplateDetailRouteContext,
 ) {
   try {
+    await requestCurrentUserService.requireCurrentUserId(request);
     const { id } = await context.params;
     const templateId = Number(id);
     if (!Number.isInteger(templateId) || templateId <= 0) {
       return Response.json({ message: "รหัสลูกค้าไม่ถูกต้อง" }, { status: 400 });
     }
+    const access = await adminAuthService.requireAdmin(request);
+    if (!access.isAdmin) {
+      const activeTemplates = await templateService.getTemplates(false);
+      if (!activeTemplates.some((template) => template.id === templateId)) {
+        return Response.json({ message: "ไม่พบข้อมูลลูกค้า" }, { status: 404 });
+      }
+    }
     return Response.json({ data: await templateService.getTemplate(templateId) });
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHENTICATED") {
+      return Response.json({ message: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
+    }
     const message = error instanceof Error ? error.message : "โหลด template ไม่สำเร็จ";
     const isMissing = message === "ไม่พบข้อมูลลูกค้า" || message.includes("ยังไม่มี");
     return Response.json({ message }, { status: isMissing ? 404 : 500 });

@@ -27,6 +27,12 @@ export class RequestCurrentUserService {
     const session = await hrkpisSessionService.readSession(sessionId);
     return session?.empId || "";
   }
+
+  async requireCurrentUserId(request: Request): Promise<string> {
+    const userId = await this.getCurrentUserId(request);
+    if (!userId) throw new Error("UNAUTHENTICATED");
+    return userId;
+  }
 }
 
 export const requestCurrentUserService = new RequestCurrentUserService();

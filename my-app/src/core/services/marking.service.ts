@@ -1,15 +1,10 @@
 import { z } from "zod";
 import {
-  employeeRepository,
-  EmployeeRepository,
-} from "@/src/core/repositories/employee.repository";
-import {
   markingRepository,
   MarkingRepository,
 } from "@/src/core/repositories/marking.repository";
 
 export const markingSchema = z.object({
-  employeeId: z.string().trim().min(1).optional(),
   templateId: z.coerce.number().int().positive("กรุณาเลือกลูกค้า"),
   totalLot: z.coerce.number().nonnegative(),
   stickerSides: z.coerce.number().int().min(1).max(6),
@@ -31,12 +26,11 @@ export const markingSchema = z.object({
 export class MarkingService {
   constructor(
     private readonly repository: MarkingRepository,
-    private readonly employees: EmployeeRepository,
   ) {}
 
   async save(payload: unknown, actingEmployeeId?: string) {
     const input = markingSchema.parse(payload);
-    const employeeId = actingEmployeeId || input.employeeId || await this.employees.findDefaultFsId();
+    const employeeId = actingEmployeeId;
     if (!employeeId) throw new Error("ไม่พบข้อมูลพนักงานในระบบ");
     const stampAction = (content: typeof input.contentInside) => {
       const rows = Array.isArray(content) ? content : [content];
@@ -52,4 +46,4 @@ export class MarkingService {
   }
 }
 
-export const markingService = new MarkingService(markingRepository, employeeRepository);
+export const markingService = new MarkingService(markingRepository);
