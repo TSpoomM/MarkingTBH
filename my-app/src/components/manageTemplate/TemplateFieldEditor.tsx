@@ -468,7 +468,9 @@ export default class TemplateFieldEditor extends Component<TemplateFieldEditorPr
                         <span>ค่า default</span>
                         <Input
                           bare
-                          type={field.type === "number" || field.isCounter ? "number" : "text"}
+                          type="text"
+                          inputMode={field.type === "number" || field.isCounter ? "numeric" : undefined}
+                          pattern={field.type === "number" || field.isCounter ? "\\d*" : undefined}
                           value={field.defaultValue}
                           onChange={(event) => onChange(section, index, { defaultValue: event.target.value })}
                         />

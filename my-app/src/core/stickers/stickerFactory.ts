@@ -8,6 +8,8 @@ import type {
   StickerKind,
 } from "@/src/core/models/marking-sticker";
 
+type CounterSeed = { value: number; width: number };
+
 export default class StickerFactory {
   static normalizeGroupLayout(layout?: LegacyStickerGroupLayout): StickerGroupLayout {
     return layout === "8x2" || layout === "4x2" ? "8x2" : "2x2";
@@ -67,20 +69,21 @@ export default class StickerFactory {
     sequence: number,
     lotStart: number,
     segment?: { counterType?: CounterType; counterPad4?: boolean },
-    seed?: number,
+    seed?: CounterSeed,
   ) {
     const type = this.counterType(field, segment);
     const value = type === "pallet"
-      ? (seed ?? 1) + pallet - 1
+      ? (seed?.value ?? 1) + pallet - 1
       : type === "sequence"
-        ? (seed ?? 1) + sequence - 1
-        : (seed ?? lotStart) + lot - lotStart;
-    return this.counterPad4(field, segment) ? String(value).padStart(4, "0") : String(value);
+        ? (seed?.value ?? 1) + sequence - 1
+        : (seed?.value ?? lotStart) + lot - lotStart;
+    const width = Math.max(this.counterPad4(field, segment) ? 4 : 0, seed?.width ?? 0);
+    return width ? String(value).padStart(width, "0") : String(value);
   }
 
   private static counterSeed(row: MarkingContent | undefined, key: string) {
     const seed = row?.[key]?.trim();
-    return seed && /^\d+$/.test(seed) ? Number(seed) : undefined;
+    return seed && /^\d+$/.test(seed) ? { value: Number(seed), width: seed.length } : undefined;
   }
 
   private static counterDisplayValue(

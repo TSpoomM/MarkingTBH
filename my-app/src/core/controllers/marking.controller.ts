@@ -353,14 +353,17 @@ export class MarkingController extends Store<MarkingState> {
   }
 
   private counterDefault(
-    field: Pick<TemplateField, "key" | "label" | "counterPad4">,
+    field: Pick<TemplateField, "key" | "label" | "counterPad4" | "defaultValue">,
     lotStart: number,
     segment?: { counterType?: CounterType; counterPad4?: boolean },
   ) {
     const type = this.counterType(field, segment);
     const value = this.counterSeed(type, lotStart);
     const pad4 = segment?.counterPad4 ?? field.counterPad4 ?? false;
-    return pad4 ? String(value).padStart(4, "0") : String(value);
+    const defaultValue = String(field.defaultValue ?? "").trim();
+    const defaultWidth = /^\d+$/.test(defaultValue) ? defaultValue.length : 0;
+    const width = Math.max(pad4 ? 4 : 0, defaultWidth);
+    return width ? String(value).padStart(width, "0") : String(value);
   }
 
   private fieldDefault(field: TemplateField) {
