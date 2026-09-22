@@ -25,7 +25,7 @@ export class EmployeeRepository {
     const [rows] = await this.pool.query<EmployeeLocationRow[]>(
       `SELECT location_emp
        FROM tb_employee_list
-       WHERE fs_id = ?
+       WHERE TRIM(CAST(fs_id AS CHAR)) = TRIM(CAST(? AS CHAR))
        LIMIT 1`,
       [fsId],
     );
