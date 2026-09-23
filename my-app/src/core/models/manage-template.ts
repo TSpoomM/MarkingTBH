@@ -3,7 +3,7 @@ import type { InsideGroup, StickerLayouts } from "@/src/core/models/template-for
 
 export type TemplateFormNotice = { kind: "error" | "success"; text: string };
 export type TemplateManageMode = "edit" | "create";
-export type TemplateFieldPreset = "field" | "section";
+export type TemplateFieldPreset = "field" | "section" | "destination";
 
 export type StickerSelectableField = {
   key: string;

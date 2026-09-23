@@ -52,6 +52,7 @@ export default class MarkingPage extends StoreContainer<MarkingState> {
           template={state.template}
           insideRows={state.insideRows}
           outsideRows={state.outsideRows}
+          destinationOptions={state.destinationOptions}
           outsideGroups={MarkingStickerPlan.outsideGroups(state)}
           lotStart={state.lotStart}
           isAdmin={state.isAdmin}

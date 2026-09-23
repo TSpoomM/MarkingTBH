@@ -8,6 +8,7 @@ export type PrintSections = Record<PrintSection, boolean>;
 
 export interface MarkingState {
   templates: Template[];
+  destinationOptions: string[];
   templateId: string;
   template: TemplateDetail | null;
   totalLot: string;

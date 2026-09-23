@@ -12,7 +12,7 @@ import type { OrderTableProps } from "@/src/core/models/marking-sticker";
 export default class OrderTable extends Component<OrderTableProps> {
   render() {
     const {
-      template, insideRows, outsideRows, outsideGroups, lotStart, isAdmin,
+      template, insideRows, outsideRows, destinationOptions, outsideGroups, lotStart, isAdmin,
       framePages, customerNamePages, fscLogoPages, onChangeRow,
     } = this.props;
 
@@ -31,6 +31,7 @@ export default class OrderTable extends Component<OrderTableProps> {
                 subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์ในกรอบ"
                 fields={template.inside}
                 rows={insideRows}
+                destinationOptions={destinationOptions}
                 lotStart={lotStart}
                 onChange={(row, key, value) => onChangeRow("inside", row, key, value)}
               />
@@ -48,6 +49,7 @@ export default class OrderTable extends Component<OrderTableProps> {
                   subtitle={`กรอกข้อมูลสำหรับ ${group.name}`}
                   fields={group.fields}
                   rows={outsideRows}
+                  destinationOptions={destinationOptions}
                   lotStart={lotStart}
                   onChange={(row, key, value) => onChangeRow("outside", row, key, value)}
                 />
@@ -59,6 +61,7 @@ export default class OrderTable extends Component<OrderTableProps> {
                   subtitle="กรอกข้อมูลสำหรับสติ๊กเกอร์นอกกรอบ"
                   fields={[]}
                   rows={[]}
+                  destinationOptions={destinationOptions}
                   lotStart={lotStart}
                   onChange={(row, key, value) => onChangeRow("outside", row, key, value)}
                   emptyText="ลูกค้ารายนี้ยังไม่ได้ตั้งค่าสติ๊กเกอร์นอกกรอบ"

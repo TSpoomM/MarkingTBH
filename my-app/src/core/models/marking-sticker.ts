@@ -56,6 +56,7 @@ export interface TableSectionProps {
   subtitle: string;
   fields: TemplateField[];
   rows: MarkingContent[];
+  destinationOptions: string[];
   lotStart: number;
   onChange: (row: number, key: string, value: string) => void;
   emptyText?: string;
@@ -65,6 +66,7 @@ export interface OrderTableProps {
   template: MarkingState["template"];
   insideRows: MarkingContent[];
   outsideRows: MarkingContent[];
+  destinationOptions: string[];
   outsideGroups: OutsideStickerGroup[];
   lotStart: number;
   isAdmin: boolean;

@@ -33,13 +33,15 @@ export class MarkingController extends Store<MarkingState> {
   }
 
   protected async load() {
-    const [isAdmin, templates] = await Promise.allSettled([
+    const [isAdmin, templates, destinations] = await Promise.allSettled([
       this.session.isAdmin(),
       this.service.getTemplates(),
+      this.service.getDestinations(),
     ]);
     this.setState({
       isAdmin: isAdmin.status === "fulfilled" && isAdmin.value,
       templates: templates.status === "fulfilled" ? this.sortedTemplates(templates.value) : [],
+      destinationOptions: destinations.status === "fulfilled" ? destinations.value : [],
       isLoading: false,
       notice:
         templates.status === "rejected"

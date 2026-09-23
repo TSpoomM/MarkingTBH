@@ -35,6 +35,7 @@ const COUNTER_TYPE_OPTIONS: Array<{ value: CounterType; label: string; descripti
 
 const ADD_FIELD_OPTIONS: Array<{ value: TemplateFieldPreset; label: string; description: string }> = [
   { value: "field", label: "Field ปกติ", description: "เพิ่มช่องข้อมูลทั่วไป แล้วค่อยตั้งค่าเพิ่มเติมได้" },
+  { value: "destination", label: "Destination", description: "เพิ่ม Field DESTINATION สำหรับ Autocomplete จาก tb_destination" },
   { value: "section", label: "Section", description: "เพิ่ม Field แบบ Section พร้อมตัวนับเริ่มต้น แล้วค่อยปรับแต่งต่อได้" },
 ];
 

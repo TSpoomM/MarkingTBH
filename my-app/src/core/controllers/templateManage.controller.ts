@@ -233,11 +233,17 @@ export class TemplateManageController extends Store<TemplateFormState> {
     const { key, fields } = this.draft(target, section);
     const outsideGroup = section === "outside" ? this.outsideGroup(fields, tableOrder) : undefined;
     if (section === "outside" && TemplateFormDefaults.isVerticalStickerGroupLayout(outsideGroup?.layout)) return;
-    const fieldKey = `${section}_${preset}_${TemplateFieldUtils.uid()}`;
+    const hasDestinationField = fields.some((field) =>
+      field.key.trim().toLowerCase() === "destination" ||
+      field.label.trim().toLowerCase() === "destination",
+    );
+    const fieldKey = preset === "destination" && !hasDestinationField
+      ? "destination"
+      : `${section}_${preset}_${TemplateFieldUtils.uid()}`;
     const isSectionPreset = preset === "section";
     const nextField: TemplateField = {
       key: fieldKey,
-      label: isSectionPreset ? "SECTION" : "",
+      label: preset === "destination" ? "DESTINATION" : isSectionPreset ? "SECTION" : "",
       type: "text",
       required: true,
       showOnSticker: true,

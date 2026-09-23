@@ -28,6 +28,7 @@ export const STICKER_OTHER_OPTIONS = ["Dome", "Inter"] as const;
 
 export const INITIAL_MARKING_STATE: MarkingState = {
   templates: [],
+  destinationOptions: [],
   templateId: "",
   template: null,
   totalLot: "",

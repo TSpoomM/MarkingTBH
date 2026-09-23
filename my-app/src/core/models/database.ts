@@ -47,3 +47,11 @@ export type AdminRow = RowDataPacket & {
   createdDate: Date | string | null;
   emp_name?: string | null;
 };
+
+export type DestinationColumnRow = RowDataPacket & {
+  column_name: string;
+};
+
+export type DestinationOptionRow = RowDataPacket & {
+  destination: string | null;
+};

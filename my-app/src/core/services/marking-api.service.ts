@@ -9,6 +9,10 @@ export class MarkingApiService {
     return this.http.data<Template[]>("/api/templates");
   }
 
+  getDestinations(): Promise<string[]> {
+    return this.http.data<string[]>("/api/destinations");
+  }
+
   getTemplate(templateId: number): Promise<TemplateDetail> {
     return this.http.data<TemplateDetail>(`/api/templates/${templateId}/template`);
   }

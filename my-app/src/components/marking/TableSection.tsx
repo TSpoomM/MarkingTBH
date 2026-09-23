@@ -3,6 +3,7 @@
 import { Component } from "react";
 import { Lock } from "lucide-react";
 import EmptyState from "./EmptyState";
+import Autocomplete from "@/src/components/ui/Autocomplete";
 import CalendarInput from "@/src/components/ui/CalendarInput";
 import Input from "@/src/components/ui/Input";
 import SectionTitle from "@/src/components/ui/SectionTitle";
@@ -15,8 +16,14 @@ import StickerFactory from "@/src/core/stickers/stickerFactory";
 import type { TableSectionProps } from "@/src/core/models/marking-sticker";
 
 export default class TableSection extends Component<TableSectionProps> {
+  private isDestinationField(fieldKey: string, fieldLabel: string) {
+    const key = fieldKey.trim().toLowerCase();
+    const label = fieldLabel.trim().toLowerCase();
+    return key === "destination" || label === "destination";
+  }
+
   render() {
-    const { number, title, subtitle, fields, rows, lotStart, onChange, emptyText } = this.props;
+    const { number, title, subtitle, fields, rows, destinationOptions, lotStart, onChange, emptyText } = this.props;
     return (
       <section className="grid min-w-0 gap-4">
         <div className={TABLE_HEADING}>
@@ -65,6 +72,16 @@ export default class TableSection extends Component<TableSectionProps> {
                             onChange={(value) => onChange(rowIndex, field.key, value)}
                             disabled={field.locked === true}
                             placeholder={field.placeholder ?? `เลือก ${field.label}`}
+                          />
+                        ) : this.isDestinationField(field.key, field.label) ? (
+                          <Autocomplete
+                            bare
+                            options={destinationOptions}
+                            maxOptions={destinationOptions.length}
+                            value={row[field.key] ?? ""}
+                            onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
+                            disabled={field.locked === true}
+                            placeholder={field.placeholder ?? `กรอก ${field.label}`}
                           />
                         ) : (
                           <Input
