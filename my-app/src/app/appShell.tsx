@@ -14,31 +14,26 @@ const ACTIVITY_EVENTS = ["pointerdown", "keydown", "touchstart"] as const;
 
 const pageNavbarConfig: Record<string, NavbarProps> = {
   "/": {
-    badge: "TBH",
     title: "MarkingTBH",
     subtitle: "สร้าง sticker สำหรับส่งออกสินค้า",
     activeNav: "marking",
   },
   "/history": {
-    badge: "TBH",
     title: "ประวัติ",
     subtitle: "ตรวจสอบรายการที่บันทึกและพิมพ์/PDF",
     activeNav: "history",
   },
   "/manageTemplate": {
-    badge: "ADM",
     title: "จัดการ Template",
     subtitle: "เพิ่ม หรือ แก้ไข Template ",
     activeNav: "templates",
   },
   "/destinations": {
-    badge: "ADM",
     title: "Destinations",
     subtitle: "จัดการรายการปลายทางสำหรับ autocomplete",
     activeNav: "destinations",
   },
   "/admins": {
-    badge: "ADM",
     title: "Admin",
     subtitle: "Manage application admins",
     activeNav: "admins",

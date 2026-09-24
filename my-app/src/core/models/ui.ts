@@ -57,7 +57,6 @@ export interface ModalProps {
 }
 
 export interface NavbarProps {
-  badge?: ReactNode;
   title: string;
   subtitle?: string;
   action?: ReactNode;
