@@ -3,7 +3,7 @@ export const CAL_SHELL = "relative block h-full w-full min-w-0";
 
 export const CAL_DISPLAY =
   "!flex h-full w-full cursor-pointer items-center justify-start rounded-lg !border-2 !border-[#86aa99] " +
-  "!m-0 !py-0 !pr-[50px] !pl-[14px] font-black !text-[#071c15] " +
+  "!m-0 !py-0 !pr-[var(--control-end)] !pl-[14px] font-black !text-[#071c15] " +
   "!bg-white " +
   "shadow-[inset_0_1px_0_rgba(255,255,255,.8),0_1px_2px_rgba(20,40,32,.08)] " +
   "transition-[border-color,box-shadow,background] duration-150 " +
@@ -23,9 +23,8 @@ export const CAL_DISPLAY_DISABLED =
   "cursor-not-allowed !border-[#9cafb4] !bg-[#e8eee9] !text-[#34443f] shadow-none " +
   "group-hover/cal:!border-[#9cafb4] group-hover/cal:!bg-[#e8eee9] group-hover/cal:shadow-none";
 
-/** Calendar icon position (the icon itself is CalendarDays from lucide) */
-export const CAL_ICON =
-  "pointer-events-none absolute top-1/2 right-4 z-[2] -translate-y-1/2 text-primary-dark drop-shadow-[0_1px_0_rgba(255,255,255,.9)]";
+/** Calendar icon tone (position comes from the shared control end-slot) */
+export const CAL_ICON = "shrink-0 text-primary-dark drop-shadow-[0_1px_0_rgba(255,255,255,.9)]";
 
 export const CAL_POPOVER =
   "absolute top-[calc(100%+8px)] right-0 z-[1200] w-[min(322px,calc(100vw-32px))] rounded-lg " +

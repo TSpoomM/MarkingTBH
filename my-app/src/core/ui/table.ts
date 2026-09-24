@@ -9,13 +9,15 @@ export const RECORD_CARD =
 export const VERTICAL_FIELDS =
   "grid gap-0 " +
   "[&_input]:m-[10px_14px] [&_input]:h-12 [&_input]:w-[calc(100%_-_28px)] [&_input]:text-base " +
+  "[&_[data-control-end-slot]]:right-[15px] " +
+  "max-bp700:[&_[data-control-end-slot]]:right-[13px] " +
   "max-bp700:[&_input]:m-3 max-bp700:[&_input]:w-[calc(100%_-_24px)]";
 
 /**
  * CalendarInput uses a wrapper for the popover. Keep the wrapper full-width, then size
  * the trigger button exactly like the regular inputs in this table.
  */
-export const VERTICAL_FIELD_CALENDAR = "!h-full !w-full self-stretch [&>svg]:right-8 max-bp700:[&>svg]:right-7 [&>svg]:top-[48%]";
+export const VERTICAL_FIELD_CALENDAR = "!h-full !w-full self-stretch";
 
 export const VERTICAL_FIELD_CALENDAR_DISPLAY =
   "m-[10px_14px] box-border flex h-12 w-[calc(100%_-_28px)] cursor-pointer appearance-none items-center justify-start rounded-lg border border-[#cfdad6] bg-white " +

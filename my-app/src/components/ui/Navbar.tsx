@@ -74,6 +74,7 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
         ? [
           { key: "history", label: "ประวัติ", href: "/history" },
           { key: "templates", label: "จัดการ Template", href: "/manageTemplate" },
+          { key: "destinations", label: "Destination", href: "/destinations" },
         ]
         : []),
       ...(this.state.isSuperAdmin

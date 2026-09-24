@@ -36,5 +36,20 @@ export const CONTROL_SIZE: Record<ControlSize, string> = {
   lg: "min-h-[52px] px-[13px] text-[16px] font-semibold",
 };
 
+/**
+ * Shared trailing-icon layout for controls such as Select, Autocomplete, and CalendarInput.
+ * The icon area is one flex end-slot, so icon and divider never need per-component right offsets.
+ */
+export const CONTROL_END_SHELL = "group/control relative w-full min-w-0 [--control-end:52px]";
+export const CONTROL_WITH_END = "pr-[var(--control-end)]";
+export const CONTROL_END_SLOT =
+  "pointer-events-none absolute inset-y-px right-px z-[1] flex w-[var(--control-end)] " +
+  "items-center justify-end rounded-r-[7px] pr-3.5 text-primary transition-colors duration-150 " +
+  "group-hover/control:text-primary-dark group-focus-within/control:text-primary-dark " +
+  "group-has-[:disabled]/control:opacity-45";
+export const CONTROL_END_DIVIDER =
+  "mr-3 h-[min(28px,calc(100%-16px))] w-px bg-[#d7e4de] transition-colors " +
+  "group-hover/control:bg-[#9bc4b4] group-focus-within/control:bg-[#9bc4b4]";
+
 export const control = (size: ControlSize = "md") =>
   `${CONTROL_BASE} ${CONTROL_TONE[size]} ${CONTROL_SIZE[size]}`;

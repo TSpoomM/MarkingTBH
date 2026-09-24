@@ -4,6 +4,7 @@ import { Component, createRef } from "react";
 import DateFormatter, { MONTH_ABBREVIATIONS } from "@/src/core/dates/dateFormatter";
 import type { DateFormat } from "@/src/core/models/template";
 import type { ControlSize } from "@/src/core/ui/fields";
+import { CONTROL_END_DIVIDER, CONTROL_END_SHELL, CONTROL_END_SLOT } from "@/src/core/ui/fields";
 import Field from "./Field";
 import cn from "@/src/core/ui/cn";
 import {
@@ -183,7 +184,7 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
       ? displayClassName
       : cn(CAL_DISPLAY, CAL_DISPLAY_SIZE[size], !value && CAL_DISPLAY_PLACEHOLDER, disabled && CAL_DISPLAY_DISABLED, displayClassName);
     const control = (
-      <span className={cn("group/cal", CAL_SHELL, className)} ref={this.shellRef}>
+      <span className={cn("group/cal", CONTROL_END_SHELL, CAL_SHELL, className)} ref={this.shellRef}>
         <button
           className={displayClasses}
           type="button"
@@ -194,7 +195,10 @@ export default class CalendarInput extends Component<CalendarInputProps, Calenda
         >
           <span>{value || placeholder || "เลือกวันที่"}</span>
         </button>
-        <CalendarDays className={CAL_ICON} size={20} aria-hidden="true" />
+        <span className={CONTROL_END_SLOT} data-control-end-slot>
+          <span className={CONTROL_END_DIVIDER} aria-hidden="true" />
+          <CalendarDays className={CAL_ICON} size={20} aria-hidden="true" />
+        </span>
         {this.state.open && (
           <div
             className={cn(CAL_POPOVER, this.state.openUpward && CAL_POPOVER_UP)}

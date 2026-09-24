@@ -61,7 +61,7 @@ export interface NavbarProps {
   title: string;
   subtitle?: string;
   action?: ReactNode;
-  activeNav?: "marking" | "history" | "templates" | "admins";
+  activeNav?: "marking" | "history" | "templates" | "destinations" | "admins";
 }
 
 export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> {

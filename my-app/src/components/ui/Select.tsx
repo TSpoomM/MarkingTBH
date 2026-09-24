@@ -10,32 +10,15 @@ import {
 import type { SelectProps } from "@/src/core/models/ui";
 import Field from "./Field";
 import cn from "@/src/core/ui/cn";
-import { control as controlClass } from "@/src/core/ui/fields";
+import {
+  CONTROL_END_DIVIDER, CONTROL_END_SHELL, CONTROL_END_SLOT, CONTROL_WITH_END, control as controlClass,
+} from "@/src/core/ui/fields";
 import {
   LISTBOX, LISTBOX_CHECK, LISTBOX_OPTION, LISTBOX_OPTION_ACTIVE, LISTBOX_OPTION_SELECTED,
   LISTBOX_OPTION_TEXT,
 } from "@/src/core/ui/listbox";
 import { Check, ChevronDown } from "lucide-react";
 import Button from "./Button";
-
-/**
- * The divider and arrow of the select are drawn with ::before/::after on the wrapper
- * (previously .app-select-wrap::before / ::after)
- */
-const SELECT_WRAP =
-  "group/select app-select-wrap relative block w-full min-w-0 " +
-  "before:pointer-events-none before:absolute before:top-1/2 before:right-9 before:z-[1] " +
-  "before:h-[min(28px,calc(100%-16px))] before:w-px before:-translate-y-1/2 before:bg-[#d7e4de] " +
-  "before:transition-colors before:content-[''] " +
-  "hover:before:bg-[#9bc4b4] focus-within:before:bg-[#9bc4b4] " +
-  "has-[.app-select:disabled]:before:opacity-45";
-
-/** The select arrow uses ChevronDown from lucide */
-const SELECT_CHEVRON =
-  "pointer-events-none absolute top-1/2 right-3 z-[1] -translate-y-1/2 text-primary " +
-  "transition-[color,transform] duration-150 " +
-  "group-hover/select:text-primary-dark group-focus-within/select:text-primary-dark " +
-  "group-has-[.app-select:disabled]/select:opacity-45";
 
 interface SelectState {
   open: boolean;
@@ -176,7 +159,7 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
     const activeOption = enabledOptions[this.state.activeIndex];
     const control = (
       <div
-        className={SELECT_WRAP}
+        className={cn(CONTROL_END_SHELL, "app-select-wrap block")}
         onBlur={(event) => {
           const wrapper = event.currentTarget;
           window.setTimeout(() => {
@@ -204,7 +187,8 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
           type="button"
           className={cn(
             controlClass(size),
-            "app-select flex w-full min-w-0 cursor-pointer appearance-none items-center justify-start pr-[46px] text-left",
+            "app-select flex w-full min-w-0 cursor-pointer appearance-none items-center justify-start text-left",
+            CONTROL_WITH_END,
             "disabled:cursor-not-allowed",
             className,
           )}
@@ -235,7 +219,10 @@ class SelectBase extends Component<SelectBaseProps, SelectState> {
         >
           <span className={LISTBOX_OPTION_TEXT}>{selectedOption?.label || "\u00a0"}</span>
         </Button>
-        <ChevronDown className={SELECT_CHEVRON} size={18} aria-hidden="true" />
+        <span className={CONTROL_END_SLOT}>
+          <span className={CONTROL_END_DIVIDER} aria-hidden="true" />
+          <ChevronDown className="shrink-0" size={18} aria-hidden="true" />
+        </span>
         {this.state.open && enabledOptions.length > 0 && (
           <div className={cn(LISTBOX, "[scrollbar-color:#9bc4b4_#f4faf7] [scrollbar-width:thin]")} id={listId} role="listbox">
             {options.filter((option) => !option.hidden).map((option) => {
