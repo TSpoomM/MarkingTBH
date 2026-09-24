@@ -4,6 +4,7 @@ export const DATE_PART_OPTIONS: Array<{ value: DatePart; label: string }> = [
   { value: "dd", label: "วัน" },
   { value: "mm", label: "เดือนตัวเลข" },
   { value: "mmm", label: "เดือนย่อ ENG" },
+  { value: "yy", label: "ปีแบบย่อ" },
   { value: "yyyy", label: "ปี" },
 ];
 
@@ -51,6 +52,7 @@ export default class DateFormatter {
     const samePartIndex = nextParts.findIndex((part, partIndex) => {
       if (partIndex === index) return false;
       if (monthParts.has(part) && monthParts.has(nextPart)) return true;
+      if ((part === "yy" || part === "yyyy") && (nextPart === "yy" || nextPart === "yyyy")) return true;
       return part === nextPart;
     });
     nextParts[index] = nextPart;
@@ -65,6 +67,7 @@ export default class DateFormatter {
       dd: day,
       mm: month,
       mmm: MONTH_ABBREVIATIONS[Number(month) - 1] ?? month,
+      yy: year.slice(-2),
       yyyy: year,
     };
     const config = this.parseFormat(format);
@@ -97,7 +100,8 @@ export default class DateFormatter {
       values[part] = match[index + 1];
     });
     const month = values.mm ?? this.monthNumber(values.mmm ?? "");
-    return values.yyyy && month && values.dd ? `${values.yyyy}-${month}-${values.dd}` : "";
+    const year = this.fullYear(values.yyyy ?? values.yy ?? "");
+    return year && month && values.dd ? `${year}-${month}-${values.dd}` : "";
   }
 
   private static parseCommonDate(value: string) {
@@ -105,19 +109,22 @@ export default class DateFormatter {
       { pattern: /^(\d{4})[-/. ]([A-Z]{3})[-/. ](\d{2})$/, order: ["yyyy", "mmm", "dd"] },
       { pattern: /^(\d{2})[-/. ]([A-Z]{3})[-/. ](\d{4})$/, order: ["dd", "mmm", "yyyy"] },
       { pattern: /^([A-Z]{3})[-/. ](\d{2})[-/. ](\d{4})$/, order: ["mmm", "dd", "yyyy"] },
+      { pattern: /^(\d{2})[-/. ]([A-Z]{3})[-/. ](\d{2})$/, order: ["dd", "mmm", "yy"] },
+      { pattern: /^([A-Z]{3})[-/. ](\d{2})[-/. ](\d{2})$/, order: ["mmm", "dd", "yy"] },
     ];
     for (const item of textMonthPatterns) {
       const match = value.match(item.pattern);
       if (!match) continue;
       const values = this.valuesFromMatch(item.order, match);
       const month = this.monthNumber(values.mmm ?? "");
-      return values.yyyy && month && values.dd ? `${values.yyyy}-${month}-${values.dd}` : "";
+      const year = this.fullYear(values.yyyy ?? values.yy ?? "");
+      return year && month && values.dd ? `${year}-${month}-${values.dd}` : "";
     }
 
-    const numericMatch = value.match(/^(\d{2})[-/. ](\d{2})[-/. ](\d{4})$/);
+    const numericMatch = value.match(/^(\d{2})[-/. ](\d{2})[-/. ](\d{2}|\d{4})$/);
     if (!numericMatch) return "";
     const [, first, second, year] = numericMatch;
-    return `${year}-${second}-${first}`;
+    return `${this.fullYear(year)}-${second}-${first}`;
   }
 
   private static valuesFromMatch(order: [DatePart, DatePart, DatePart], match: RegExpMatchArray) {
@@ -132,6 +139,12 @@ export default class DateFormatter {
     return index >= 0 ? String(index + 1).padStart(2, "0") : "";
   }
 
+  private static fullYear(year: string) {
+    if (/^\d{4}$/.test(year)) return year;
+    if (/^\d{2}$/.test(year)) return `20${year}`;
+    return "";
+  }
+
   private static findSeparator(format: string): DateSeparator {
     if (format.includes(" ")) return " ";
     if (format.includes("/")) return "/";
@@ -142,9 +155,10 @@ export default class DateFormatter {
   private static hasValidParts(parts: string[]): parts is DatePart[] {
     const dateParts = new Set(parts);
     const hasDay = dateParts.has("dd");
-    const hasYear = dateParts.has("yyyy");
+    const hasYear = dateParts.has("yy") || dateParts.has("yyyy");
+    const yearCount = parts.filter((part) => part === "yy" || part === "yyyy").length;
     const monthCount = parts.filter((part) => part === "mm" || part === "mmm").length;
-    return hasDay && hasYear && monthCount === 1 && dateParts.size === 3;
+    return hasDay && hasYear && yearCount === 1 && monthCount === 1 && dateParts.size === 3;
   }
 
   private static escapeRegExp(value: string) {
