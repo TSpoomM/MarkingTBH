@@ -1,9 +1,13 @@
-import type { Template, StickerDefaults, StickerGroupLayout, TemplateField } from "@/src/core/models/template";
+import type { DragEvent } from "react";
+import type { CounterType, Template, StickerDefaults, StickerGroupLayout, TemplateField } from "@/src/core/models/template";
 import type { InsideGroup, StickerLayouts } from "@/src/core/models/template-form";
 
 export type TemplateFormNotice = { kind: "error" | "success"; text: string };
 export type TemplateManageMode = "edit" | "create";
 export type TemplateFieldPreset = "field" | "section" | "destination";
+/** The manage-template page keeps two independent drafts side by side. */
+export type TemplateFormTarget = "edit" | "create";
+export type TemplateSection = "inside" | "outside";
 
 export type StickerSelectableField = {
   key: string;
@@ -127,6 +131,86 @@ export interface TemplateFieldEditorProps {
   onChangeTableLayout?: (tableOrder: number, layout: StickerGroupLayout) => void;
   onRemoveTable?: (tableOrder: number) => void;
   onMoveTable?: (fromOrder: number, toOrder: number) => void;
+}
+
+/** Props for the pieces TemplateFieldEditor is composed of (components/manageTemplate/fieldEditor/). */
+export type FieldPatch = (patch: Partial<TemplateField>) => void;
+export type FieldDragHandler = (event: DragEvent) => void;
+
+export interface FieldTableHeaderProps {
+  field: TemplateField;
+  tableOrder: number;
+  isDragging: boolean;
+  onDragStart: (event: DragEvent, headElement: Element | null) => void;
+  onDragEnd: () => void;
+  onDragOver: FieldDragHandler;
+  onRename: (name: string) => void;
+  onChangeLayout: (layout: StickerGroupLayout) => void;
+  onRemove: () => void;
+}
+
+export interface FieldSummaryRowProps {
+  field: TemplateField;
+  fieldNumber: number;
+  onEdit: () => void;
+  onRemove: () => void;
+  onDragStart: FieldDragHandler;
+  onDragEnd: () => void;
+}
+
+export interface SegmentListProps {
+  field: TemplateField;
+  fieldIndex: number;
+  draggingSegmentKey: string | null;
+  onChange: FieldPatch;
+  onOpenCounterPrompt: (segmentIndex: number) => void;
+  onDragStart: (event: DragEvent, segmentIndex: number, segmentKey: string, cardElement: Element | null) => void;
+  onDragEnd: () => void;
+  onDragOver: (event: DragEvent, segmentIndex: number) => void;
+}
+
+export interface FieldSettingsModalProps extends Omit<SegmentListProps, "onOpenCounterPrompt"> {
+  open: boolean;
+  isVerticalTable: boolean;
+  onClose: () => void;
+  onOpenCounterPrompt: (segmentIndex?: number) => void;
+  onOpenDateFormatPrompt: () => void;
+}
+
+export interface DateFormatModalProps {
+  open: boolean;
+  field: TemplateField;
+  onChange: FieldPatch;
+  onClose: () => void;
+}
+
+export interface AddFieldModalProps {
+  open: boolean;
+  section: "inside" | "outside";
+  pendingPreset: TemplateFieldPreset;
+  onPresetChange: (preset: TemplateFieldPreset) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+export interface AddTableModalProps {
+  open: boolean;
+  pendingLayout: StickerGroupLayout;
+  onLayoutChange: (layout: StickerGroupLayout) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+export interface CounterModalProps {
+  open: boolean;
+  isCounting: boolean;
+  pendingType: CounterType;
+  pendingPad4: boolean;
+  onTypeChange: (type: CounterType) => void;
+  onPad4Change: (pad4: boolean) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+  onStop: () => void;
 }
 
 export interface StickerTemplatePreviewProps {

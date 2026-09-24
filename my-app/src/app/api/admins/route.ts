@@ -1,18 +1,8 @@
-import { z, ZodError } from "zod";
-import { adminRepository } from "@/src/core/repositories/admin.repository";
-import { adminAuthService } from "@/src/lib/adminAuth";
-import { actionLogger } from "@/src/lib/actionLogger";
+import { ZodError } from "zod";
+import { adminService } from "@/src/core/services/server/admin.service";
+import { adminAuthService } from "@/src/lib/server/adminAuth";
 
 export const runtime = "nodejs";
-
-const adminInputSchema = z.object({
-  fsId: z.union([z.string(), z.number()]).transform((value) => String(value).trim()).pipe(z.string().min(1)),
-  role: z.enum(["admin", "super_admin", "superAdmin"]).transform((value) => value === "superAdmin" ? "super_admin" : value),
-});
-
-const adminDeleteSchema = z.object({
-  idUser: z.number().int().positive(),
-});
 
 class AdminsRoute {
   async get(request: Request) {
@@ -22,7 +12,7 @@ class AdminsRoute {
         return Response.json({ message: "เฉพาะ Super Admin เท่านั้น" }, { status: 403 });
       }
 
-      return Response.json({ data: await adminRepository.findAll() });
+      return Response.json({ data: await adminService.list() });
     } catch (error) {
       console.error("GET /api/admins", error);
       return Response.json({ message: "โหลดรายชื่อ admin ไม่สำเร็จ" }, { status: 500 });
@@ -36,9 +26,7 @@ class AdminsRoute {
         return Response.json({ message: "เฉพาะ Super Admin เท่านั้น" }, { status: 403 });
       }
 
-      const input = adminInputSchema.parse(await request.json());
-      const admin = await adminRepository.upsert(input);
-      await actionLogger.log(access.userId, `เพิ่ม/แก้ไข admin: ${admin.fsId} (${admin.role})`);
+      const admin = await adminService.save(await request.json(), access.userId);
 
       return Response.json({ data: admin, message: "บันทึก admin เรียบร้อยแล้ว" }, { status: 201 });
     } catch (error) {
@@ -58,13 +46,11 @@ class AdminsRoute {
         return Response.json({ message: "เฉพาะ Super Admin เท่านั้น" }, { status: 403 });
       }
 
-      const input = adminDeleteSchema.parse(await request.json());
-      const admin = await adminRepository.deleteById(input.idUser);
+      const admin = await adminService.remove(await request.json(), access.userId);
       if (!admin) {
         return Response.json({ message: "ไม่พบ admin ที่ต้องการลบ" }, { status: 404 });
       }
 
-      await actionLogger.log(access.userId, `ลบ admin: ${admin.fsId} (${admin.role})`);
       return Response.json({ data: admin, message: "ลบ admin เรียบร้อยแล้ว" });
     } catch (error) {
       if (error instanceof ZodError) {

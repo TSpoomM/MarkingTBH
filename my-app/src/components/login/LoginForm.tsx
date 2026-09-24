@@ -15,7 +15,7 @@ import {
   LOGIN_TOGGLE_PASSWORD,
   LOGIN_SUBMIT,
 } from "@/src/core/ui/login";
-import { basePathService } from "@/src/lib/basePath";
+import { basePathService } from "@/src/core/services/client/basePath.service";
 import type { LoginFormProps } from "@/src/core/models/login";
 
 type LoginFormState = {

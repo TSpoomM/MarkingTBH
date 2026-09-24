@@ -3,9 +3,14 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Navbar from "@/src/components/ui/Navbar";
-import { sessionApiService } from "@/src/core/services/session-api.service";
-import { basePathService } from "@/src/lib/basePath";
+import { sessionApiService, SessionApiService } from "@/src/core/services/client/session-api.service";
+import { basePathService } from "@/src/core/services/client/basePath.service";
+import ActivityThrottle from "@/src/core/session/activityThrottle";
 import type { NavbarProps } from "@/src/core/models/ui";
+
+/** How often user activity is reported to the server. Must stay well under the 30-minute idle timeout. */
+const ACTIVITY_PING_MS = 2 * 60 * 1000;
+const ACTIVITY_EVENTS = ["pointerdown", "keydown", "touchstart"] as const;
 
 const pageNavbarConfig: Record<string, NavbarProps> = {
   "/": {
@@ -45,6 +50,7 @@ const defaultNavbarConfig = pageNavbarConfig["/"];
 export default function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const [authenticatedPath, setAuthenticatedPath] = useState<string | null>(null);
+  const [access, setAccess] = useState({ isAdmin: false, isSuperAdmin: false });
 
   useEffect(() => {
     if (pathname === "/login") return;
@@ -52,8 +58,13 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
     let isActive = true;
     sessionApiService
       .getSession()
-      .then(() => {
-        if (isActive) setAuthenticatedPath(pathname);
+      .then((session) => {
+        if (!isActive) return;
+        setAccess({
+          isAdmin: SessionApiService.hasAdminRole(session),
+          isSuperAdmin: SessionApiService.hasSuperAdminRole(session),
+        });
+        setAuthenticatedPath(pathname);
       })
       .catch(() => {
         window.location.replace(basePathService.withBasePath("/login"));
@@ -62,6 +73,18 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
     return () => {
       isActive = false;
     };
+  }, [pathname]);
+
+  // While the user is working, keep the session alive: the session route restarts the idle timer.
+  useEffect(() => {
+    if (pathname === "/login") return;
+
+    const throttle = new ActivityThrottle(ACTIVITY_PING_MS);
+    const onActivity = () => {
+      if (throttle.tryRun()) void sessionApiService.getSession().catch(() => undefined);
+    };
+    ACTIVITY_EVENTS.forEach((event) => window.addEventListener(event, onActivity, { passive: true }));
+    return () => ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, onActivity));
   }, [pathname]);
 
   if (pathname === "/login") return <>{children}</>;
@@ -74,10 +97,18 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
     );
   }
 
+  const handleLogout = async () => {
+    try {
+      await sessionApiService.logout();
+    } finally {
+      window.location.href = basePathService.withBasePath("/login");
+    }
+  };
+
   const navbarConfig = pageNavbarConfig[pathname] ?? defaultNavbarConfig;
   return (
     <>
-      <Navbar {...navbarConfig} />
+      <Navbar {...navbarConfig} {...access} onLogout={() => void handleLogout()} />
       {children}
     </>
   );

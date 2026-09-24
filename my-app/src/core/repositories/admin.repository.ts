@@ -1,14 +1,10 @@
-import { pool } from "@/src/lib/db";
-import { currentUserService } from "@/src/lib/currentUser";
+import { pool } from "@/src/lib/server/db";
+import { currentUserService } from "@/src/lib/server/currentUser";
 import type { AdminRole, AdminRow } from "@/src/core/models/database";
 
-export type AdminUser = {
-  idUser: number;
-  fsId: string;
-  name: string;
-  role: AdminRole;
-  createdDate: string | null;
-};
+import type { AdminUser } from "@/src/core/models/admin";
+
+export type { AdminUser };
 
 export class AdminRepository {
   private normalizeRole(role: unknown): AdminRole | null {

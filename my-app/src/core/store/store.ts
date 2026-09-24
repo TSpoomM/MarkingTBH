@@ -27,12 +27,18 @@ export default abstract class Store<S> {
     this.listeners.forEach((listener) => listener());
   }
 
-  /** Runs load() exactly once, however many views mount against this store. */
+  /**
+   * Runs load() on the first mount. Later mounts (returning to the page) call refresh(),
+   * which does nothing unless a controller overrides it.
+   */
   async initialize() {
-    if (this.initialized) return;
+    if (this.initialized) return this.refresh();
     this.initialized = true;
     await this.load();
   }
 
   protected abstract load(): Promise<void>;
+
+  /** Hook for pages that must show fresh data every time they are opened. */
+  protected async refresh(): Promise<void> {}
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authSessionService } from "@/src/lib/authSession";
+import { authSessionService } from "@/src/lib/server/authSession";
 
 class LogoutRoute {
   async post() {

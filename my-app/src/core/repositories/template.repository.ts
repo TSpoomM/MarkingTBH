@@ -1,6 +1,6 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool } from "mysql2/promise";
-import { pool } from "@/src/lib/db";
+import { pool } from "@/src/lib/server/db";
 import type { ActiveColumnRow, TemplateListRow, TemplateRow } from "@/src/core/models/database";
 import type { TemplateHistoryItem } from "@/src/core/models/history";
 

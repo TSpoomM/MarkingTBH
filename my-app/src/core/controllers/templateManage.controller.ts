@@ -1,22 +1,21 @@
 import Store from "@/src/core/store/store";
-import { templateApiService, TemplateApiService } from "@/src/core/services/template-api.service";
-import { sessionApiService, SessionApiService } from "@/src/core/services/session-api.service";
+import { templateApiService, TemplateApiService } from "@/src/core/services/client/template-api.service";
+import { sessionApiService, SessionApiService } from "@/src/core/services/client/session-api.service";
 import type { Template, StickerDefaults, StickerGroupLayout, TemplateDetail, TemplateField } from "@/src/core/models/template";
 import { DEFAULT_STICKER_DEFAULTS, type CreateTemplatePayload } from "@/src/core/models/template-form";
 import {
   fixedInsideFields,
   initialGroups,
   type TemplateFormState,
+  type TemplateFormTarget,
   type TemplateFieldPreset,
   type TemplateManageMode,
+  type TemplateSection,
 } from "@/src/core/models/manage-template";
 import TemplateFormDefaults from "@/src/core/templates/templateFormDefaults";
-import TemplateFieldUtils from "@/src/core/templates/templateFieldUtils";
-import DateFormatter from "@/src/core/dates/dateFormatter";
+import TemplateDraftEditor from "@/src/core/templates/templateDraftEditor";
+import TemplateDraftSubmission from "@/src/core/templates/templateDraftSubmission";
 
-/** The manage-template page keeps two independent drafts side by side. */
-export type TemplateFormTarget = "edit" | "create";
-type Section = "inside" | "outside";
 type DraftKey = "templateInsideDraft" | "templateOutsideDraft" | "createInsideDraft" | "createOutsideDraft";
 
 const EMPTY_LAYOUTS = {
@@ -26,7 +25,7 @@ const EMPTY_LAYOUTS = {
   fscLogo: false,
 } as const;
 
-const DRAFT_KEYS: Record<TemplateFormTarget, Record<Section, DraftKey>> = {
+const DRAFT_KEYS: Record<TemplateFormTarget, Record<TemplateSection, DraftKey>> = {
   edit: { inside: "templateInsideDraft", outside: "templateOutsideDraft" },
   create: { inside: "createInsideDraft", outside: "createOutsideDraft" },
 };
@@ -47,20 +46,6 @@ const FORM_KEYS = {
     defaults: "stickerDefaults",
   },
 } as const;
-
-/** The two drafts report the same problems with different wording. */
-const VALIDATION_MESSAGES: Record<TemplateFormTarget, { emptyLabel: string; noLayout: string; duplicateKey: string }> = {
-  edit: {
-    emptyLabel: "กรุณากรอกชื่อ Field ให้ครบ",
-    noLayout: "เลือกรูปแบบสติ๊กเกอร์ที่ต้องพิมพ์อย่างน้อย 1 แบบ",
-    duplicateKey: "ชื่อ Field บางรายการซ้ำกันในระบบ กรุณาลบแล้วเพิ่ม Field ใหม่อีกครั้ง",
-  },
-  create: {
-    emptyLabel: "กรุณากรอกชื่อ Field ให้ครบทุกช่อง",
-    noLayout: "กรุณาเลือกรูปแบบสติ๊กเกอร์อย่างน้อย 1 แบบ",
-    duplicateKey: "มี Field ที่ซ้ำกัน กรุณาลบแล้วเพิ่ม Field ใหม่อีกครั้ง",
-  },
-};
 
 const INITIAL_TEMPLATE_FORM_STATE: TemplateFormState = {
   mode: "edit",
@@ -91,6 +76,10 @@ const INITIAL_TEMPLATE_FORM_STATE: TemplateFormState = {
   saving: false,
 };
 
+/**
+ * Owns the manage-template page state and its async flows. The draft edits themselves
+ * live in TemplateDraftEditor and the clean/validate step in TemplateDraftSubmission.
+ */
 export class TemplateManageController extends Store<TemplateFormState> {
   constructor(
     private readonly service: TemplateApiService,
@@ -109,7 +98,7 @@ export class TemplateManageController extends Store<TemplateFormState> {
     this.setState({ [key]: value } as unknown as Partial<TemplateFormState>);
   }
 
-  private draft(target: TemplateFormTarget, section: Section) {
+  private draft(target: TemplateFormTarget, section: TemplateSection) {
     const key = DRAFT_KEYS[target][section];
     return { key, fields: this.state[key] };
   }
@@ -220,171 +209,55 @@ export class TemplateManageController extends Store<TemplateFormState> {
     }
   };
 
-  changeDraftField = (target: TemplateFormTarget, section: Section, index: number, fieldPatch: Partial<TemplateField>) => {
+  changeDraftField = (target: TemplateFormTarget, section: TemplateSection, index: number, fieldPatch: Partial<TemplateField>) => {
     const { key, fields } = this.draft(target, section);
-    this.patch(key, fields.map((field, fieldIndex) =>
-      fieldIndex === index
-        ? TemplateFormDefaults.normalizeDraftField(section, { ...field, ...fieldPatch })
-        : field,
-    ));
+    this.patch(key, TemplateDraftEditor.patchField(section, fields, index, fieldPatch));
   };
 
-  addField = (target: TemplateFormTarget, section: Section, tableOrder?: number, preset: TemplateFieldPreset = "field") => {
+  addField = (target: TemplateFormTarget, section: TemplateSection, tableOrder?: number, preset: TemplateFieldPreset = "field") => {
     const { key, fields } = this.draft(target, section);
-    const outsideGroup = section === "outside" ? this.outsideGroup(fields, tableOrder) : undefined;
-    if (section === "outside" && TemplateFormDefaults.isVerticalStickerGroupLayout(outsideGroup?.layout)) return;
-    const hasDestinationField = fields.some((field) =>
-      field.key.trim().toLowerCase() === "destination" ||
-      field.label.trim().toLowerCase() === "destination",
-    );
-    const fieldKey = preset === "destination" && !hasDestinationField
-      ? "destination"
-      : `${section}_${preset}_${TemplateFieldUtils.uid()}`;
-    const isSectionPreset = preset === "section";
-    const nextField: TemplateField = {
-      key: fieldKey,
-      label: preset === "destination" ? "DESTINATION" : isSectionPreset ? "SECTION" : "",
-      type: "text",
-      required: true,
-      showOnSticker: true,
-      stickerGroup: outsideGroup?.name,
-      stickerGroupOrder: outsideGroup?.order,
-      stickerGroupLayout: outsideGroup?.layout,
-      uppercase: true,
-      segments: isSectionPreset
-        ? [{
-          key: `${fieldKey}_1`,
-          label: "SECTION 1",
-          type: "number",
-          showOnSticker: true,
-          isCounter: true,
-          counterType: "lot",
-        }]
-        : undefined,
-    };
-    const insertIndex = section === "outside"
-      ? this.lastOutsideGroupIndex(fields, outsideGroup?.order ?? 0) + 1
-      : fields.length;
-    this.patch(key, TemplateFieldUtils.renumberStickerOrders([
-      ...fields.slice(0, insertIndex),
-      nextField,
-      ...fields.slice(insertIndex),
-    ]));
+    const nextFields = TemplateDraftEditor.addField(section, fields, tableOrder, preset);
+    if (nextFields) this.patch(key, nextFields);
   };
-
-  private lastOutsideGroupIndex(fields: TemplateField[], tableOrder: number) {
-    return fields.reduce((lastIndex, field, index) =>
-      (field.stickerGroupOrder ?? 0) === tableOrder ? index : lastIndex,
-      -1);
-  }
-
-  private outsideGroup(fields: TemplateField[], requestedOrder?: number) {
-    if (!fields.length) return { order: 0, name: "นอกกรอบ 1", layout: "2x2" as const };
-    const order = requestedOrder ?? Math.max(...fields.map((field) => field.stickerGroupOrder ?? 0));
-    const field = [...fields].reverse().find((item) => (item.stickerGroupOrder ?? 0) === order);
-    return {
-      order,
-      name: field?.stickerGroup ?? `นอกกรอบ ${order + 1}`,
-      layout: TemplateFormDefaults.normalizeStickerGroupLayout(field?.stickerGroupLayout),
-    };
-  }
-
-  private nextOutsideGroupOrder(fields: TemplateField[]) {
-    return fields.length ? Math.max(...fields.map((field) => field.stickerGroupOrder ?? 0)) + 1 : 0;
-  }
 
   addTable = (target: TemplateFormTarget, layout: StickerGroupLayout) => {
     const key = this.outsideDraftKey(target);
-    const fields = this.state[key];
-    const tableOrder = this.nextOutsideGroupOrder(fields);
-    this.patch(key, TemplateFieldUtils.renumberStickerOrders([
-      ...fields,
-      {
-        key: `outside_field_${TemplateFieldUtils.uid()}`,
-        label: "",
-        type: "text",
-        required: true,
-        showOnSticker: true,
-        stickerGroup: `นอกกรอบ ${tableOrder + 1}`,
-        stickerGroupOrder: tableOrder,
-        stickerGroupLayout: layout,
-        uppercase: true,
-        fontScale: undefined,
-      },
-    ]));
+    this.patch(key, TemplateDraftEditor.addTable(this.state[key], layout));
   };
 
   renameTable = (target: TemplateFormTarget, tableOrder: number, name: string) => {
     const key = this.outsideDraftKey(target);
-    this.patch(key, this.state[key].map((field) =>
-      (field.stickerGroupOrder ?? 0) === tableOrder ? { ...field, stickerGroup: name } : field,
-    ));
+    this.patch(key, TemplateDraftEditor.renameTable(this.state[key], tableOrder, name));
   };
 
   changeTableLayout = (target: TemplateFormTarget, tableOrder: number, layout: StickerGroupLayout) => {
     const key = this.outsideDraftKey(target);
-    const isVertical = TemplateFormDefaults.isVerticalStickerGroupLayout(layout);
-    const nextFields = this.state[key].map((field) =>
-      (field.stickerGroupOrder ?? 0) === tableOrder
-        ? { ...field, stickerGroupLayout: layout, fontScale: isVertical ? undefined : field.fontScale }
-        : field,
-    );
-    this.patch(key, isVertical ? TemplateFormDefaults.enforceOutsideVerticalSingleRows(nextFields) : nextFields);
+    this.patch(key, TemplateDraftEditor.changeTableLayout(this.state[key], tableOrder, layout));
   };
 
   removeTable = (target: TemplateFormTarget, tableOrder: number) => {
     const key = this.outsideDraftKey(target);
-    this.patch(key, TemplateFieldUtils.renumberStickerOrders(
-      TemplateFieldUtils.renumberOutsideTableOrders(
-        this.state[key].filter((field) => (field.stickerGroupOrder ?? 0) !== tableOrder),
-      ),
-    ));
+    this.patch(key, TemplateDraftEditor.removeTable(this.state[key], tableOrder));
   };
 
-  removeField = (target: TemplateFormTarget, section: Section, index: number) => {
+  removeField = (target: TemplateFormTarget, section: TemplateSection, index: number) => {
     const { key, fields } = this.draft(target, section);
-    this.patch(key, TemplateFieldUtils.renumberStickerOrders(
-      fields.filter((_, fieldIndex) => fieldIndex !== index),
-    ));
+    this.patch(key, TemplateDraftEditor.removeField(fields, index));
   };
 
-  moveField = (target: TemplateFormTarget, section: Section, fromIndex: number, toIndex: number, tableOrder?: number) => {
+  moveField = (target: TemplateFormTarget, section: TemplateSection, fromIndex: number, toIndex: number, tableOrder?: number) => {
     const { key, fields } = this.draft(target, section);
-    this.patch(key, TemplateFieldUtils.moveField(
-      fields, fromIndex, toIndex, section === "outside" ? tableOrder : undefined,
-    ));
+    this.patch(key, TemplateDraftEditor.moveField(section, fields, fromIndex, toIndex, tableOrder));
   };
 
   moveTable = (target: TemplateFormTarget, fromOrder: number, toOrder: number) => {
     const key = this.outsideDraftKey(target);
-    this.patch(key, TemplateFieldUtils.moveOutsideTable(this.state[key], fromOrder, toOrder));
+    this.patch(key, TemplateDraftEditor.moveTable(this.state[key], fromOrder, toOrder));
   };
 
-  /** Puts one field into a sticker preview slot and clears whoever held that slot. */
-  setPreviewSlot = (target: TemplateFormTarget, section: Section, slotIndex: number, fieldKey: string) => {
+  setPreviewSlot = (target: TemplateFormTarget, section: TemplateSection, slotIndex: number, fieldKey: string) => {
     const { key, fields } = this.draft(target, section);
-    const [targetFieldKey, targetSegmentKey] = fieldKey.split(".");
-    this.patch(key, fields.map((field) => {
-      if (field.segments?.length) {
-        return {
-          ...field,
-          segments: field.segments.map((segment) => {
-            const isTarget = field.key === targetFieldKey && segment.key === targetSegmentKey;
-            const isSameSlot = segment.stickerOrder === slotIndex;
-            if (isTarget) return { ...segment, showOnSticker: true, stickerOrder: slotIndex };
-            if (isSameSlot) return { ...segment, showOnSticker: false, stickerOrder: undefined };
-            return segment;
-          }),
-        };
-      }
-      if (field.key === targetFieldKey) {
-        return fieldKey ? { ...field, showOnSticker: true, stickerOrder: slotIndex } : field;
-      }
-      if (field.stickerOrder === slotIndex) {
-        return { ...field, showOnSticker: false, stickerOrder: undefined };
-      }
-      return field;
-    }));
+    this.patch(key, TemplateDraftEditor.assignPreviewSlot(fields, slotIndex, fieldKey));
   };
 
   changeName = (target: TemplateFormTarget, name: string) => {
@@ -409,83 +282,15 @@ export class TemplateManageController extends Store<TemplateFormState> {
     this.setNotice(target, undefined);
   };
 
-  private cleanFields(section: Section, fields: TemplateField[]) {
-    const cleaned = fields.map((field, index) => {
-      const fieldKey = field.key.trim() || `${section}_field_${TemplateFieldUtils.uid()}`;
-      const usedSegmentKeys = new Set<string>();
-      const hasSegmentAffixes = field.segments?.some((segment) => segment.prefix?.trim() || segment.suffix?.trim());
-      const isVerticalOutside = section === "outside" && TemplateFormDefaults.isVerticalStickerGroupLayout(field.stickerGroupLayout);
-      return TemplateFieldUtils.normalizeCounterField({
-        ...field,
-        key: fieldKey,
-        label: field.label.trim().toUpperCase(),
-        type: field.isCounter ? "number" : field.type ?? "text",
-        displayFormat: hasSegmentAffixes ? undefined : field.displayFormat?.trim() || undefined,
-        dateFormat: field.type === "date" ? DateFormatter.normalizeFormat(field.dateFormat) : undefined,
-        defaultValue: !field.segments?.length && field.locked
-          ? field.defaultValue?.trim() || field.label.trim()
-          : field.defaultValue?.trim() || undefined,
-        locked: !field.segments?.length ? field.locked === true : false,
-        required: true,
-        condition: undefined,
-        showOnSticker: field.showOnSticker ?? true,
-        stickerOrder: field.showOnSticker === false ? undefined : index,
-        uppercase: field.uppercase ?? true,
-        isCounter: !field.segments?.length ? field.isCounter : undefined,
-        counterType: !field.segments?.length ? field.counterType : undefined,
-        counterPad4: !field.segments?.length ? field.counterPad4 : undefined,
-        fontScale: !isVerticalOutside ? field.fontScale : undefined,
-        segments: field.segments?.map((segment, segmentIndex) => ({
-          ...segment,
-          key: TemplateFieldUtils.uniqueSegmentKey(fieldKey, segment.key, segmentIndex, usedSegmentKeys),
-          label: segment.label.trim().toUpperCase(),
-          type: segment.isCounter ? "number" : segment.type ?? "text",
-          dateFormat: segment.type === "date" ? DateFormatter.normalizeFormat(segment.dateFormat ?? field.dateFormat) : undefined,
-          prefix: segment.prefix ?? "",
-          suffix: segment.suffix ?? "",
-          showOnSticker: segment.showOnSticker ?? true,
-          stickerOrder: segment.showOnSticker === false ? undefined : index * 10 + segmentIndex,
-          counterType: segment.counterType ?? TemplateFieldUtils.inferCounterType({ ...field, key: fieldKey }),
-          counterPad4: segment.counterPad4,
-        })),
-      });
-    });
-    return section === "outside"
-      ? TemplateFieldUtils.renumberStickerOrders(
-        TemplateFieldUtils.renumberOutsideTableOrders(TemplateFormDefaults.enforceOutsideVerticalSingleRows(cleaned)),
-      )
-      : TemplateFieldUtils.renumberStickerOrders(cleaned);
-  }
-
   private cleanDrafts(target: TemplateFormTarget) {
     return {
-      inside: this.cleanFields("inside", this.draft(target, "inside").fields),
-      outside: this.cleanFields("outside", this.draft(target, "outside").fields),
+      inside: TemplateDraftSubmission.cleanFields("inside", this.draft(target, "inside").fields),
+      outside: TemplateDraftSubmission.cleanFields("outside", this.draft(target, "outside").fields),
     };
   }
 
-  /**
-   * The create draft also rejects empty segment labels; the edit draft never has,
-   * so the two keep their own predicate as well as their own wording.
-   */
   private validateDrafts(target: TemplateFormTarget, inside: TemplateField[], outside: TemplateField[]) {
-    const messages = VALIDATION_MESSAGES[target];
-    const hasEmptyLabel = [...inside, ...outside].some((field) =>
-      !field.label || (target === "create" && field.segments?.some((segment) => !segment.label)),
-    );
-    if (hasEmptyLabel) return messages.emptyLabel;
-
-    const layouts = TemplateFormDefaults.withRequiredStickerLayouts(this.state[FORM_KEYS[target].layouts]);
-    if (!layouts.insideFrame && !layouts.outsideFrame && !layouts.customerName && !layouts.fscLogo) {
-      return messages.noLayout;
-    }
-    if (
-      new Set(inside.map((field) => field.key)).size !== inside.length ||
-      new Set(outside.map((field) => field.key)).size !== outside.length
-    ) {
-      return messages.duplicateKey;
-    }
-    return undefined;
+    return TemplateDraftSubmission.validate(target, inside, outside, this.state[FORM_KEYS[target].layouts]);
   }
 
   private stickerPayload(target: TemplateFormTarget) {
