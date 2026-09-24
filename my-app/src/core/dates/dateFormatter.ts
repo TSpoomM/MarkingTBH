@@ -4,8 +4,8 @@ export const DATE_PART_OPTIONS: Array<{ value: DatePart; label: string }> = [
   { value: "dd", label: "วัน" },
   { value: "mm", label: "เดือนตัวเลข" },
   { value: "mmm", label: "เดือนย่อ ENG" },
-  { value: "yy", label: "ปีแบบย่อ" },
-  { value: "yyyy", label: "ปี" },
+  { value: "yy", label: "ปี YY" },
+  { value: "yyyy", label: "ปี YYYY" },
 ];
 
 export const DATE_SEPARATOR_OPTIONS: Array<{ value: DateSeparator; label: string }> = [
