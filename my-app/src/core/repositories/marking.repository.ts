@@ -2,7 +2,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { TemplateField } from "@/src/core/models/template";
 import type { CreateMarkingInput, MarkingContent, MarkingHistoryFieldMeta, MarkingHistoryItem } from "@/src/core/models/marking";
 import type { Pool } from "mysql2/promise";
-import { pool } from "@/src/lib/db";
+import { pool } from "@/src/lib/server/db";
 
 type TemplateSegment = NonNullable<TemplateField["segments"]>[number];
 

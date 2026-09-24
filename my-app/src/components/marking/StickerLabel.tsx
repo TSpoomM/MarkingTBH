@@ -5,7 +5,7 @@ import Image from "next/image";
 import AutoFitStickerDetails from "./AutoFitStickerDetails";
 import AutoFitStickerText from "./AutoFitStickerText";
 import StickerLabelMetrics from "@/src/core/stickers/stickerLabelMetrics";
-import { basePathService } from "@/src/lib/basePath";
+import { basePathService } from "@/src/core/services/client/basePath.service";
 import type { StickerItem } from "@/src/core/models/marking-sticker";
 
 export default class StickerLabel extends Component<{ item: StickerItem }> {

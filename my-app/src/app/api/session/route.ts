@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { devAuthService, isDevAuthBypassEnabled } from "@/src/lib/devAuth";
-import { hrkpisSessionService } from "@/src/lib/hrkpisSession";
-import { authSessionService } from "@/src/lib/authSession";
-import { adminAuthService } from "@/src/lib/adminAuth";
+import { devAuthService, isDevAuthBypassEnabled } from "@/src/lib/server/devAuth";
+import { hrkpisSessionService } from "@/src/lib/server/hrkpisSession";
+import { authSessionService } from "@/src/lib/server/authSession";
+import { adminAuthService } from "@/src/lib/server/adminAuth";
 
 class SessionRoute {
   async get(request: NextRequest) {
@@ -21,13 +21,16 @@ class SessionRoute {
     if (appSession) {
       const empId = appSession.empId || appSession.userInv;
       const role = await adminAuthService.getUserRole(empId);
-      return NextResponse.json({
+      const response = NextResponse.json({
         authenticated: true,
         userId: empId,
         empId,
         userInv: appSession.userInv,
         user: { role: role ?? "user" },
       });
+      // Being asked for the session means the user is active, so the idle timer restarts.
+      authSessionService.renewCookie(response, appSession);
+      return response;
     }
 
     const sessionId = request.cookies.get(hrkpisSessionService.getCookieName())?.value;

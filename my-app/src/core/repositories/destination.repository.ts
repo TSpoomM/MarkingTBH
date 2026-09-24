@@ -1,12 +1,12 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool } from "mysql2/promise";
-import { pool } from "@/src/lib/db";
+import { pool } from "@/src/lib/server/db";
 import type { DestinationColumnRow, DestinationOptionRow } from "@/src/core/models/database";
 
-export type DestinationItem = {
-  id: string;
-  value: string;
-};
+import type { DestinationItem } from "@/src/core/models/destination";
+import { UserFacingError } from "@/src/core/errors/userFacingError";
+
+export type { DestinationItem };
 
 type DestinationColumns = {
   idColumn: string | null;
@@ -100,7 +100,7 @@ export class DestinationRepository {
     const column = await this.requireValueColumn();
     const normalizedValue = this.normalizeValue(value);
     const existing = await this.findByValue(normalizedValue);
-    if (existing) throw new Error("Destination นี้มีอยู่แล้ว");
+    if (existing) throw new UserFacingError("Destination นี้มีอยู่แล้ว");
 
     const [result] = await this.pool.execute<ResultSetHeader>(
       `INSERT INTO tb_destination (${this.columnRef(column)}) VALUES (?)`,
@@ -117,7 +117,7 @@ export class DestinationRepository {
 
     const normalizedValue = this.normalizeValue(value);
     const existing = await this.findByValue(normalizedValue);
-    if (existing && existing.id !== id) throw new Error("Destination นี้มีอยู่แล้ว");
+    if (existing && existing.id !== id) throw new UserFacingError("Destination นี้มีอยู่แล้ว");
 
     const whereClause = idColumn
       ? `${this.columnRef(idColumn)} = ?`

@@ -1,9 +1,8 @@
 import { ZodError } from "zod";
-import { markingRepository } from "@/src/core/repositories/marking.repository";
-import { markingService } from "@/src/core/services/marking.service";
-import { actionLogger } from "@/src/lib/actionLogger";
-import { adminAuthService } from "@/src/lib/adminAuth";
-import { requestCurrentUserService } from "@/src/lib/requestCurrentUser";
+import { markingService } from "@/src/core/services/server/marking.service";
+import { actionLogger } from "@/src/lib/server/actionLogger";
+import { adminAuthService } from "@/src/lib/server/adminAuth";
+import { requestCurrentUserService } from "@/src/lib/server/requestCurrentUser";
 
 export const runtime = "nodejs";
 
@@ -15,8 +14,7 @@ class MarkingsRoute {
         return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
       }
       const { searchParams } = new URL(request.url);
-      const limit = Math.min(Math.max(Number(searchParams.get("limit") ?? 100), 1), 300);
-      return Response.json({ data: await markingRepository.findHistory(limit) });
+      return Response.json({ data: await markingService.getHistory(searchParams.get("limit")) });
     } catch (error) {
       console.error("GET /api/markings", error);
       return Response.json({ message: "โหลด history ไม่สำเร็จ" }, { status: 500 });

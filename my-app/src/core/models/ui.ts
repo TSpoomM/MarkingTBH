@@ -64,6 +64,13 @@ export interface NavbarProps {
   activeNav?: "marking" | "history" | "templates" | "destinations" | "admins";
 }
 
+/** Navbar content plus what the signed-in user may see; the shell owns the session, the navbar only renders it. */
+export interface NavbarViewProps extends NavbarProps {
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+  onLogout: () => void;
+}
+
 export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> {
   label?: string;
   hint?: string;

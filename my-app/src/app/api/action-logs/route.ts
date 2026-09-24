@@ -1,5 +1,5 @@
-import { actionLogRepository } from "@/src/core/repositories/actionLog.repository";
-import { adminAuthService } from "@/src/lib/adminAuth";
+import { actionLogService } from "@/src/core/services/server/actionLog.service";
+import { adminAuthService } from "@/src/lib/server/adminAuth";
 
 export const runtime = "nodejs";
 
@@ -11,8 +11,7 @@ class ActionLogsRoute {
         return Response.json({ message: "เฉพาะ Admin เท่านั้น" }, { status: 403 });
       }
       const { searchParams } = new URL(request.url);
-      const limit = Math.min(Math.max(Number(searchParams.get("limit") ?? 100), 1), 500);
-      return Response.json({ data: await actionLogRepository.findRecent(limit) });
+      return Response.json({ data: await actionLogService.getRecent(searchParams.get("limit")) });
     } catch (error) {
       console.error("GET /api/action-logs", error);
       return Response.json({ message: "โหลด Action Log ไม่สำเร็จ" }, { status: 500 });

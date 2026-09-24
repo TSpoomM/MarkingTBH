@@ -1,5 +1,5 @@
 import Store from "@/src/core/store/store";
-import { historyApiService, HistoryApiService } from "@/src/core/services/history-api.service";
+import { historyApiService, HistoryApiService } from "@/src/core/services/client/history-api.service";
 import type { HistoryPageState } from "@/src/core/models/history";
 
 const INITIAL_HISTORY_STATE: HistoryPageState = {

@@ -1,11 +1,10 @@
 import type { Pool } from "mysql2/promise";
-import { pool } from "@/src/lib/db";
+import { pool } from "@/src/lib/server/db";
 import type { EmployeeLocationRow, EmployeeOptionRow, EmployeeRow } from "@/src/core/models/database";
 
-export type EmployeeOption = {
-  fsId: string;
-  name: string;
-};
+import type { EmployeeOption } from "@/src/core/models/admin";
+
+export type { EmployeeOption };
 
 export class EmployeeRepository {
   constructor(private readonly pool: Pool) {}

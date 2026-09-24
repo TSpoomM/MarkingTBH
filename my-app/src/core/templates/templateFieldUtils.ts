@@ -13,6 +13,24 @@ export default class TemplateFieldUtils {
     return key.includes("pallet") || label.includes("pallet") ? "pallet" : "lot";
   }
 
+  /** Placeholder rendering of a multi-section field, shown in the editor as a sticker preview. */
+  static segmentPreview(field: TemplateField) {
+    const segments = field.segments?.filter((segment) => segment.showOnSticker !== false) ?? [];
+    const hasAffixes = segments.some((segment) => segment.prefix || segment.suffix);
+    if (hasAffixes) {
+      return segments.map((segment) => `${segment.prefix ?? ""}XXX${segment.suffix ?? ""}`).join("");
+    }
+    if (field.displayFormat?.trim()) {
+      return segments.reduce((text, segment, index) => (
+        text
+          .replaceAll(`{${index + 1}}`, "XXX")
+          .replaceAll(`{${segment.key}}`, "XXX")
+          .replaceAll(`{${segment.label}}`, "XXX")
+      ), field.displayFormat.trim()).replace(/\{[^}]+\}/g, "");
+    }
+    return segments.map(() => "XXX").join(" ");
+  }
+
   static counterTypeLabel(type: CounterType) {
     if (type === "pallet") return "Pallet";
     if (type === "sequence") return "+1 ไปเรื่อยๆ";

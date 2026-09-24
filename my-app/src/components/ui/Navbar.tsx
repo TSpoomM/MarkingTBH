@@ -6,14 +6,8 @@ import { Component } from "react";
 import { LogOut } from "lucide-react";
 import cn from "@/src/core/ui/cn";
 import Button from "./Button";
-import { sessionApiService } from "@/src/core/services/session-api.service";
-import { basePathService } from "@/src/lib/basePath";
-import type { NavbarProps } from "@/src/core/models/ui";
-
-type NavbarState = {
-  isAdmin: boolean;
-  isSuperAdmin: boolean;
-};
+import { basePathService } from "@/src/core/services/client/basePath.service";
+import type { NavbarViewProps } from "@/src/core/models/ui";
 
 /** The navbar height comes from the --navbar-height variable in globals.css (varies by screen size) */
 const NAV_LINK =
@@ -32,52 +26,19 @@ const NAV_LINK_ACTIVE =
   "border-primary-dark bg-primary text-white " +
   "shadow-[0_12px_24px_rgba(15,118,110,.28)] hover:border-[#0b4f48] hover:bg-primary-dark hover:text-white";
 
-export default class Navbar extends Component<NavbarProps, NavbarState> {
-  private isMounted = false;
-
-  state: NavbarState = {
-    isAdmin: false,
-    isSuperAdmin: false,
-  };
-
-  componentDidMount() {
-    this.isMounted = true;
-    void this.loadAccess();
-  }
-
-  componentWillUnmount() {
-    this.isMounted = false;
-  }
-
-  private async loadAccess() {
-    const [isAdmin, isSuperAdmin] = await Promise.all([
-      sessionApiService.isAdmin(),
-      sessionApiService.isSuperAdmin(),
-    ]);
-    if (!this.isMounted) return;
-    this.setState({ isAdmin, isSuperAdmin });
-  }
-
-  private handleLogout = async () => {
-    try {
-      await sessionApiService.logout();
-    } finally {
-      window.location.href = basePathService.withBasePath("/login");
-    }
-  };
-
+export default class Navbar extends Component<NavbarViewProps> {
   render() {
-    const { badge, title, subtitle, action, activeNav } = this.props;
+    const { badge, title, subtitle, action, activeNav, isAdmin, isSuperAdmin, onLogout } = this.props;
     const navItems = [
       { key: "marking", label: "Marking", href: "/" },
-      ...(this.state.isAdmin
+      ...(isAdmin
         ? [
           { key: "history", label: "ประวัติ", href: "/history" },
           { key: "templates", label: "จัดการ Template", href: "/manageTemplate" },
           { key: "destinations", label: "Destination", href: "/destinations" },
         ]
         : []),
-      ...(this.state.isSuperAdmin
+      ...(isSuperAdmin
         ? [
           { key: "admins", label: "Admin", href: "/admins" },
         ]
@@ -142,7 +103,7 @@ export default class Navbar extends Component<NavbarProps, NavbarState> {
                 type="button"
                 variant="alert"
                 className="shrink-0 max-bp900:w-full"
-                onClick={() => void this.handleLogout()}
+                onClick={onLogout}
               >
                 <LogOut size={16} aria-hidden="true" />
                 ออกจากระบบ

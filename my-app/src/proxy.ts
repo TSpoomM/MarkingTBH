@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isDevAuthBypassEnabled } from "@/src/lib/devAuth";
-import { APP_SESSION_COOKIE_NAME, PHP_SESSION_COOKIE_NAME } from "@/src/lib/sessionCookieNames";
+import { isDevAuthBypassEnabled } from "@/src/lib/server/devAuth";
+import { APP_SESSION_COOKIE_NAME, PHP_SESSION_COOKIE_NAME } from "@/src/lib/server/sessionCookieNames";
 
 function redirectTo(request: NextRequest, pathname: string) {
   const url = request.nextUrl.clone();
@@ -16,7 +16,7 @@ function redirectTo(request: NextRequest, pathname: string) {
  * APIs) - so this only checks whether a session cookie is present. Real
  * verification still happens server-side in /api/session and the login route;
  * this just keeps an unauthenticated visitor from landing anywhere but /login.
- * The app_session cookie itself expires after 30 minutes (see authSession.ts),
+ * The app_session cookie expires after 30 idle minutes (see authSession.ts),
  * so an idle session naturally falls back to this redirect.
  */
 export function proxy(request: NextRequest) {

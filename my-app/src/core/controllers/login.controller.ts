@@ -1,6 +1,6 @@
 import Store from "@/src/core/store/store";
-import { loginApiService, LoginApiService } from "@/src/core/services/login-api.service";
-import { basePathService } from "@/src/lib/basePath";
+import { loginApiService, LoginApiService } from "@/src/core/services/client/login-api.service";
+import { basePathService } from "@/src/core/services/client/basePath.service";
 import type { LoginPageState } from "@/src/core/models/login";
 
 const INITIAL_LOGIN_STATE: LoginPageState = { userInv: "", password: "", isSubmitting: false, error: "" };
