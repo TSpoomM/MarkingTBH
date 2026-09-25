@@ -1,3 +1,4 @@
+import DestinationRules from "./destinationRules";
 import { describe, expect, it } from "vitest";
 import MarkingRows from "./markingRows";
 import MarkingSubmission from "./markingSubmission";
@@ -197,6 +198,39 @@ describe("MarkingSubmission.validate", () => {
     const state = markingState({ template: template([conditional, sectioned]), insideRows: [{ s2: "x" }], outsideRows: [] });
     expect(MarkingSubmission.validate(state)).toBe("");
     expect(MarkingSubmission.validate({ ...state, insideRows: [{}] })).toBe("Inside แถว 1: กรุณากรอก SEC");
+  });
+});
+
+describe("MarkingSubmission destinations", () => {
+  const destination = field({ key: "destination", label: "DESTINATION" });
+  const state = (value: string, destinationOptions = ["MOJI", "OSAKA"]) =>
+    markingState({
+      template: templateDetail({ inside: [destination], outside: [] }),
+      insideRows: [{ destination: value }],
+      outsideRows: [],
+      destinationOptions,
+    });
+
+  it.each(["MOJI", "moji", " Osaka "])("accepts %j from the list, whatever its case", (value) => {
+    expect(MarkingSubmission.validate(state(value))).toBe("");
+  });
+
+  it("rejects a destination that is not in the list", () => {
+    expect(MarkingSubmission.validate(state("TOKYO"))).toBe('Inside แถว 1: DESTINATION "TOKYO" ไม่มีในรายการ กรุณาเลือกจากรายการ');
+  });
+
+  it("rejects any typed destination when the list is empty", () => {
+    expect(MarkingSubmission.validate(state("MOJI", []))).not.toBe("");
+  });
+
+  it("saves the destination the way the list spells it", () => {
+    expect(MarkingSubmission.buildPayload(state(" moji ")).contentInside[0]).toMatchObject({ destination: "MOJI" });
+  });
+
+  it("does not treat a date or sectioned field named Destination as a picker", () => {
+    expect(DestinationRules.isDestinationField(field({ key: "destination", label: "DESTINATION", type: "date" }))).toBe(false);
+    expect(DestinationRules.isDestinationField(field({ key: "d", label: "Destination", segments: [{ key: "s", label: "S" }] }))).toBe(false);
+    expect(DestinationRules.isDestinationField(field({ key: "d", label: " destination " }))).toBe(true);
   });
 });
 

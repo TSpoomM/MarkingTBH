@@ -4,7 +4,12 @@ import {
   MarkingRepository,
 } from "@/src/core/repositories/marking.repository";
 import { employeeRepository, EmployeeRepository } from "@/src/core/repositories/employee.repository";
+import { destinationRepository, DestinationRepository } from "@/src/core/repositories/destination.repository";
+import { templateService, TemplateService } from "@/src/core/services/server/template.service";
+import DestinationRules from "@/src/core/marking/destinationRules";
 import { LotOverlapError } from "@/src/core/errors/lotOverlapError";
+import { UserFacingError } from "@/src/core/errors/userFacingError";
+import type { MarkingContent } from "@/src/core/models/marking";
 
 export const markingSchema = z.object({
   templateId: z.coerce.number().int().positive("กรุณาเลือกลูกค้า"),
@@ -38,7 +43,29 @@ export class MarkingService {
   constructor(
     private readonly repository: MarkingRepository,
     private readonly employees: EmployeeRepository,
+    private readonly templates: TemplateService,
+    private readonly destinations: DestinationRepository,
   ) {}
+
+  /**
+   * A destination must be one of tb_destination, whatever the form sent: the page may be out of date
+   * or the request may not come from the page at all. Returns the rows with destinations written as the list has them.
+   */
+  private async checkDestinations(templateId: number, inside: MarkingContent[], outside: MarkingContent[]) {
+    const template = await this.templates.getTemplate(templateId);
+    if (![...template.inside, ...template.outside].some((field) => DestinationRules.isDestinationField(field))) {
+      return { inside, outside };
+    }
+    const options = await this.destinations.findOptions();
+    const badInside = DestinationRules.findInvalid(template.inside, inside, options);
+    if (badInside) throw new UserFacingError(DestinationRules.describe("Inside", badInside));
+    const badOutside = DestinationRules.findInvalid(template.outside, outside, options);
+    if (badOutside) throw new UserFacingError(DestinationRules.describe("Outside", badOutside));
+    return {
+      inside: DestinationRules.canonicalRows(template.inside, inside, options),
+      outside: DestinationRules.canonicalRows(template.outside, outside, options),
+    };
+  }
 
   /** `rawLimit` is the untrusted query-string value; it is clamped to 1..HISTORY_MAX_LIMIT. */
   getHistory(rawLimit: string | null) {
@@ -71,11 +98,12 @@ export class MarkingService {
       const rows = Array.isArray(content) ? content : [content];
       return rows.map((row) => ({ ...row, action_type: input.actionType }));
     };
+    const checked = await this.checkDestinations(input.templateId, stampAction(input.contentInside), stampAction(input.contentOutside));
     const record = {
       ...input,
       employeeId,
-      contentInside: stampAction(input.contentInside),
-      contentOutside: stampAction(input.contentOutside),
+      contentInside: checked.inside,
+      contentOutside: checked.outside,
     };
 
     // Lot numbers are counted per branch; without one there is no series to check.
@@ -97,4 +125,4 @@ export class MarkingService {
   }
 }
 
-export const markingService = new MarkingService(markingRepository, employeeRepository);
+export const markingService = new MarkingService(markingRepository, employeeRepository, templateService, destinationRepository);

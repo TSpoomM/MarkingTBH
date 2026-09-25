@@ -13,13 +13,14 @@ import {
   VERTICAL_FIELD_LABEL, VERTICAL_SEGMENT_INPUTS,
 } from "@/src/core/ui/table";
 import StickerFactory from "@/src/core/stickers/stickerFactory";
+import DestinationRules from "@/src/core/marking/destinationRules";
 import type { TableSectionProps } from "@/src/core/models/marking-sticker";
 
 export default class TableSection extends Component<TableSectionProps> {
-  private isDestinationField(fieldKey: string, fieldLabel: string) {
-    const key = fieldKey.trim().toLowerCase();
-    const label = fieldLabel.trim().toLowerCase();
-    return key === "destination" || label === "destination";
+  /** A filled-in destination that is not in the list; an empty box is not an error here (required is checked on save). */
+  private isUnknownDestination(value: string | undefined) {
+    const typed = value?.trim();
+    return Boolean(typed) && !DestinationRules.match(this.props.destinationOptions, typed ?? "");
   }
 
   render() {
@@ -73,7 +74,7 @@ export default class TableSection extends Component<TableSectionProps> {
                             disabled={field.locked === true}
                             placeholder={field.placeholder ?? `เลือก ${field.label}`}
                           />
-                        ) : this.isDestinationField(field.key, field.label) ? (
+                        ) : DestinationRules.isDestinationField(field) ? (
                           <Autocomplete
                             bare
                             options={destinationOptions}
@@ -81,7 +82,9 @@ export default class TableSection extends Component<TableSectionProps> {
                             value={row[field.key] ?? ""}
                             onChange={(event) => onChange(rowIndex, field.key, event.target.value)}
                             disabled={field.locked === true}
-                            placeholder={field.placeholder ?? `กรอก ${field.label}`}
+                            placeholder={field.placeholder ?? `เลือก ${field.label}`}
+                            aria-invalid={this.isUnknownDestination(row[field.key]) || undefined}
+                            className={this.isUnknownDestination(row[field.key]) ? "!border-[#b94147] !bg-[#fff5f5]" : undefined}
                           />
                         ) : (
                           <Input

@@ -2,6 +2,7 @@ import { MESSAGES } from "@/src/core/models/constants";
 import type { MarkingState, SaveMarkingPayload } from "@/src/core/models/marking";
 import StickerFactory from "@/src/core/stickers/stickerFactory";
 import MarkingRows from "./markingRows";
+import DestinationRules from "./destinationRules";
 
 /** Decides whether the marking form may be saved and builds the request that saves it. */
 export default class MarkingSubmission {
@@ -36,12 +37,24 @@ export default class MarkingSubmission {
       );
       if (missing) return `Outside แถว ${index + 1}: กรุณากรอก ${missing.label}`;
     }
+    const badInside = DestinationRules.findInvalid(template?.inside, insideRows, state.destinationOptions);
+    if (badInside) return DestinationRules.describe("Inside", badInside);
+    const badOutside = DestinationRules.findInvalid(template?.outside, outsideRows, state.destinationOptions);
+    if (badOutside) return DestinationRules.describe("Outside", badOutside);
     return "";
   }
 
   static buildPayload(state: MarkingState, actionType: SaveMarkingPayload["actionType"] = "save"): SaveMarkingPayload {
-    const insideRows = MarkingRows.withLockedDefaults(state.template?.inside, state.insideRows);
-    const outsideRows = MarkingRows.withLockedDefaults(state.template?.outside, state.outsideRows);
+    const insideRows = DestinationRules.canonicalRows(
+      state.template?.inside,
+      MarkingRows.withLockedDefaults(state.template?.inside, state.insideRows),
+      state.destinationOptions,
+    );
+    const outsideRows = DestinationRules.canonicalRows(
+      state.template?.outside,
+      MarkingRows.withLockedDefaults(state.template?.outside, state.outsideRows),
+      state.destinationOptions,
+    );
     return {
       templateId: Number(state.templateId),
       totalLot: Number(state.totalLot || 0),
