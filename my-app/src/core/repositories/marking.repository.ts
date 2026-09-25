@@ -3,8 +3,13 @@ import type { TemplateField } from "@/src/core/models/template";
 import type { CreateMarkingInput, MarkingContent, MarkingHistoryFieldMeta, MarkingHistoryItem } from "@/src/core/models/marking";
 import type { Pool } from "mysql2/promise";
 import { pool } from "@/src/lib/server/db";
+import { UserFacingError } from "@/src/core/errors/userFacingError";
 
 type TemplateSegment = NonNullable<TemplateField["segments"]>[number];
+
+/** Anything that can run a prepared statement: the pool, or one connection taken from it. */
+type Queryable = Pick<Pool, "execute">;
+
 
 export class MarkingRepository {
   constructor(private readonly pool: Pool) {}
@@ -196,8 +201,32 @@ export class MarkingRepository {
     }));
   }
 
-  async create(input: CreateMarkingInput) {
-    const [result] = await this.pool.execute<ResultSetHeader>(
+  /**
+   * Runs `task` while holding a named database lock, so saves for the same key never run together.
+   * It does not wait: when someone else holds the lock, this fails at once and the user tries again.
+   * The task gets the locked connection: using the pool inside it could wait for a connection that
+   * other callers, blocked on this same lock, are holding.
+   */
+  async withLock<T>(name: string, task: (db: Queryable) => Promise<T>): Promise<T> {
+    const connection = await this.pool.getConnection();
+    try {
+      const [rows] = await connection.query<Array<RowDataPacket & { acquired: number | null }>>(
+        "SELECT GET_LOCK(?, 0) AS acquired",
+        [name],
+      );
+      if (Number(rows[0]?.acquired) !== 1) throw new UserFacingError("มีคนกำลังพิมพ์ Template เดียวกันอยู่ กรุณาลองอีกครั้ง");
+      try {
+        return await task(connection);
+      } finally {
+        await connection.query("SELECT RELEASE_LOCK(?)", [name]);
+      }
+    } finally {
+      connection.release();
+    }
+  }
+
+  async create(input: CreateMarkingInput, db: Queryable = this.pool) {
+    const [result] = await db.execute<ResultSetHeader>(
       `INSERT INTO tb_marking
         (emp_id, cus_id, total_lot, sticker_sides, content_inside, content_outside, print_sections, created_date)
        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -214,53 +243,82 @@ export class MarkingRepository {
     return result.insertId;
   }
 
-  async findLastLotEnd(templateId: number, productionYear: number, employeeLocation: string) {
-    const [rows] = await this.pool.execute<Array<RowDataPacket & { content_inside: string | null }>>(
-      `SELECT l.content_inside
-       FROM tb_marking l
-       INNER JOIN tb_employee_list e ON TRIM(e.fs_id) = TRIM(l.emp_id)
-       WHERE l.cus_id = ?
-         AND TRIM(COALESCE(e.location_emp, '')) = ?
-       ORDER BY l.created_date DESC`,
-      [templateId, employeeLocation],
+  /**
+   * Ids of the branch's employees as they appear in tb_marking.emp_id (an integer column).
+   * A fs_id that is not a plain integer, such as "007", never matched an emp_id and still does not.
+   */
+  private async findBranchEmployeeIds(employeeLocation: string, db: Queryable) {
+    const [employees] = await db.execute<Array<RowDataPacket & { fs_id: string | null }>>(
+      "SELECT fs_id FROM tb_employee_list WHERE TRIM(COALESCE(location_emp, '')) = ?",
+      [employeeLocation],
     );
+    return employees
+      .map((employee) => String(employee.fs_id ?? "").trim())
+      .filter((fsId) => String(Number(fsId)) === fsId)
+      .map(Number);
+  }
 
-    let lastLotEnd = 0;
-    rows.forEach((row) => {
-      try {
-        const parsed = JSON.parse(row.content_inside ?? "[]") as Array<Record<string, unknown>> | Record<string, unknown>;
-        const first = Array.isArray(parsed) ? parsed[0] : parsed;
-        if (!first) return;
-        const productionDate = String(first.production_date ?? "");
-        const year = Number(productionDate.slice(0, 4));
-        if (year !== productionYear) return;
-        const lotEnd = Number(first.lot_end ?? 0);
-        const lotStart = Number(first.lot_start ?? 0);
-        const lotCount = Number(first.lot_count ?? 0);
-        lastLotEnd = Math.max(lastLotEnd, lotEnd || (lotStart && lotCount ? lotStart + lotCount - 1 : 0));
-      } catch {
-        // Ignore old rows without JSON metadata.
-      }
-    });
-    return lastLotEnd;
+  /**
+   * Reads tb_marking.lot_year / lot_start_no / lot_end_no (see db/001_marking_lot_columns.sql), so the
+   * JSON of past markings is never loaded. Matching employees in code avoids a TRIM() join that cannot use an index.
+   */
+  async findLastLotEnd(templateId: number, productionYear: number, employeeLocation: string, db: Queryable = this.pool) {
+    const employeeIds = await this.findBranchEmployeeIds(employeeLocation, db);
+    if (!employeeIds.length) return 0;
+    const [rows] = await db.execute<Array<RowDataPacket & { last_lot_end: number | null }>>(
+      `SELECT MAX(lot_end_no) AS last_lot_end
+       FROM tb_marking
+       WHERE cus_id = ? AND lot_year = ? AND emp_id IN (${employeeIds.map(() => "?").join(",")})`,
+      [templateId, productionYear, ...employeeIds],
+    );
+    return Number(rows[0]?.last_lot_end ?? 0);
+  }
+
+  /** Whether any earlier marking of the customer, branch and year already used a lot in lotStart..lotEnd. */
+  async hasLotOverlap(
+    templateId: number,
+    productionYear: number,
+    employeeLocation: string,
+    lotStart: number,
+    lotEnd: number,
+    db: Queryable = this.pool,
+  ) {
+    const employeeIds = await this.findBranchEmployeeIds(employeeLocation, db);
+    if (!employeeIds.length) return false;
+    const [rows] = await db.execute<RowDataPacket[]>(
+      `SELECT 1
+       FROM tb_marking
+       WHERE cus_id = ? AND lot_year = ? AND emp_id IN (${employeeIds.map(() => "?").join(",")})
+         AND lot_end_no > 0 AND lot_end_no >= ? AND IF(lot_start_no > 0, lot_start_no, lot_end_no) <= ?
+       LIMIT 1`,
+      [templateId, productionYear, ...employeeIds, lotStart, lotEnd],
+    );
+    return rows.length > 0;
   }
 
   async findHistory(limit = 100): Promise<MarkingHistoryItem[]> {
-    const [rows] = await this.pool.execute<RowDataPacket[]>(
-      `SELECT l.*, t.c_name, e.emp_name, e.emp_name_en, e.location_emp
-       FROM tb_marking l
-       LEFT JOIN tb_template t ON t.id = (
-         SELECT latest_template.id
-         FROM tb_template latest_template
-         WHERE latest_template.id = l.cus_id
-         ORDER BY latest_template.created_date DESC, latest_template.id DESC
-         LIMIT 1
-       )
-       LEFT JOIN tb_employee_list e ON TRIM(e.fs_id) = TRIM(l.emp_id)
-       ORDER BY l.created_date DESC
-       LIMIT ?`,
-      [limit],
-    );
+    // Employees are matched in code (a TRIM() join cannot use an index); the list is small.
+    const [[rows], [employeeRows]] = await Promise.all([
+      this.pool.execute<RowDataPacket[]>(
+        // Cut to the newest rows first so the join only runs for the rows that are returned.
+        `SELECT l.*, t.c_name
+         FROM (SELECT * FROM tb_marking ORDER BY created_date DESC LIMIT ?) l
+         LEFT JOIN tb_template t ON t.id = l.cus_id
+         ORDER BY l.created_date DESC`,
+        [limit],
+      ),
+      this.pool.execute<RowDataPacket[]>(
+        "SELECT fs_id, emp_name, emp_name_en, location_emp FROM tb_employee_list",
+      ),
+    ]);
+    const employeesByFsId = new Map<string, RowDataPacket>();
+    employeeRows.forEach((employee) => {
+      const fsId = String(employee.fs_id ?? "").trim();
+      if (!employeesByFsId.has(fsId)) employeesByFsId.set(fsId, employee);
+    });
+    rows.forEach((row) => {
+      Object.assign(row, employeesByFsId.get(String(row.emp_id ?? "").trim()));
+    });
 
     const fieldMetaByTemplate = await this.findHistoryFieldMeta(rows.map((row) => this.numberValue(row.cus_id)));
 

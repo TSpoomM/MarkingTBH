@@ -4,6 +4,7 @@ import { readFile, stat } from "fs/promises";
 import path from "path";
 import type { HrkpisSession, PhpValue } from "@/src/core/models/auth";
 import { PHP_SESSION_COOKIE_NAME } from "@/src/lib/server/sessionCookieNames";
+import { timing } from "@/src/lib/server/timing";
 
 const SESSION_COOKIE_NAME = PHP_SESSION_COOKIE_NAME;
 const SESSION_SAVE_PATH = process.env.PHP_SESSION_SAVE_PATH || "C:\\xampp\\tmp";
@@ -83,11 +84,12 @@ export class HrkpisSessionService {
 
     let raw: string;
     try {
-      const stats = await stat(filePath);
-      const ageSeconds = (Date.now() - stats.mtimeMs) / 1000;
-      if (ageSeconds > SESSION_MAX_AGE_SECONDS) return null;
-
-      raw = await readFile(filePath, "utf8");
+      raw = await timing.measure("session file read", async () => {
+        const stats = await stat(filePath);
+        const ageSeconds = (Date.now() - stats.mtimeMs) / 1000;
+        if (ageSeconds > SESSION_MAX_AGE_SECONDS) throw new Error("expired");
+        return readFile(filePath, "utf8");
+      });
     } catch {
       return null;
     }

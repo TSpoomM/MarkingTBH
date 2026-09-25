@@ -2,6 +2,7 @@ import { ZodError } from "zod";
 import { markingService } from "@/src/core/services/server/marking.service";
 import type { NextLotRouteContext } from "@/src/core/models/api";
 import { requestCurrentUserService } from "@/src/lib/server/requestCurrentUser";
+import { timing } from "@/src/lib/server/timing";
 
 export const runtime = "nodejs";
 
@@ -35,5 +36,7 @@ class TemplateNextLotRoute {
 const templateNextLotRoute = new TemplateNextLotRoute();
 
 export async function GET(request: Request, context: NextLotRouteContext) {
-  return templateNextLotRoute.get(request, context);
+  return timing.measure("GET /api/templates/[id]/next-lot (total)", () =>
+    templateNextLotRoute.get(request, context),
+  );
 }

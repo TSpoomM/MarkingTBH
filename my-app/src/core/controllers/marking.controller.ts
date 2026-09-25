@@ -1,6 +1,7 @@
 import Store from "@/src/core/store/store";
 import { INITIAL_MARKING_STATE, MESSAGES } from "@/src/core/models/constants";
 import { markingApiService, MarkingApiService } from "@/src/core/services/client/marking-api.service";
+import { ApiError } from "@/src/core/services/client/http.service";
 import { sessionApiService, SessionApiService } from "@/src/core/services/client/session-api.service";
 import { printService, PrintService } from "@/src/core/services/client/print.service";
 import MarkingRows from "@/src/core/marking/markingRows";
@@ -67,8 +68,11 @@ export class MarkingController extends Store<MarkingState> {
     this.setState({ isLoading: true });
     try {
       const productionDate = this.state.productionDate || this.today();
-      const template = await this.service.getTemplate(Number(templateId));
-      const lotStart = await this.loadLotStart(templateId, productionDate, template.inside);
+      const [template, nextLotStart] = await Promise.all([
+        this.service.getTemplate(Number(templateId)),
+        this.fetchNextLotStart(templateId, productionDate),
+      ]);
+      const lotStart = Math.max(nextLotStart, MarkingRows.templateLotStart(template.inside));
       const stickerDefaults = template.sticker.defaults;
       this.setState({
         template,
@@ -124,14 +128,18 @@ export class MarkingController extends Store<MarkingState> {
     this.setState({ isExportModalOpen: true, notice: null });
   };
 
-  private async loadLotStart(templateId: string, productionDate: string, template?: TemplateField[] | null) {
-    const templateLotStart = MarkingRows.templateLotStart(template);
+  /** Falls back to 0 when the lookup fails, so the template's own lot start wins. */
+  private async fetchNextLotStart(templateId: string, productionDate: string) {
     try {
-      const nextLotStart = await this.service.getNextLotStart(Number(templateId), productionDate);
-      return Math.max(nextLotStart, templateLotStart);
+      return await this.service.getNextLotStart(Number(templateId), productionDate);
     } catch {
-      return templateLotStart;
+      return 0;
     }
+  }
+
+  private async loadLotStart(templateId: string, productionDate: string, template?: TemplateField[] | null) {
+    const nextLotStart = await this.fetchNextLotStart(templateId, productionDate);
+    return Math.max(nextLotStart, MarkingRows.templateLotStart(template));
   }
 
   private async refreshLotStart(templateId: string, productionDate: string) {
@@ -163,7 +171,7 @@ export class MarkingController extends Store<MarkingState> {
     });
   };
 
-  async save(actionType: SaveMarkingPayload["actionType"] = "save") {
+  async save(actionType: SaveMarkingPayload["actionType"] = "save", allowLotOverlap = false) {
     const validationError = MarkingSubmission.validate(this.state);
     if (validationError) {
       this.setState({ notice: { type: "error", text: validationError } });
@@ -171,13 +179,24 @@ export class MarkingController extends Store<MarkingState> {
     }
     this.setState({ isSaving: true });
     try {
-      const payload = MarkingSubmission.buildPayload(this.state, actionType);
+      const payload = {
+        ...MarkingSubmission.buildPayload(this.state, actionType),
+        ...(allowLotOverlap && { allowLotOverlap: true }),
+      };
       const result = await this.service.saveMarking(payload);
       this.setState({
         notice: { type: "success", text: `บันทึกรายการ #${result.id} แล้ว` },
       });
       return result;
     } catch (error) {
+      if (error instanceof ApiError && error.body.code === "LOT_OVERLAP") {
+        // Repeating a lot can be intentional, so ask instead of failing.
+        this.setState({
+          isExportModalOpen: false,
+          lotOverlap: { message: error.message },
+        });
+        return null;
+      }
       this.setState({ notice: { type: "error", text: this.errorMessage(error, MESSAGES.saveFailed) } });
       return null;
     } finally {
@@ -185,16 +204,25 @@ export class MarkingController extends Store<MarkingState> {
     }
   }
 
-  saveAndExport = async () => {
+  saveAndExport = async (allowLotOverlap = false) => {
     if (!Object.values(this.state.printSections).some(Boolean)) {
       this.setState({ notice: { type: "error", text: "กรุณาเลือกสติ๊กเกอร์ที่ต้องการปริ้นอย่างน้อย 1 แบบ" } });
       return;
     }
-    const result = await this.save("print");
+    const result = await this.save("print", allowLotOverlap);
     if (!result) return;
     this.setState({ isExportModalOpen: false, isPrintSheetActive: true });
     this.printer.print(() => this.setState({ isPrintSheetActive: false }));
   };
+
+  /** The user says the repeated lot is intended, so save and print it as it is. */
+  confirmLotOverlap = async () => {
+    this.setState({ lotOverlap: null });
+    await this.saveAndExport(true);
+  };
+
+  /** Dismisses the warning so the user can correct the lot number. */
+  closeLotOverlap = () => this.setState({ lotOverlap: null });
 
   private errorMessage(error: unknown, fallback: string) {
     return error instanceof Error ? error.message : fallback;

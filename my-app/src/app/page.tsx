@@ -6,6 +6,7 @@ import MarkingStickerPlan from "@/src/core/stickers/markingStickerPlan";
 import FilterPanel from "@/src/components/marking/FilterPanel";
 import OrderTable from "@/src/components/marking/OrderTable";
 import Pagination from "@/src/components/marking/Pagination";
+import LotOverlapModal from "@/src/components/marking/LotOverlapModal";
 import type { MarkingState } from "@/src/core/models/marking";
 import type { SelectablePrintOption } from "@/src/core/models/marking-sticker";
 
@@ -74,6 +75,12 @@ export default class MarkingPage extends StoreContainer<MarkingState> {
             onExport={() => void markingStore.saveAndExport()}
           />
         )}
+        <LotOverlapModal
+          overlap={state.lotOverlap}
+          isSaving={state.isSaving}
+          onClose={markingStore.closeLotOverlap}
+          onConfirm={() => void markingStore.confirmLotOverlap()}
+        />
       </>
     );
   }

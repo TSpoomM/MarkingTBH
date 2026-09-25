@@ -14,6 +14,11 @@ export class TemplateService {
     return this.repository.findAll(includeInactive);
   }
 
+  async isTemplateActive(templateId: number) {
+    const rows = await this.repository.findAll(false, templateId);
+    return rows.length > 0;
+  }
+
   private isActiveValue(value: number | string | boolean | null | undefined) {
     if (typeof value === "boolean") return value;
     if (typeof value === "number") return value !== 0;
@@ -92,12 +97,9 @@ export class TemplateService {
   }
 
   async getTemplate(id: number): Promise<TemplateDetail> {
-    const templates = await this.repository.findAll(true);
-    const template = templates.find((item) => item.id === id);
-    if (!template) throw new UserFacingError("ไม่พบข้อมูลลูกค้า");
-
+    // Both lookups read tb_template by id, so one query covers "customer missing" too.
     const latestTemplate = await this.repository.findLatestTemplate(id);
-    if (!latestTemplate) throw new UserFacingError("ลูกค้ารายนี้ยังไม่มี Template ในฐานข้อมูล");
+    if (!latestTemplate) throw new UserFacingError("ไม่พบข้อมูลลูกค้า");
     return {
       id,
       customerName: latestTemplate.c_name,

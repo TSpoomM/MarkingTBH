@@ -4,6 +4,7 @@ import {
   MarkingRepository,
 } from "@/src/core/repositories/marking.repository";
 import { employeeRepository, EmployeeRepository } from "@/src/core/repositories/employee.repository";
+import { LotOverlapError } from "@/src/core/errors/lotOverlapError";
 
 export const markingSchema = z.object({
   templateId: z.coerce.number().int().positive("กรุณาเลือกลูกค้า"),
@@ -22,6 +23,8 @@ export const markingSchema = z.object({
     z.array(z.record(z.string(), z.string())),
   ]),
   printSections: z.record(z.string(), z.boolean()).optional(),
+  /** Set once the user confirmed that these lot numbers may repeat an earlier marking. */
+  allowLotOverlap: z.boolean().optional(),
 });
 
 const nextLotQuerySchema = z.object({
@@ -68,11 +71,27 @@ export class MarkingService {
       const rows = Array.isArray(content) ? content : [content];
       return rows.map((row) => ({ ...row, action_type: input.actionType }));
     };
-    const id = await this.repository.create({
+    const record = {
       ...input,
       employeeId,
       contentInside: stampAction(input.contentInside),
       contentOutside: stampAction(input.contentOutside),
+    };
+
+    // Lot numbers are counted per branch; without one there is no series to check.
+    // A repeated lot is allowed when the user confirmed it, so that path needs no check or lock.
+    const branch = await this.employees.findLocationByFsId(employeeId);
+    if (!branch || input.allowLotOverlap) return { id: await this.repository.create(record) };
+
+    // The form's lot start was read when the page loaded, so another save may have used it since.
+    // Checking and inserting under one lock per series keeps two saves from both passing the check.
+    const year = Number(input.productionDate.slice(0, 4));
+    const lotEnd = input.lotStart + input.lotCount - 1;
+    const id = await this.repository.withLock(`marking-lot:${input.templateId}:${year}:${branch}`, async (db) => {
+      if (await this.repository.hasLotOverlap(input.templateId, year, branch, input.lotStart, lotEnd, db)) {
+        throw new LotOverlapError(input.lotStart, lotEnd);
+      }
+      return this.repository.create(record, db);
     });
     return { id };
   }

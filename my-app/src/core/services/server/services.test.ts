@@ -6,6 +6,7 @@ import { AdminService } from "./admin.service";
 import { AuthService } from "./auth.service";
 import { DestinationService } from "./destination.service";
 import { MarkingService } from "./marking.service";
+import { LotOverlapError } from "@/src/core/errors/lotOverlapError";
 import { TemplateService } from "./template.service";
 import type { ActionLogger } from "@/src/lib/server/actionLogger";
 import type { ActionLogRepository } from "@/src/core/repositories/actionLog.repository";
@@ -220,6 +221,59 @@ describe("MarkingService", () => {
     const { repo, service } = setup(null);
     await expect(service.getNextLotStart({ templateId: 3, productionYear: 2026 }, "10180")).resolves.toBeNull();
     expect(repo.findLastLotEnd).not.toHaveBeenCalled();
+  });
+
+  describe("save", () => {
+    const payload = (lotStart: number, lotCount = 10) => ({
+      templateId: 3,
+      totalLot: 0,
+      stickerSides: 1,
+      lotCount,
+      lotStart,
+      productionDate: "2026-09-24",
+      contentInside: [{ production_date: "2026-09-24" }],
+      contentOutside: [],
+    });
+    const db = { execute: vi.fn() };
+    const setupSave = (overlaps: boolean, location: string | null = "HQ") => {
+      const repo = fake<MarkingRepository>({
+        withLock: vi.fn(async (_name: string, task: (connection: typeof db) => Promise<unknown>) => task(db)),
+        hasLotOverlap: vi.fn(async () => overlaps),
+        create: vi.fn(async () => 7),
+      });
+      const employees = fake<EmployeeRepository>({ findLocationByFsId: vi.fn(async () => location) });
+      return { repo, service: new MarkingService(repo, employees) };
+    };
+
+    it("saves under one lock per customer, year and branch, using the locked connection", async () => {
+      const { repo, service } = setupSave(false);
+      await expect(service.save(payload(25), "10180")).resolves.toEqual({ id: 7 });
+      expect(repo.withLock).toHaveBeenCalledWith("marking-lot:3:2026:HQ", expect.any(Function));
+      expect(repo.hasLotOverlap).toHaveBeenCalledWith(3, 2026, "HQ", 25, 34, db);
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ employeeId: "10180" }), db);
+    });
+
+    it("holds back a lot that was already used and names the range", async () => {
+      const { repo, service } = setupSave(true);
+      const error = await service.save(payload(11, 5), "10180").catch((caught: unknown) => caught);
+      expect(error).toBeInstanceOf(LotOverlapError);
+      expect(error).toMatchObject({ lotStart: 11, lotEnd: 15, message: "LOT 11-15 เคยพิมพ์ไปแล้ว" });
+      expect(repo.create).not.toHaveBeenCalled();
+    });
+
+    it("saves a repeated lot without a check once the user confirmed it", async () => {
+      const { repo, service } = setupSave(true);
+      await expect(service.save({ ...payload(1), allowLotOverlap: true }, "10180")).resolves.toEqual({ id: 7 });
+      expect(repo.hasLotOverlap).not.toHaveBeenCalled();
+      expect(repo.withLock).not.toHaveBeenCalled();
+      expect(repo.create).toHaveBeenCalled();
+    });
+
+    it("saves without a lock when the employee has no branch", async () => {
+      const { repo, service } = setupSave(true, null);
+      await expect(service.save(payload(1), "10180")).resolves.toEqual({ id: 7 });
+      expect(repo.withLock).not.toHaveBeenCalled();
+    });
   });
 });
 
