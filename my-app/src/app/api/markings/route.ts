@@ -1,4 +1,6 @@
 import { ZodError } from "zod";
+import { UserFacingError } from "@/src/core/errors/userFacingError";
+import { LotOverlapError } from "@/src/core/errors/lotOverlapError";
 import { markingService } from "@/src/core/services/server/marking.service";
 import { actionLogger } from "@/src/lib/server/actionLogger";
 import { adminAuthService } from "@/src/lib/server/adminAuth";
@@ -44,6 +46,15 @@ class MarkingsRoute {
       }
       if (error instanceof Error && error.message === "UNAUTHENTICATED") {
         return Response.json({ message: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
+      }
+      if (error instanceof LotOverlapError) {
+        return Response.json(
+          { message: error.message, code: "LOT_OVERLAP" },
+          { status: 409 },
+        );
+      }
+      if (error instanceof UserFacingError) {
+        return Response.json({ message: error.message }, { status: 409 });
       }
       console.error("POST /api/markings", error);
       return Response.json({ message: "บันทึกข้อมูลไม่สำเร็จ" }, { status: 500 });

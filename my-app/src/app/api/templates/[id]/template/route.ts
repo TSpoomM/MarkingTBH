@@ -2,8 +2,8 @@ import { templateService } from "@/src/core/services/server/template.service";
 import { updateTemplateSchema } from "@/src/core/validation/template.schema";
 import { adminAuthService } from "@/src/lib/server/adminAuth";
 import { actionLogger } from "@/src/lib/server/actionLogger";
-import { requestCurrentUserService } from "@/src/lib/server/requestCurrentUser";
 import { clientMessage, logUnexpected } from "@/src/lib/server/apiError";
+import { timing } from "@/src/lib/server/timing";
 import { ZodError } from "zod";
 import type { TemplateDetailRouteContext } from "@/src/core/models/api";
 
@@ -15,18 +15,16 @@ class TemplateDetailGetRoute {
   context: TemplateDetailRouteContext,
 ) {
   try {
-    await requestCurrentUserService.requireCurrentUserId(request);
+    // One access lookup resolves both the session and the admin role.
+    const access = await adminAuthService.requireAdmin(request);
+    if (!access.userId) throw new Error("UNAUTHENTICATED");
     const { id } = await context.params;
     const templateId = Number(id);
     if (!Number.isInteger(templateId) || templateId <= 0) {
       return Response.json({ message: "รหัสลูกค้าไม่ถูกต้อง" }, { status: 400 });
     }
-    const access = await adminAuthService.requireAdmin(request);
-    if (!access.isAdmin) {
-      const activeTemplates = await templateService.getTemplates(false);
-      if (!activeTemplates.some((template) => template.id === templateId)) {
-        return Response.json({ message: "ไม่พบข้อมูลลูกค้า" }, { status: 404 });
-      }
+    if (!access.isAdmin && !(await templateService.isTemplateActive(templateId))) {
+      return Response.json({ message: "ไม่พบข้อมูลลูกค้า" }, { status: 404 });
     }
     return Response.json({ data: await templateService.getTemplate(templateId) });
   } catch (error) {
@@ -47,7 +45,9 @@ export async function GET(
   request: Request,
   context: TemplateDetailRouteContext,
 ) {
-  return templateDetailGetRoute.get(request, context);
+  return timing.measure("GET /api/templates/[id]/template (total)", () =>
+    templateDetailGetRoute.get(request, context),
+  );
 }
 
 class TemplateDetailPutRoute {

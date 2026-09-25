@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { adminRepository, AdminRepository } from "@/src/core/repositories/admin.repository";
 import { actionLogger, ActionLogger } from "@/src/lib/server/actionLogger";
+import { adminAuthService } from "@/src/lib/server/adminAuth";
 
 const saveSchema = z.object({
   fsId: z.union([z.string(), z.number()]).transform((value) => String(value).trim()).pipe(z.string().min(1)),
@@ -25,6 +26,7 @@ export class AdminService {
   async save(payload: unknown, actorId: string) {
     const input = saveSchema.parse(payload);
     const admin = await this.repository.upsert(input);
+    adminAuthService.clearRoleCache();
     await this.logger.log(actorId, `เพิ่ม/แก้ไข admin: ${admin.fsId} (${admin.role})`);
     return admin;
   }
@@ -33,6 +35,7 @@ export class AdminService {
   async remove(payload: unknown, actorId: string) {
     const input = deleteSchema.parse(payload);
     const admin = await this.repository.deleteById(input.idUser);
+    adminAuthService.clearRoleCache();
     if (admin) await this.logger.log(actorId, `ลบ admin: ${admin.fsId} (${admin.role})`);
     return admin;
   }

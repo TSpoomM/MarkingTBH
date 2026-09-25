@@ -29,7 +29,20 @@ export interface MarkingState {
   isSaving: boolean;
   isExportModalOpen: boolean;
   isPrintSheetActive: boolean;
+  /** Set when a save was held back because its lot numbers repeat an earlier marking. */
+  lotOverlap: LotOverlap | null;
   notice: Notice | null;
+}
+
+export interface LotOverlap {
+  message: string;
+}
+
+export interface LotOverlapModalProps {
+  overlap: LotOverlap | null;
+  isSaving: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
 }
 
 export interface SaveMarkingPayload {
@@ -44,6 +57,8 @@ export interface SaveMarkingPayload {
   contentOutside: MarkingContent[];
   /** Which sticker sections the user had ticked when this was printed - undefined for a plain save. */
   printSections?: Partial<PrintSections>;
+  /** Sent on the retry after the user confirmed that the lot numbers may repeat. */
+  allowLotOverlap?: boolean;
 }
 
 export interface CreateMarkingInput {

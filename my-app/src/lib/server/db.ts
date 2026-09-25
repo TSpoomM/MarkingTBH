@@ -1,5 +1,6 @@
 import mysql, { type Pool } from "mysql2/promise";
 import { readDbConfig } from "./serverEnv";
+import { timing } from "./timing";
 
 export class Database {
   private instance: Pool | undefined;
@@ -23,6 +24,11 @@ export const pool: Pool = new Proxy({} as Pool, {
   get(_target, property) {
     const real = database.pool;
     const value = Reflect.get(real, property, real);
-    return typeof value === "function" ? value.bind(real) : value;
+    if (typeof value !== "function") return value;
+    if (timing.enabled && (property === "query" || property === "execute")) {
+      return (sql: unknown, ...args: unknown[]) =>
+        timing.measure(`sql ${timing.describeSql(sql)}`, () => value.call(real, sql, ...args));
+    }
+    return value.bind(real);
   },
 });

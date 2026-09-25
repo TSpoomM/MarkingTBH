@@ -3,10 +3,7 @@ export type AdminAccess = {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   role: "admin" | "super_admin" | null;
-  isBranchManager: boolean;
-  branch: string | null;
   canManageAdmins: boolean;
-  canAccessReport: boolean;
 };
 
 export type HrkpisSession = {

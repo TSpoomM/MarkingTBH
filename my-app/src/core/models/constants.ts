@@ -54,6 +54,7 @@ export const INITIAL_MARKING_STATE: MarkingState = {
   isSaving: false,
   isExportModalOpen: false,
   isPrintSheetActive: false,
+  lotOverlap: null,
   notice: null,
 };
 

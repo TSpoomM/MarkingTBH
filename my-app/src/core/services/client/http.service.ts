@@ -1,6 +1,14 @@
 import { basePathService } from "@/src/core/services/client/basePath.service";
 import type { ApiEnvelope } from "@/src/core/models/api";
 
+/** A failed API call. `body` keeps the route's full answer, so callers can read fields such as `code`. */
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number, readonly body: Record<string, unknown> = {}) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 /**
  * Single client-side entry point for calling the app's API routes.
  * Applies the deploy basePath and unwraps the { data, message } envelope,
@@ -10,7 +18,7 @@ export class HttpService {
   async json<T>(path: string, init?: RequestInit): Promise<T> {
     const response = await fetch(basePathService.withBasePath(path), init);
     const body = (await response.json()) as T & { message?: string };
-    if (!response.ok) throw new Error(body?.message || "Request failed");
+    if (!response.ok) throw new ApiError(body?.message || "Request failed", response.status, { ...body });
     return body;
   }
 

@@ -53,6 +53,7 @@ export function markingState(overrides: Partial<MarkingState> = {}): MarkingStat
     isSaving: false,
     isExportModalOpen: false,
     isPrintSheetActive: true,
+    lotOverlap: null,
     notice: null,
     ...overrides,
   };

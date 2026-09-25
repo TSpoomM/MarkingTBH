@@ -20,11 +20,6 @@ export type EmployeeOptionRow = RowDataPacket & {
 
 export type EmployeeLocationRow = RowDataPacket & { location_emp: string | null };
 
-export type EmployeeReportAccessRow = RowDataPacket & {
-  section: string | number | null;
-  location_emp: string | null;
-};
-
 export type ActionLogRow = RowDataPacket & {
   Logid: number;
   empId: string;

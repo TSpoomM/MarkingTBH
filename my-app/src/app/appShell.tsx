@@ -76,7 +76,7 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
 
     const throttle = new ActivityThrottle(ACTIVITY_PING_MS);
     const onActivity = () => {
-      if (throttle.tryRun()) void sessionApiService.getSession().catch(() => undefined);
+      if (throttle.tryRun()) void sessionApiService.getSession({ fresh: true }).catch(() => undefined);
     };
     ACTIVITY_EVENTS.forEach((event) => window.addEventListener(event, onActivity, { passive: true }));
     return () => ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, onActivity));

@@ -69,7 +69,7 @@ export class TemplateRepository {
     return isActive ? 1 : 0;
   }
 
-  async findAll(includeInactive = false) {
+  async findAll(includeInactive = false, templateId?: number) {
     const activeColumn = await this.findActiveColumn();
     const activeSource = activeColumn
       ? this.columnRef("t", activeColumn.columnName)
@@ -86,11 +86,13 @@ export class TemplateRepository {
           ELSE 1
         END`;
     const whereClause = includeInactive ? "" : `WHERE ${activeExpression} = 1`;
+    const idFilter = templateId === undefined ? "" : `AND t.id = ${Number(templateId)}`;
     const [rows] = await this.pool.query<TemplateListRow[]>(
       `SELECT t.id, t.c_name, ${activeExpression} AS is_active
        FROM tb_template t
        ${whereClause}
-         ${whereClause ? "AND" : "WHERE"} t.id = (
+         ${whereClause ? "AND" : "WHERE"} 1 = 1 ${idFilter}
+         AND t.id = (
          SELECT latest_template.id
          FROM tb_template latest_template
          WHERE latest_template.id = t.id
@@ -102,45 +104,75 @@ export class TemplateRepository {
     return rows;
   }
 
-  async findHistory(): Promise<TemplateHistoryItem[]> {
-    const [rows] = await this.pool.query<Array<RowDataPacket & {
-      id: number;
-      c_name: string;
-      inside: string | null;
-      outside: string | null;
-      created_by: string | null;
-      created_date: Date | string | null;
-      first_log_date: Date | string | null;
-      last_template_log_date: Date | string | null;
-    }>>(
-      `SELECT
-         t.id,
-         t.c_name,
-         t.inside,
-         t.outside,
-         t.created_by,
-         t.created_date,
-         (
-           SELECT MIN(l.createdDate)
-           FROM tb_action_log l
-           WHERE l.action LIKE CONCAT('%(ID ', t.id, ')%')
-              OR l.action LIKE CONCAT('%ลูกค้าใหม่%ID ', t.id, '%')
-         ) AS first_log_date,
-         (
-           SELECT MAX(l.createdDate)
-           FROM tb_action_log l
-           WHERE l.action LIKE CONCAT('%Template%ID ', t.id, '%')
-         ) AS last_template_log_date
-       FROM tb_template t
-       ORDER BY COALESCE(t.created_date, '1970-01-01') DESC, t.c_name ASC`,
+  /** Customer ids named as "ID n" after `keyword` in a log line; empty when the keyword is absent. */
+  private idsAfter(action: string, keyword: string) {
+    const start = action.indexOf(keyword);
+    if (start < 0) return [];
+    return Array.from(action.slice(start).matchAll(/ID (\d+)/g), (match) => Number(match[1]));
+  }
+
+  /**
+   * First and last template activity per customer, read from the action log in one pass.
+   * Doing this per customer in SQL scanned the whole log twice for every template.
+   */
+  private async findTemplateLogDates() {
+    const [logs] = await this.pool.query<Array<RowDataPacket & { createdDate: Date | string | null; action: string | null }>>(
+      `SELECT createdDate, action
+       FROM tb_action_log
+       WHERE action LIKE '%ID %'
+         AND (action LIKE '%(ID %' OR action LIKE '%Template%' OR action LIKE '%ลูกค้าใหม่%')`,
     );
 
+    const dates = new Map<number, { first: Date | string | null; last: Date | string | null }>();
+    const time = (value: Date | string | null) => (value ? new Date(value).getTime() : NaN);
+    const entry = (id: number) => {
+      const found = dates.get(id) ?? { first: null, last: null };
+      dates.set(id, found);
+      return found;
+    };
+
+    logs.forEach(({ createdDate, action }) => {
+      if (!createdDate || !action) return;
+      const createdIds = [
+        ...Array.from(action.matchAll(/\(ID (\d+)\)/g), (match) => Number(match[1])),
+        ...this.idsAfter(action, "ลูกค้าใหม่"),
+      ];
+      createdIds.forEach((id) => {
+        const found = entry(id);
+        if (!found.first || time(createdDate) < time(found.first)) found.first = createdDate;
+      });
+      this.idsAfter(action, "Template").forEach((id) => {
+        const found = entry(id);
+        if (!found.last || time(createdDate) > time(found.last)) found.last = createdDate;
+      });
+    });
+    return dates;
+  }
+
+  async findHistory(): Promise<TemplateHistoryItem[]> {
+    const [[rows], logDates] = await Promise.all([
+      this.pool.query<Array<RowDataPacket & {
+        id: number;
+        c_name: string;
+        inside: string | null;
+        outside: string | null;
+        created_by: string | null;
+        created_date: Date | string | null;
+      }>>(
+        `SELECT t.id, t.c_name, t.inside, t.outside, t.created_by, t.created_date
+         FROM tb_template t
+         ORDER BY COALESCE(t.created_date, '1970-01-01') DESC, t.c_name ASC`,
+      ),
+      this.findTemplateLogDates(),
+    ]);
+
     return rows.map((row) => {
-      const updatedAt = this.isoDate(row.last_template_log_date ?? row.created_date);
+      const logs = logDates.get(Number(row.id));
+      const updatedAt = this.isoDate(logs?.last ?? row.created_date);
       return {
         id: Number(row.id),
         name: String(row.c_name ?? ""),
-        createdAt: this.isoDate(row.first_log_date ?? row.created_date),
+        createdAt: this.isoDate(logs?.first ?? row.created_date),
         updatedAt,
         updatedBy: String(row.created_by ?? ""),
         insideFieldCount: this.countTemplateFields(row.inside, "inside"),
