@@ -174,6 +174,30 @@ describe("StickerFactory.build", () => {
       expect([1, 2, 3, 4, 5].map((pallet) => detailValue(items, 1, pallet))).toEqual(["1", "2", "3", "4", "5"]);
     });
 
+    it("starts pallet counters from the typed pallet and stops at the format limit", () => {
+      const palletCounter = field({ key: "palletNo", label: "PALLET NO.", isCounter: true, counterType: "pallet" });
+      const items = StickerFactory.build(buildOptions({
+        insideFields: [palletCounter],
+        insideRow: { palletNo: "2" },
+      }));
+      expect(items.map((item) => item.pallet)).toEqual([2, 3, 4, 5]);
+      expect(items.map((item) => item.details[0].values[0].value)).toEqual(["2", "3", "4", "5"]);
+    });
+
+    it("uses the typed pallet only for the first lot, then resets each later lot to pallet 1", () => {
+      const palletCounter = field({ key: "palletNo", label: "PALLET NO.", isCounter: true, counterType: "pallet" });
+      const items = StickerFactory.build(buildOptions({
+        format: "5533",
+        lotCount: 4,
+        insideFields: [palletCounter],
+        insideRow: { palletNo: "2" },
+      }));
+      const palletsByLot = [1, 2, 3, 4].map((lot) =>
+        items.filter((item) => item.lot === lot).map((item) => item.pallet),
+      );
+      expect(palletsByLot).toEqual([[2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3], [1, 2, 3]]);
+    });
+
     it("keeps counting across lots for a sequence counter", () => {
       const sequence = field({ key: "seq", label: "SEQ", isCounter: true, counterType: "sequence" });
       const items = StickerFactory.build(buildOptions({ lotCount: 2, insideFields: [sequence] }));

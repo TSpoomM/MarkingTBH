@@ -73,7 +73,7 @@ export default class StickerFactory {
   ) {
     const type = this.counterType(field, segment);
     const value = type === "pallet"
-      ? (seed?.value ?? 1) + pallet - 1
+      ? pallet
       : type === "sequence"
         ? (seed?.value ?? 1) + sequence - 1
         : (seed?.value ?? lotStart) + lot - lotStart;
@@ -84,6 +84,25 @@ export default class StickerFactory {
   private static counterSeed(row: MarkingContent | undefined, key: string) {
     const seed = row?.[key]?.trim();
     return seed && /^\d+$/.test(seed) ? { value: Number(seed), width: seed.length } : undefined;
+  }
+
+  private static palletCounterSeeds(fields: TemplateField[], row: MarkingContent | undefined) {
+    return fields.flatMap((field) => {
+      if (field.segments?.length) {
+        return field.segments.flatMap((segment) =>
+          segment.isCounter && this.counterType(field, segment) === "pallet"
+            ? [this.counterSeed(row, segment.key)?.value]
+            : [],
+        );
+      }
+      return field.isCounter && this.counterType(field, { counterType: field.counterType }) === "pallet"
+        ? [this.counterSeed(row, field.key)?.value]
+        : [];
+    }).filter((value): value is number => Number.isInteger(value) && value > 0);
+  }
+
+  private static palletStart(fields: TemplateField[], row: MarkingContent | undefined) {
+    return this.palletCounterSeeds(fields, row)[0] ?? 1;
   }
 
   private static counterDisplayValue(
@@ -234,6 +253,10 @@ export default class StickerFactory {
       fscLogo: stickerType === "TNR" && stickerFsc,
     };
     const items: StickerItem[] = [];
+    const palletStart = Math.max(
+      this.palletStart(insideFields, insideRow),
+      this.palletStart(outsideFields, outsideRow),
+    );
 
     const buildLayoutItems = (
       kind: StickerKind,
@@ -246,7 +269,8 @@ export default class StickerFactory {
       let sequenceBase = 0;
       Array.from({ length: lotCount }, (_, lotIndex) => {
         const palletCount = palletsByLot[lotIndex % palletsByLot.length];
-        for (let pallet = 1; pallet <= palletCount; pallet += 1) {
+        const firstPallet = lotIndex === 0 ? palletStart : 1;
+        for (let pallet = firstPallet; pallet <= palletCount; pallet += 1) {
           const sequence = sequenceBase + pallet;
           for (let side = 1; side <= sideCount; side += 1) {
             generated.push({
