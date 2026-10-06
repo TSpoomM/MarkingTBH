@@ -46,7 +46,7 @@ export const INITIAL_MARKING_STATE: MarkingState = {
   printOutsideGroups: {},
   lotCount: "1",
   lotStart: 1,
-  productionDate: "",
+  lastLotEnd: 0,
   insideRows: [],
   outsideRows: [],
   isAdmin: false,

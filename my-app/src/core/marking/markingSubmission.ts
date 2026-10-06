@@ -11,7 +11,6 @@ export default class MarkingSubmission {
     const { templateId, template, insideRows, outsideRows } = state;
     if (!templateId) return MESSAGES.selectTemplate;
     const stickerFields = template?.sticker.enabledFields ?? [];
-    if (!state.productionDate) return "กรุณาเลือก Production Date";
     if (!Number.isInteger(Number(state.lotCount)) || Number(state.lotCount) < 1) return "กรุณากรอกจำนวน Lot";
     if (!state.stickerSides) return "กรุณาเลือก Side";
     if (!state.stickerFormat) return "กรุณาเลือก Format";
@@ -61,11 +60,9 @@ export default class MarkingSubmission {
       stickerSides: Number(state.stickerSides || 1),
       lotCount: Number(state.lotCount || 1),
       lotStart: state.lotStart,
-      productionDate: state.productionDate,
       actionType,
       contentInside: insideRows.map((row) => ({
         ...row,
-        production_date: state.productionDate,
         lot_count: state.lotCount,
         lot_start: String(state.lotStart),
         lot_end: String(state.lotStart + Number(state.lotCount || 1) - 1),

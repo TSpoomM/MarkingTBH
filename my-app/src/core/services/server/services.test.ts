@@ -179,7 +179,7 @@ describe("MarkingService", () => {
       findLastLotEnd: vi.fn(async () => 41),
     });
     const employees = fake<EmployeeRepository>({ findLocationByFsId: vi.fn(async () => location) });
-    return { repo, employees, service: new MarkingService(repo, employees, fake<TemplateService>({}), fake<DestinationRepository>({})) };
+    return { repo, employees, service: new MarkingService(repo, fake<TemplateService>({}), fake<DestinationRepository>({})) };
   };
 
   it.each([[null, 100], ["20", 20], ["-5", 1], ["5000", 300]])("clamps history limit %s to %i", async (raw, expected) => {
@@ -189,38 +189,22 @@ describe("MarkingService", () => {
   });
 
   describe("parseNextLotQuery", () => {
-    it("reads the template id and production year", () => {
+    it("reads the template id", () => {
       const { service } = setup();
-      expect(service.parseNextLotQuery("12", "2026-09-02")).toEqual({ templateId: 12, productionYear: 2026 });
+      expect(service.parseNextLotQuery("12")).toEqual({ templateId: 12 });
     });
 
     it.each(["abc", "0", "-3", "1.5", ""])("rejects template id %j", (id) => {
       const { service } = setup();
-      expect(messageOf(() => service.parseNextLotQuery(id, "2026-09-02"))).toBe("รหัสลูกค้าไม่ถูกต้อง");
-    });
-
-    it.each(["", "not-a-date", "1999-01-01"])("rejects production date %j", (date) => {
-      const { service } = setup();
-      expect(messageOf(() => service.parseNextLotQuery("1", date))).toBe("Production date ไม่ถูกต้อง");
-    });
-
-    it("reports a bad template id before a bad date", () => {
-      const { service } = setup();
-      expect(messageOf(() => service.parseNextLotQuery("x", ""))).toBe("รหัสลูกค้าไม่ถูกต้อง");
+      expect(messageOf(() => service.parseNextLotQuery(id))).toBe("รหัสลูกค้าไม่ถูกต้อง");
     });
   });
 
-  it("continues from the last lot used in the employee's branch", async () => {
+  it("returns the last printed lot and the next lot for the template", async () => {
     const { repo, employees, service } = setup("HQ");
-    await expect(service.getNextLotStart({ templateId: 3, productionYear: 2026 }, "10180")).resolves.toBe(42);
-    expect(employees.findLocationByFsId).toHaveBeenCalledWith("10180");
-    expect(repo.findLastLotEnd).toHaveBeenCalledWith(3, 2026, "HQ");
-  });
-
-  it("returns null when the employee has no branch", async () => {
-    const { repo, service } = setup(null);
-    await expect(service.getNextLotStart({ templateId: 3, productionYear: 2026 }, "10180")).resolves.toBeNull();
-    expect(repo.findLastLotEnd).not.toHaveBeenCalled();
+    await expect(service.getNextLotStart({ templateId: 3 })).resolves.toEqual({ lastLotEnd: 41, lotStart: 42 });
+    expect(employees.findLocationByFsId).not.toHaveBeenCalled();
+    expect(repo.findLastLotEnd).toHaveBeenCalledWith(3);
   });
 
   describe("save", () => {
@@ -230,8 +214,7 @@ describe("MarkingService", () => {
       stickerSides: 1,
       lotCount,
       lotStart,
-      productionDate: "2026-09-24",
-      contentInside: [{ production_date: "2026-09-24", destination: "MOJI" }],
+      contentInside: [{ destination: "MOJI" }],
       contentOutside: [],
     });
     const db = { execute: vi.fn() };
@@ -247,14 +230,15 @@ describe("MarkingService", () => {
         create: vi.fn(async () => 7),
       });
       const employees = fake<EmployeeRepository>({ findLocationByFsId: vi.fn(async () => location) });
-      return { repo, service: new MarkingService(repo, employees, templates, destinations) };
+      return { repo, employees, service: new MarkingService(repo, templates, destinations) };
     };
 
-    it("saves under one lock per customer, year and branch, using the locked connection", async () => {
-      const { repo, service } = setupSave(false);
+    it("saves under one lock per customer, using the locked connection", async () => {
+      const { repo, employees, service } = setupSave(false);
       await expect(service.save(payload(25), "10180")).resolves.toEqual({ id: 7 });
-      expect(repo.withLock).toHaveBeenCalledWith("marking-lot:3:2026:HQ", expect.any(Function));
-      expect(repo.hasLotOverlap).toHaveBeenCalledWith(3, 2026, "HQ", 25, 34, db);
+      expect(employees.findLocationByFsId).not.toHaveBeenCalled();
+      expect(repo.withLock).toHaveBeenCalledWith("marking-lot:3", expect.any(Function));
+      expect(repo.hasLotOverlap).toHaveBeenCalledWith(3, 25, 34, db);
       expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ employeeId: "10180" }), db);
     });
 
@@ -292,11 +276,6 @@ describe("MarkingService", () => {
       );
     });
 
-    it("saves without a lock when the employee has no branch", async () => {
-      const { repo, service } = setupSave(true, null);
-      await expect(service.save(payload(1), "10180")).resolves.toEqual({ id: 7 });
-      expect(repo.withLock).not.toHaveBeenCalled();
-    });
   });
 });
 

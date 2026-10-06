@@ -14,6 +14,13 @@ type Queryable = Pick<Pool, "execute">;
 export class MarkingRepository {
   constructor(private readonly pool: Pool) {}
 
+  private readonly printedActionWhere = `
+    JSON_UNQUOTE(COALESCE(
+      JSON_EXTRACT(content_inside, '$[0].action_type'),
+      JSON_EXTRACT(content_inside, '$.action_type')
+    )) = 'print'
+  `;
+
   private parseContent(value: unknown): MarkingContent[] {
     try {
       const parsed = JSON.parse(String(value ?? "[]")) as MarkingContent | MarkingContent[];
@@ -243,55 +250,32 @@ export class MarkingRepository {
     return result.insertId;
   }
 
-  /**
-   * Ids of the branch's employees as they appear in tb_marking.emp_id (an integer column).
-   * A fs_id that is not a plain integer, such as "007", never matched an emp_id and still does not.
-   */
-  private async findBranchEmployeeIds(employeeLocation: string, db: Queryable) {
-    const [employees] = await db.execute<Array<RowDataPacket & { fs_id: string | null }>>(
-      "SELECT fs_id FROM tb_employee_list WHERE TRIM(COALESCE(location_emp, '')) = ?",
-      [employeeLocation],
-    );
-    return employees
-      .map((employee) => String(employee.fs_id ?? "").trim())
-      .filter((fsId) => String(Number(fsId)) === fsId)
-      .map(Number);
-  }
-
-  /**
-   * Reads tb_marking.lot_year / lot_start_no / lot_end_no (see db/001_marking_lot_columns.sql), so the
-   * JSON of past markings is never loaded. Matching employees in code avoids a TRIM() join that cannot use an index.
-   */
-  async findLastLotEnd(templateId: number, productionYear: number, employeeLocation: string, db: Queryable = this.pool) {
-    const employeeIds = await this.findBranchEmployeeIds(employeeLocation, db);
-    if (!employeeIds.length) return 0;
+  /** Reads tb_marking.lot_end_no, so the JSON of past markings is never loaded. */
+  async findLastLotEnd(templateId: number, db: Queryable = this.pool) {
     const [rows] = await db.execute<Array<RowDataPacket & { last_lot_end: number | null }>>(
       `SELECT MAX(lot_end_no) AS last_lot_end
        FROM tb_marking
-       WHERE cus_id = ? AND lot_year = ? AND emp_id IN (${employeeIds.map(() => "?").join(",")})`,
-      [templateId, productionYear, ...employeeIds],
+       WHERE cus_id = ? AND ${this.printedActionWhere}`,
+      [templateId],
     );
     return Number(rows[0]?.last_lot_end ?? 0);
   }
 
-  /** Whether any earlier marking of the customer, branch and year already used a lot in lotStart..lotEnd. */
+  /** Whether any earlier marking of the customer already used a lot in lotStart..lotEnd. */
   async hasLotOverlap(
     templateId: number,
-    productionYear: number,
-    employeeLocation: string,
     lotStart: number,
     lotEnd: number,
     db: Queryable = this.pool,
   ) {
-    const employeeIds = await this.findBranchEmployeeIds(employeeLocation, db);
-    if (!employeeIds.length) return false;
     const [rows] = await db.execute<RowDataPacket[]>(
       `SELECT 1
        FROM tb_marking
-       WHERE cus_id = ? AND lot_year = ? AND emp_id IN (${employeeIds.map(() => "?").join(",")})
+       WHERE cus_id = ?
+         AND ${this.printedActionWhere}
          AND lot_end_no > 0 AND lot_end_no >= ? AND IF(lot_start_no > 0, lot_start_no, lot_end_no) <= ?
        LIMIT 1`,
-      [templateId, productionYear, ...employeeIds, lotStart, lotEnd],
+      [templateId, lotStart, lotEnd],
     );
     return rows.length > 0;
   }
@@ -343,7 +327,6 @@ export class MarkingRepository {
         lotStart,
         lotEnd,
         lotCount,
-        productionDate: this.firstContentValue(inside, "production_date"),
         actionType: actionType === "save" || actionType === "print" ? actionType : "unknown",
         stickerFormat: this.firstContentValue(inside, "sticker_format"),
         stickerType: this.firstContentValue(inside, "sticker_type"),

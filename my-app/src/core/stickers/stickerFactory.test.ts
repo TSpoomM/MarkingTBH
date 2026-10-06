@@ -10,7 +10,6 @@ function buildOptions(overrides: Partial<StickerBuildOptions> = {}): StickerBuil
     sideCount: 1,
     lotCount: 1,
     lotStart: 1,
-    productionDate: "2026-09-02",
     stickerType: "NON TNR",
     stickerFsc: false,
     layouts: { ...ALL_LAYOUTS },

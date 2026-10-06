@@ -37,10 +37,6 @@ export default class HistoryDetailModal extends Component<HistoryDetailModalProp
               <h3>รายละเอียดสติ๊กเกอร์</h3>
               <dl className={HISTORY_SPEC_LIST}>
                 <div>
-                  <dt>Production</dt>
-                  <dd>{item.productionDate || "-"}</dd>
-                </div>
-                <div>
                   <dt>LOT</dt>
                   <dd>{item.lotStart && item.lotEnd ? `${item.lotStart}-${item.lotEnd}` : "-"}</dd>
                 </div>

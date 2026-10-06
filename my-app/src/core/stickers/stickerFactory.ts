@@ -98,7 +98,7 @@ export default class StickerFactory {
       return field.isCounter && this.counterType(field, { counterType: field.counterType }) === "pallet"
         ? [this.counterSeed(row, field.key)?.value]
         : [];
-    }).filter((value): value is number => Number.isInteger(value) && value > 0);
+    }).filter((value): value is number => value !== undefined && Number.isInteger(value) && value > 0);
   }
 
   private static palletStart(fields: TemplateField[], row: MarkingContent | undefined) {
@@ -241,7 +241,7 @@ export default class StickerFactory {
 
   static build(options: StickerBuildOptions) {
     const {
-      customerName, format, sideCount, lotCount, lotStart, productionDate, stickerType, stickerFsc,
+      customerName, format, sideCount, lotCount, lotStart, stickerType, stickerFsc,
       insideFields, outsideFields, insideRow, outsideRow,
     } = options;
     const palletsByLot = STICKER_FORMAT_PALLETS[format as keyof typeof STICKER_FORMAT_PALLETS];
@@ -279,7 +279,6 @@ export default class StickerFactory {
               lot: lotStart + lotIndex,
               pallet,
               side,
-              productionDate,
               stickerType,
               details: detailsForSticker(lotStart + lotIndex, pallet, sequence),
               group,

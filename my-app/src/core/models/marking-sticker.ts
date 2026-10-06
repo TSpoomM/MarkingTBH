@@ -18,7 +18,6 @@ export interface StickerItem {
   lot: number;
   pallet: number;
   side: number;
-  productionDate: string;
   stickerType: string;
   details: StickerDetail[];
   group?: string;
@@ -33,7 +32,6 @@ export interface StickerBuildOptions {
   sideCount: number;
   lotCount: number;
   lotStart: number;
-  productionDate: string;
   stickerType: string;
   stickerFsc: boolean;
   layouts: StickerLayouts | undefined;

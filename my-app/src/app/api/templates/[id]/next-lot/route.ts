@@ -10,16 +10,12 @@ class TemplateNextLotRoute {
   async get(request: Request, context: NextLotRouteContext) {
     try {
       const { id } = await context.params;
-      const { searchParams } = new URL(request.url);
-      const query = markingService.parseNextLotQuery(id, searchParams.get("productionDate") ?? "");
+      const query = markingService.parseNextLotQuery(id);
 
-      const employeeId = await requestCurrentUserService.requireCurrentUserId(request);
-      const lotStart = await markingService.getNextLotStart(query, employeeId);
-      if (lotStart === null) {
-        return Response.json({ message: "ไม่พบสาขาของผู้ใช้" }, { status: 400 });
-      }
+      await requestCurrentUserService.requireCurrentUserId(request);
+      const lotProgress = await markingService.getNextLotStart(query);
 
-      return Response.json({ data: { lotStart } });
+      return Response.json({ data: lotProgress });
     } catch (error) {
       if (error instanceof ZodError) {
         return Response.json({ message: error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" }, { status: 400 });

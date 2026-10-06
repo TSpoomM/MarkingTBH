@@ -127,7 +127,7 @@ describe("MarkingStickerPlan.previewItems", () => {
   it("shows one sticker per layout, even before anything is filled in", () => {
     const state = stateWith(
       { outside: [boxGroup()] },
-      { stickerFormat: "", stickerSides: "", productionDate: "" },
+      { stickerFormat: "", stickerSides: "" },
     );
     const items = MarkingStickerPlan.previewItems(state);
     expect(items.map((item) => item.kind)).toEqual(["insideFrame", "outsideFrame"]);

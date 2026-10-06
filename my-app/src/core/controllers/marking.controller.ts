@@ -11,7 +11,6 @@ import type {
   PrintSection,
   SaveMarkingPayload,
 } from "@/src/core/models/marking";
-import type { TemplateField } from "@/src/core/models/template";
 
 type Section = "inside" | "outside";
 
@@ -62,17 +61,16 @@ export class MarkingController extends Store<MarkingState> {
     }
     this.setState({ templateId, notice: null });
     if (!templateId) {
-      this.setState({ template: null, insideRows: [], outsideRows: [] });
+      this.setState({ template: null, insideRows: [], outsideRows: [], lastLotEnd: 0 });
       return;
     }
     this.setState({ isLoading: true });
     try {
-      const productionDate = this.state.productionDate || this.today();
-      const [template, nextLotStart] = await Promise.all([
+      const [template, lotProgress] = await Promise.all([
         this.service.getTemplate(Number(templateId)),
-        this.fetchNextLotStart(templateId, productionDate),
+        this.fetchNextLotStart(templateId),
       ]);
-      const lotStart = Math.max(nextLotStart, MarkingRows.templateLotStart(template.inside));
+      const lotStart = Math.max(lotProgress.lotStart, MarkingRows.templateLotStart(template.inside));
       const stickerDefaults = template.sticker.defaults;
       this.setState({
         template,
@@ -83,7 +81,7 @@ export class MarkingController extends Store<MarkingState> {
         stickerOther: stickerDefaults.stickerOther,
         lotCount: "1",
         lotStart,
-        productionDate,
+        lastLotEnd: lotProgress.lastLotEnd,
         insideRows: [MarkingRows.emptyRow(template.inside, lotStart)],
         outsideRows: template.outside.length ? [MarkingRows.emptyRow(template.outside, lotStart)] : [],
         printOutsideGroups: {},
@@ -96,13 +94,6 @@ export class MarkingController extends Store<MarkingState> {
   };
 
   setLotCount = (lotCount: string) => this.setState({ lotCount: MarkingRows.digitsOnly(lotCount) });
-
-  setProductionDate = (productionDate: string) => {
-    this.setState({ productionDate });
-    if (this.state.templateId && productionDate) {
-      void this.refreshLotStart(this.state.templateId, productionDate);
-    }
-  };
 
   dismissNotice = () => this.setState({ notice: null });
   closeExportModal = () => this.setState({ isExportModalOpen: false });
@@ -129,27 +120,12 @@ export class MarkingController extends Store<MarkingState> {
   };
 
   /** Falls back to 0 when the lookup fails, so the template's own lot start wins. */
-  private async fetchNextLotStart(templateId: string, productionDate: string) {
+  private async fetchNextLotStart(templateId: string) {
     try {
-      return await this.service.getNextLotStart(Number(templateId), productionDate);
+      return await this.service.getNextLotStart(Number(templateId));
     } catch {
-      return 0;
+      return { lotStart: 0, lastLotEnd: 0 };
     }
-  }
-
-  private async loadLotStart(templateId: string, productionDate: string, template?: TemplateField[] | null) {
-    const nextLotStart = await this.fetchNextLotStart(templateId, productionDate);
-    return Math.max(nextLotStart, MarkingRows.templateLotStart(template));
-  }
-
-  private async refreshLotStart(templateId: string, productionDate: string) {
-    const previousLotStart = this.state.lotStart;
-    const lotStart = await this.loadLotStart(templateId, productionDate, this.state.template?.inside);
-    this.setState({
-      lotStart,
-      insideRows: MarkingRows.withCounterDefaults(this.state.insideRows, this.state.template?.inside ?? [], lotStart, previousLotStart),
-      outsideRows: MarkingRows.withCounterDefaults(this.state.outsideRows, this.state.template?.outside ?? [], lotStart, previousLotStart),
-    });
   }
 
   private sectionFields(section: Section) {
@@ -184,8 +160,10 @@ export class MarkingController extends Store<MarkingState> {
         ...(allowLotOverlap && { allowLotOverlap: true }),
       };
       const result = await this.service.saveMarking(payload);
+      const printedLotEnd = payload.lotStart + payload.lotCount - 1;
       this.setState({
         notice: { type: "success", text: `บันทึกรายการ #${result.id} แล้ว` },
+        ...(actionType === "print" ? { lastLotEnd: Math.max(this.state.lastLotEnd, printedLotEnd) } : {}),
       });
       return result;
     } catch (error) {
@@ -228,9 +206,6 @@ export class MarkingController extends Store<MarkingState> {
     return error instanceof Error ? error.message : fallback;
   }
 
-  private today() {
-    return new Date().toISOString().slice(0, 10);
-  }
 }
 
 export const markingStore = new MarkingController(markingApiService, sessionApiService, printService);

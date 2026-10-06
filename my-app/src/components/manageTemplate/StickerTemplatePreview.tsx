@@ -50,7 +50,6 @@ export default class StickerTemplatePreview extends Component<
       sideCount: defaults.sideCount,
       lotCount: 1,
       lotStart: 0,
-      productionDate: "xxx",
       stickerType: defaults.stickerType,
       stickerFsc: defaults.stickerFsc,
       layouts,

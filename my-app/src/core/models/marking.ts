@@ -21,7 +21,7 @@ export interface MarkingState {
   printOutsideGroups: Record<string, boolean>;
   lotCount: string;
   lotStart: number;
-  productionDate: string;
+  lastLotEnd: number;
   insideRows: MarkingContent[];
   outsideRows: MarkingContent[];
   isAdmin: boolean;
@@ -51,7 +51,6 @@ export interface SaveMarkingPayload {
   stickerSides: number;
   lotCount: number;
   lotStart: number;
-  productionDate: string;
   actionType?: "save" | "print";
   contentInside: MarkingContent[];
   contentOutside: MarkingContent[];
@@ -68,7 +67,6 @@ export interface CreateMarkingInput {
   stickerSides: number;
   lotCount: number;
   lotStart: number;
-  productionDate: string;
   actionType?: "save" | "print";
   contentInside: MarkingContent | MarkingContent[];
   contentOutside: MarkingContent | MarkingContent[];
@@ -87,7 +85,6 @@ export interface MarkingHistoryItem {
   lotStart: number;
   lotEnd: number;
   lotCount: number;
-  productionDate: string;
   actionType: "save" | "print" | "unknown";
   stickerFormat: string;
   stickerType: string;
@@ -119,12 +116,11 @@ export interface MarkingFilterPanelProps {
   templates: Template[];
   templateId: string;
   template: TemplateDetail | null;
-  productionDate: string;
   lotCount: string;
   lotStart: number;
+  lastLotEnd: number;
   isLoading: boolean;
   onDismissNotice: () => void;
   onSelectTemplate: (templateId: string) => void;
-  onProductionDateChange: (value: string) => void;
   onLotCountChange: (value: string) => void;
 }

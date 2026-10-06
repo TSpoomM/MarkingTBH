@@ -45,7 +45,7 @@ export function markingState(overrides: Partial<MarkingState> = {}): MarkingStat
     printOutsideGroups: {},
     lotCount: "1",
     lotStart: 1,
-    productionDate: "2026-09-02",
+    lastLotEnd: 0,
     insideRows: [{}],
     outsideRows: [{}],
     isAdmin: false,

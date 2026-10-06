@@ -171,7 +171,6 @@ describe("MarkingSubmission.validate", () => {
   });
 
   it.each([
-    [{ productionDate: "" }, "กรุณาเลือก Production Date"],
     [{ lotCount: "0" }, "กรุณากรอกจำนวน Lot"],
     [{ lotCount: "abc" }, "กรุณากรอกจำนวน Lot"],
     [{ stickerSides: "" }, "กรุณาเลือก Side"],
@@ -216,7 +215,7 @@ describe("MarkingSubmission destinations", () => {
   });
 
   it("rejects a destination that is not in the list", () => {
-    expect(MarkingSubmission.validate(state("TOKYO"))).toBe('Inside แถว 1: DESTINATION "TOKYO" ไม่มีในรายการ กรุณาเลือกจากรายการ');
+    expect(MarkingSubmission.validate(state("TOKYO"))).toBe('Inside: DESTINATION "TOKYO" ไม่มีในรายการ กรุณาเลือกจากรายการ');
   });
 
   it("rejects any typed destination when the list is empty", () => {
@@ -251,7 +250,6 @@ describe("MarkingSubmission.buildPayload", () => {
     expect(payload).toMatchObject({ templateId: 1, totalLot: 10, stickerSides: 1, lotCount: 3, lotStart: 20, actionType: "save" });
     expect(payload.contentInside[0]).toMatchObject({
       a: "FIXED",
-      production_date: "2026-09-02",
       lot_count: "3",
       lot_start: "20",
       lot_end: "22",

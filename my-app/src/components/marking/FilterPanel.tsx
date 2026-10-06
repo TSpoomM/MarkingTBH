@@ -5,7 +5,6 @@ import Toast from "@/src/components/ui/Toast";
 import { CONTAINER } from "@/src/core/ui/surfaces";
 import Card from "@/src/components/ui/Card";
 import Input from "@/src/components/ui/Input";
-import CalendarInput from "@/src/components/ui/CalendarInput";
 import TemplateAutocomplete from "@/src/components/templates/TemplateAutocomplete";
 import SectionTitle from "@/src/components/ui/SectionTitle";
 import type { MarkingFilterPanelProps } from "@/src/core/models/marking";
@@ -13,9 +12,12 @@ import type { MarkingFilterPanelProps } from "@/src/core/models/marking";
 export default class FilterPanel extends Component<MarkingFilterPanelProps> {
   render() {
     const {
-      notice, templates, templateId, productionDate, lotCount, lotStart, isLoading,
-      onDismissNotice, onSelectTemplate, onProductionDateChange, onLotCountChange,
+      notice, templates, templateId, lotCount, lastLotEnd, isLoading,
+      onDismissNotice, onSelectTemplate, onLotCountChange,
     } = this.props;
+    const lotHint = lastLotEnd > 0
+      ? `LOT ล่าสุดที่พิมพ์: ${lastLotEnd}`
+      : "ยังไม่เคยพิมพ์ Template นี้";
 
     return (
       <main className={CONTAINER}>
@@ -48,16 +50,10 @@ export default class FilterPanel extends Component<MarkingFilterPanelProps> {
             />
             {templateId && (
               <>
-                <CalendarInput
-                  size="lg"
-                  label="Production Date *"
-                  value={productionDate}
-                  onChange={onProductionDateChange}
-                />
                 <Input
                   size="lg"
                   label="จำนวน Lot ที่ต้องการ print *"
-                  hint={`เริ่ม LOT ${lotStart}`}
+                  hint={lotHint}
                   type="text"
                   inputMode="numeric"
                   pattern="\d*"

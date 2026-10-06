@@ -40,13 +40,12 @@ export default class MarkingPage extends StoreContainer<MarkingState> {
           templates={state.templates}
           templateId={state.templateId}
           template={state.template}
-          productionDate={state.productionDate}
           lotCount={state.lotCount}
           lotStart={state.lotStart}
+          lastLotEnd={state.lastLotEnd}
           isLoading={state.isLoading}
           onDismissNotice={markingStore.dismissNotice}
           onSelectTemplate={(templateId) => void markingStore.selectTemplate(templateId)}
-          onProductionDateChange={markingStore.setProductionDate}
           onLotCountChange={markingStore.setLotCount}
         />
         <OrderTable

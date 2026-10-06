@@ -3,7 +3,6 @@ import {
   markingRepository,
   MarkingRepository,
 } from "@/src/core/repositories/marking.repository";
-import { employeeRepository, EmployeeRepository } from "@/src/core/repositories/employee.repository";
 import { destinationRepository, DestinationRepository } from "@/src/core/repositories/destination.repository";
 import { templateService, TemplateService } from "@/src/core/services/server/template.service";
 import DestinationRules from "@/src/core/marking/destinationRules";
@@ -17,7 +16,6 @@ export const markingSchema = z.object({
   stickerSides: z.coerce.number().int().min(1).max(6),
   lotCount: z.coerce.number().int().min(1),
   lotStart: z.coerce.number().int().min(1),
-  productionDate: z.string().trim().min(1),
   actionType: z.enum(["save", "print"]).default("save"),
   contentInside: z.union([
     z.record(z.string(), z.string()),
@@ -34,7 +32,6 @@ export const markingSchema = z.object({
 
 const nextLotQuerySchema = z.object({
   templateId: z.number({ error: "รหัสลูกค้าไม่ถูกต้อง" }).int("รหัสลูกค้าไม่ถูกต้อง").positive("รหัสลูกค้าไม่ถูกต้อง"),
-  productionYear: z.number({ error: "Production date ไม่ถูกต้อง" }).int("Production date ไม่ถูกต้อง").min(2000, "Production date ไม่ถูกต้อง"),
 });
 
 const HISTORY_MAX_LIMIT = 300;
@@ -42,7 +39,6 @@ const HISTORY_MAX_LIMIT = 300;
 export class MarkingService {
   constructor(
     private readonly repository: MarkingRepository,
-    private readonly employees: EmployeeRepository,
     private readonly templates: TemplateService,
     private readonly destinations: DestinationRepository,
   ) {}
@@ -74,20 +70,15 @@ export class MarkingService {
   }
 
   /** Validates the raw route inputs; throws ZodError with the message to show the caller. */
-  parseNextLotQuery(rawTemplateId: string, productionDate: string) {
+  parseNextLotQuery(rawTemplateId: string) {
     return nextLotQuerySchema.parse({
       templateId: Number(rawTemplateId),
-      productionYear: Number(productionDate.slice(0, 4)),
     });
   }
 
-  /** Resolves to null when the employee has no branch, since lot numbers are counted per branch. */
-  async getNextLotStart(query: z.infer<typeof nextLotQuerySchema>, employeeId: string) {
-    const employeeLocation = employeeId ? await this.employees.findLocationByFsId(employeeId) : null;
-    if (!employeeLocation) return null;
-
-    const lastLotEnd = await this.repository.findLastLotEnd(query.templateId, query.productionYear, employeeLocation);
-    return lastLotEnd + 1;
+  async getNextLotStart(query: z.infer<typeof nextLotQuerySchema>) {
+    const lastLotEnd = await this.repository.findLastLotEnd(query.templateId);
+    return { lastLotEnd, lotStart: lastLotEnd + 1 };
   }
 
   async save(payload: unknown, actingEmployeeId?: string) {
@@ -106,17 +97,14 @@ export class MarkingService {
       contentOutside: checked.outside,
     };
 
-    // Lot numbers are counted per branch; without one there is no series to check.
     // A repeated lot is allowed when the user confirmed it, so that path needs no check or lock.
-    const branch = await this.employees.findLocationByFsId(employeeId);
-    if (!branch || input.allowLotOverlap) return { id: await this.repository.create(record) };
+    if (input.allowLotOverlap) return { id: await this.repository.create(record) };
 
     // The form's lot start was read when the page loaded, so another save may have used it since.
-    // Checking and inserting under one lock per series keeps two saves from both passing the check.
-    const year = Number(input.productionDate.slice(0, 4));
+    // Checking and inserting under one lock per template keeps two saves from both passing the check.
     const lotEnd = input.lotStart + input.lotCount - 1;
-    const id = await this.repository.withLock(`marking-lot:${input.templateId}:${year}:${branch}`, async (db) => {
-      if (await this.repository.hasLotOverlap(input.templateId, year, branch, input.lotStart, lotEnd, db)) {
+    const id = await this.repository.withLock(`marking-lot:${input.templateId}`, async (db) => {
+      if (await this.repository.hasLotOverlap(input.templateId, input.lotStart, lotEnd, db)) {
         throw new LotOverlapError(input.lotStart, lotEnd);
       }
       return this.repository.create(record, db);
@@ -125,4 +113,4 @@ export class MarkingService {
   }
 }
 
-export const markingService = new MarkingService(markingRepository, employeeRepository, templateService, destinationRepository);
+export const markingService = new MarkingService(markingRepository, templateService, destinationRepository);

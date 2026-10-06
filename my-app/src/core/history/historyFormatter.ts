@@ -14,7 +14,7 @@ export default class HistoryFormatter {
     const normalizedEmployee = employeeQuery.trim().toLowerCase();
     return items.filter((item) => {
       const matchesAction = action === "all" || item.actionType === action;
-      const matchesDate = !date || item.productionDate === date || item.createdDate.startsWith(date);
+      const matchesDate = !date || item.createdDate.startsWith(date);
       const matchesTemplate = !normalizedTemplate || (item.customerName || "").toLowerCase().includes(normalizedTemplate);
       const matchesEmployee = !normalizedEmployee || (item.employeeName || "").toLowerCase().includes(normalizedEmployee);
       return matchesAction && matchesDate && matchesTemplate && matchesEmployee;
@@ -83,7 +83,6 @@ export default class HistoryFormatter {
   private static isStickerDetailKey(key: string) {
     return new Set([
       "action_type",
-      "production_date",
       "lot_start",
       "lot_end",
       "lot_count",

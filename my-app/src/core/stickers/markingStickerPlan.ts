@@ -28,14 +28,12 @@ export interface PrintOption {
 const PREVIEW_FALLBACK = {
   format: "555",
   sideCount: 1,
-  productionDate: "xxx",
 } as const;
 
 type BuildOverrides = {
   format: string;
   sideCount: number;
   lotCount: number;
-  productionDate: string;
 };
 
 /**
@@ -61,7 +59,6 @@ export default class MarkingStickerPlan {
       sideCount: overrides.sideCount,
       lotCount: overrides.lotCount,
       lotStart: state.lotStart,
-      productionDate: overrides.productionDate,
       stickerType: state.stickerType,
       stickerFsc: state.stickerFsc,
       layouts: state.template?.sticker.layouts,
@@ -79,7 +76,6 @@ export default class MarkingStickerPlan {
       format: state.stickerFormat,
       sideCount: Number(state.stickerSides || 0),
       lotCount: Number(state.lotCount || 1),
-      productionDate: state.productionDate,
     });
   }
 
@@ -122,7 +118,6 @@ export default class MarkingStickerPlan {
       format: state.stickerFormat || PREVIEW_FALLBACK.format,
       sideCount: Number(state.stickerSides || PREVIEW_FALLBACK.sideCount),
       lotCount: 1,
-      productionDate: state.productionDate || PREVIEW_FALLBACK.productionDate,
     });
     return StickerPreview.unique(items, { includeGroupOrder: true });
   }

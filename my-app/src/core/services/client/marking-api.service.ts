@@ -2,6 +2,11 @@ import { httpService, HttpService } from "./http.service";
 import type { Template, TemplateDetail } from "@/src/core/models/template";
 import type { SaveMarkingPayload } from "@/src/core/models/marking";
 
+export interface LotProgress {
+  lotStart: number;
+  lastLotEnd: number;
+}
+
 export class MarkingApiService {
   constructor(private readonly http: HttpService) {}
 
@@ -17,11 +22,10 @@ export class MarkingApiService {
     return this.http.data<TemplateDetail>(`/api/templates/${templateId}/template`);
   }
 
-  async getNextLotStart(templateId: number, productionDate: string): Promise<number> {
-    const result = await this.http.data<{ lotStart: number }>(
-      `/api/templates/${templateId}/next-lot?productionDate=${encodeURIComponent(productionDate)}`,
+  async getNextLotStart(templateId: number): Promise<LotProgress> {
+    return this.http.data<LotProgress>(
+      `/api/templates/${templateId}/next-lot`,
     );
-    return result.lotStart;
   }
 
   saveMarking(payload: SaveMarkingPayload): Promise<{ id: number }> {
