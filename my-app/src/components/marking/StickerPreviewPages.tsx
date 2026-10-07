@@ -17,7 +17,10 @@ export default class StickerPreviewPages extends Component<StickerPreviewPagesPr
     return (
       <>
         {pages.map((page, index) => (
-          <StickerPage items={page} layout={layout} key={`preview-page-${layout}-${index}`} />
+          <div className="sticker-preview-page" key={`preview-page-${layout}-${index}`}>
+            <div className="sticker-preview-page-title">หน้าที่ {index + 1} / {pages.length}</div>
+            <StickerPage items={page} layout={layout} />
+          </div>
         ))}
       </>
     );

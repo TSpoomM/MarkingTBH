@@ -225,11 +225,24 @@
 	align-items: start
 }
 
+.pdf-preview .sticker-preview-page {
+	min-width: 0
+}
+
+.pdf-preview .sticker-preview-page-title {
+	margin-bottom: 8px;
+	padding-bottom: 6px;
+	border-bottom: 2px solid #839d8d;
+	color: #345343;
+	font-size: 13px;
+	font-weight: 700
+}
+
 .pdf-preview .sticker-page {
 	display: grid;
 	gap: 10px;
 	padding: 12px;
-	border: 1px solid #d3ded8;
+	border: 2px solid #839d8d;
 	border-radius: var(--radius);
 	background: #f8fbf9;
 	box-shadow: var(--shadow-sm)
@@ -284,9 +297,7 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: stretch;
-	aspect-ratio: 138 / 95;
-	min-height: 220px;
-	border: 0;
+	border: 1px dashed #b8c9bf;
 	padding: 20px;
 	background: #fff;
 	overflow: hidden
@@ -319,7 +330,7 @@
 
 .pdf-preview .sticker-label.customerName {
 	aspect-ratio: auto;
-	min-height: 90px
+	min-height: 0
 }
 
 .pdf-preview .sticker-details {
@@ -593,6 +604,6 @@
 	}
 
 	.pdf-preview .sticker-label {
-		border-color: #17231f;
+		border-color: #b8c9bf;
 	}
 }
