@@ -7,13 +7,10 @@ import type { StickerItem } from "@/src/core/models/marking-sticker";
 // Layer A: squeezes row gaps first so the card can keep the largest readable font.
 // Font scale is reduced only when the measured height still overflows the card.
 //
-// Layer B (rows) settles in two passes: each row first measures the size it would need
-// on its own and reports it here; once every row has reported, the smallest size per
-// fontScale group is picked and handed back down so same-scale rows render at one
-// consistent size instead of each shrinking independently.
+// Each row fits its own text to the available width.
 export default class AutoFitStickerDetails extends Component<
   { details: StickerItem["details"]; maxRowFontSize?: number },
-  { fontScale: number; gapScale: number; sharedRowFontSizes: Record<string, number> }
+  { fontScale: number; gapScale: number }
 > {
   private readonly comfortableRowCount = 5;
   private readonly maxRowCount = 10;
@@ -21,9 +18,7 @@ export default class AutoFitStickerDetails extends Component<
   private readonly minFontSize = 1;
   private readonly ref = createRef<HTMLDListElement>();
   private resizeObserver: ResizeObserver | undefined;
-  private rowMeasurements = new Map<string, { group: string; fontSize: number }>();
-
-  state = { fontScale: 1, gapScale: this.getGapScale(this.props.details), sharedRowFontSizes: {} as Record<string, number> };
+  state = { fontScale: 1, gapScale: this.getGapScale(this.props.details) };
 
   componentDidMount() {
     this.fitNow();
@@ -39,7 +34,6 @@ export default class AutoFitStickerDetails extends Component<
       previousProps.details !== this.props.details ||
       previousProps.maxRowFontSize !== this.props.maxRowFontSize
     ) {
-      this.resetRowMeasurements();
       this.fit();
     }
   }
@@ -50,28 +44,7 @@ export default class AutoFitStickerDetails extends Component<
   }
 
   private handleBeforePrint = () => {
-    this.resetRowMeasurements();
     this.fitNow();
-  };
-
-  private resetRowMeasurements() {
-    this.rowMeasurements.clear();
-    if (Object.keys(this.state.sharedRowFontSizes).length > 0) {
-      this.setState({ sharedRowFontSizes: {} });
-    }
-  }
-
-  private handleRowMeasured = (rowId: string, group: string, fontSize: number) => {
-    this.rowMeasurements.set(rowId, { group, fontSize });
-    if (this.rowMeasurements.size < this.props.details.length) return;
-
-    const minByGroup: Record<string, number> = {};
-    for (const measurement of this.rowMeasurements.values()) {
-      minByGroup[measurement.group] = minByGroup[measurement.group] !== undefined
-        ? Math.min(minByGroup[measurement.group], measurement.fontSize)
-        : measurement.fontSize;
-    }
-    this.setState({ sharedRowFontSizes: minByGroup });
   };
 
   private fitNow = () => {
@@ -98,7 +71,6 @@ export default class AutoFitStickerDetails extends Component<
       Math.abs(nextFontScale - this.state.fontScale) > 0.01 ||
       Math.abs(gapScale - this.state.gapScale) > 0.01
     ) {
-      if (Math.abs(nextFontScale - this.state.fontScale) > 0.01) this.resetRowMeasurements();
       this.setState({ fontScale: nextFontScale, gapScale });
     }
   };
@@ -137,9 +109,6 @@ export default class AutoFitStickerDetails extends Component<
               detail={detail}
               cardScale={this.state.fontScale}
               maxFontSize={maxRowFontSize}
-              rowId={rowId}
-              sharedFontSize={this.state.sharedRowFontSizes[detail.fontScale ?? "normal"]}
-              onMeasured={this.handleRowMeasured}
               key={rowId}
             />
           );

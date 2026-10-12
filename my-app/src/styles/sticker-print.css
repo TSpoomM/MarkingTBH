@@ -27,7 +27,8 @@
 	width: 281mm;
 	height: 194mm;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	grid-template-rows: repeat(2, minmax(0, 1fr))
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	row-gap: 6mm
 }
 
 .print-sheet .sticker-page-template {
@@ -41,8 +42,10 @@
 
 .print-sheet .sticker-page-frame-vertical {
 	page: stickerFrameVertical;
-	width: 194mm;
-	height: 269mm;
+	box-sizing: border-box;
+	width: 210mm;
+	height: 297mm;
+	padding: 14mm 8mm;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	grid-template-rows: repeat(8, minmax(0, 1fr));
 	row-gap: 0;
@@ -115,13 +118,24 @@
 .print-sheet .sticker-details {
 	flex: 1;
 	min-height: 0;
+	width: max-content;
+	max-width: 100%;
 	font-family: Arial;
-	margin: 0;
+	margin: 0 auto;
 	display: grid;
 	grid-auto-rows: minmax(min-content, 1fr);
 	align-items: center;
 	gap: calc(var(--sticker-gap) * var(--sticker-fit-scale, 1));
 	font-size: var(--sticker-font)
+}
+
+.print-sheet .sticker-page-frame .sticker-label.insideFrame {
+	justify-content: center
+}
+
+.print-sheet .sticker-page-frame .sticker-label.insideFrame .sticker-details {
+	flex: 0 1 auto;
+	grid-auto-rows: min-content
 }
 
 .print-sheet .sticker-label.outsideFrame {
@@ -225,11 +239,24 @@
 	align-items: start
 }
 
+.pdf-preview .sticker-preview-page {
+	min-width: 0
+}
+
+.pdf-preview .sticker-preview-page-title {
+	margin-bottom: 8px;
+	padding-bottom: 6px;
+	border-bottom: 2px solid #839d8d;
+	color: #345343;
+	font-size: 13px;
+	font-weight: 700
+}
+
 .pdf-preview .sticker-page {
 	display: grid;
 	gap: 10px;
 	padding: 12px;
-	border: 1px solid #d3ded8;
+	border: 2px solid #839d8d;
 	border-radius: var(--radius);
 	background: #f8fbf9;
 	box-shadow: var(--shadow-sm)
@@ -238,7 +265,8 @@
 .pdf-preview .sticker-page-frame {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	grid-template-rows: repeat(2, minmax(0, 1fr));
-	aspect-ratio: 281 / 194
+	aspect-ratio: 281 / 194;
+	row-gap: 14px
 }
 
 .pdf-preview .sticker-page-template {
@@ -284,9 +312,7 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: stretch;
-	aspect-ratio: 138 / 95;
-	min-height: 220px;
-	border: 0;
+	border: 1px dashed #b8c9bf;
 	padding: 20px;
 	background: #fff;
 	overflow: hidden
@@ -319,18 +345,29 @@
 
 .pdf-preview .sticker-label.customerName {
 	aspect-ratio: auto;
-	min-height: 90px
+	min-height: 0
 }
 
 .pdf-preview .sticker-details {
 	flex: 1;
 	min-height: 0;
-	margin: 0;
+	width: max-content;
+	max-width: 100%;
+	margin: 0 auto;
 	display: grid;
 	grid-auto-rows: minmax(min-content, 1fr);
 	align-items: center;
 	gap: clamp(5px, calc(var(--sticker-gap) * var(--sticker-fit-scale, 1)), 14px);
 	font-family: Arial, sans-serif
+}
+
+.pdf-preview .sticker-page-frame .sticker-label.insideFrame {
+	justify-content: center
+}
+
+.pdf-preview .sticker-page-frame .sticker-label.insideFrame .sticker-details {
+	flex: 0 1 auto;
+	grid-auto-rows: min-content
 }
 
 .pdf-preview .sticker-label.outsideFrame {
@@ -490,7 +527,7 @@
 
 	@page stickerFrameVertical {
 		size: A4 portrait;
-		margin: 14mm 8mm
+		margin: 0
 	}
 
 	@page stickerFsc {
@@ -593,6 +630,6 @@
 	}
 
 	.pdf-preview .sticker-label {
-		border-color: #17231f;
+		border-color: #b8c9bf;
 	}
 }

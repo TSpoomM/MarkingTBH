@@ -8,17 +8,9 @@ type Props = {
   detail: StickerItem["details"][number];
   cardScale: number;
   maxFontSize?: number;
-  rowId: string;
-  /** Size every row in this row's scale group has agreed to use. Undefined while still measuring. */
-  sharedFontSize?: number;
-  /** Reports the font size this row would need on its own, so the group can settle on the smallest one. */
-  onMeasured: (rowId: string, group: string, fontSize: number) => void;
 };
 
-// Layer B: rows in the same fontScale group render at one shared size — the smallest
-// size any row in the group needs to keep its text on one line. Measurement happens in
-// two passes: each row first measures its own natural fit and reports it up (Details
-// takes the minimum per group), then rows re-render at that agreed size.
+// Each row keeps the largest font size that fits its own text on one line.
 //
 // A "xlarge" row (the "ขนาดใหญ่พิเศษ" field toggle) ignores the card's normal autofit
 // size entirely and starts from its own fixed, larger ceiling instead.
@@ -44,8 +36,7 @@ export default class AutoFitStickerRow extends Component<Props, { fontSize: numb
     if (
       previousProps.detail !== this.props.detail ||
       previousProps.cardScale !== this.props.cardScale ||
-      previousProps.maxFontSize !== this.props.maxFontSize ||
-      previousProps.sharedFontSize !== this.props.sharedFontSize
+      previousProps.maxFontSize !== this.props.maxFontSize
     ) {
       this.fit();
     }
@@ -63,13 +54,6 @@ export default class AutoFitStickerRow extends Component<Props, { fontSize: numb
   private fitNow = () => {
     const element = this.ref.current;
     if (!element) return;
-
-    if (this.props.sharedFontSize !== undefined) {
-      const fontSize = this.props.sharedFontSize;
-      element.style.fontSize = `${fontSize}px`;
-      if (Math.abs(fontSize - this.state.fontSize) > 0.5) this.setState({ fontSize });
-      return;
-    }
 
     const isXlarge = this.group() === "xlarge";
     const inheritedFontSize = Number.parseFloat(getComputedStyle(element).getPropertyValue("--sticker-font"));
@@ -94,7 +78,6 @@ export default class AutoFitStickerRow extends Component<Props, { fontSize: numb
     }
 
     if (Math.abs(fontSize - this.state.fontSize) > 0.5) this.setState({ fontSize });
-    this.props.onMeasured(this.props.rowId, this.group(), fontSize);
   };
 
   private fit = () => window.requestAnimationFrame(this.fitNow);

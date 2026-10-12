@@ -99,6 +99,10 @@ export default class StickerPreview {
   /** Splits preview stickers into pages the same way the print sheet does. */
   static pages(items: StickerItem[], mode: StickerKind): PreviewPages {
     const layout = this.pageLayout(mode, items);
-    return { layout, pages: StickerFactory.chunk(items, STICKERS_PER_PAGE[layout]) };
+    const perPage = STICKERS_PER_PAGE[layout];
+    const pages = StickerFactory.chunk(items, perPage).map((page) =>
+      Array.from({ length: perPage }, (_, index) => page[index % page.length]),
+    );
+    return { layout, pages };
   }
 }
