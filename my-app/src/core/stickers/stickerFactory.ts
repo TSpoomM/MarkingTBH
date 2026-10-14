@@ -124,7 +124,7 @@ export default class StickerFactory {
     const key = field.key.toLowerCase();
     const label = field.label.toLowerCase();
     const needsKg = key === "gross" || key === "nett" || label === "gross" || label === "nett";
-    return needsKg && !/\bkg\.?$/i.test(value.trim()) ? `${value} KG` : value;
+    return needsKg && !/\bkg\.?$/i.test(value.trim()) ? `${value} KG.` : value;
   }
 
   private static formatSegmentValues(
