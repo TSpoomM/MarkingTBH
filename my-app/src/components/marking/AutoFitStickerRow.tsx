@@ -61,24 +61,38 @@ export default class AutoFitStickerRow extends Component<Props, { fontSize: numb
     const baseCeiling = ceiling * this.props.cardScale;
     const maxFontSize = this.props.maxFontSize ?? Number.POSITIVE_INFINITY;
 
-    let fontSize = Math.min(baseCeiling, maxFontSize);
-    element.style.fontSize = `${fontSize}px`;
-    let availableWidth = element.clientWidth;
-    let requiredWidth = element.scrollWidth;
-    if (availableWidth > 0 && requiredWidth > availableWidth) {
-      fontSize = Math.max(this.minFontSize, fontSize * (availableWidth / requiredWidth));
-      element.style.fontSize = `${fontSize}px`;
-      for (let pass = 0; pass < this.maxVerifyPasses; pass += 1) {
-        availableWidth = element.clientWidth;
-        requiredWidth = element.scrollWidth;
-        if (requiredWidth <= availableWidth || fontSize <= this.minFontSize) break;
-        fontSize = Math.max(this.minFontSize, fontSize - 1);
-        element.style.fontSize = `${fontSize}px`;
+    let fontSize = Math.max(this.minFontSize, Math.min(baseCeiling, maxFontSize));
+    const fits = (size: number) => {
+      element.style.fontSize = `${size}px`;
+      // The row's own clientWidth grows with its text (the label column is min-content),
+      // so the sticker cell's content box is the real width limit.
+      const availableWidth = Math.min(element.clientWidth, this.cellContentWidth(element));
+      return availableWidth <= 0 || element.scrollWidth <= availableWidth;
+    };
+
+    if (!fits(fontSize)) {
+      // Binary search for the largest font that fits; fixed 1px steps could stop before the text fit.
+      let low = this.minFontSize;
+      let high = fontSize;
+      for (let pass = 0; pass < this.maxVerifyPasses && high - low > 0.25; pass += 1) {
+        const middle = (low + high) / 2;
+        if (fits(middle)) low = middle;
+        else high = middle;
       }
+      fontSize = low;
+      element.style.fontSize = `${fontSize}px`;
     }
 
-    if (Math.abs(fontSize - this.state.fontSize) > 0.5) this.setState({ fontSize });
+    if (Math.abs(fontSize - this.state.fontSize) > 0.25) this.setState({ fontSize });
   };
+
+  private cellContentWidth(element: HTMLElement) {
+    const cell = element.closest<HTMLElement>(".sticker-label");
+    if (!cell) return Number.POSITIVE_INFINITY;
+    const style = getComputedStyle(cell);
+    const padding = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
+    return Math.max(0, cell.clientWidth - padding);
+  }
 
   private fit = () => window.requestAnimationFrame(this.fitNow);
 
